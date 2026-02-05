@@ -1,2 +1,2 @@
 # SE_KPS_68_2
-Home Spa Service
+Wellness Massage Management System (previously Home Spa Service System)
