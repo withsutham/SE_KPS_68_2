@@ -35,4 +35,6 @@ npm run dev
 
 ### 4. Verify the Setup
 *   **Web App:** Visit [http://localhost:3000](http://localhost:3000)
-*   **API Test:** Visit [http://localhost:3000/api/getUsers](http://localhost:3000/api/getUsers) to verify the Supabase connection.
+*   **API Test (Profiles):** Visit [http://localhost:3000/api/profiles](http://localhost:3000/api/profiles)
+*   **API Test (Auth Users):** Visit [http://localhost:3000/api/users](http://localhost:3000/api/users) (Admin Required)
+*   **API Test (Single Item):** Use `api/profiles/[id]` or `api/users/[id]` with a valid UUID.
