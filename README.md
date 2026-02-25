@@ -35,6 +35,38 @@ npm run dev
 
 ### 4. Verify the Setup
 *   **Web App:** Visit [http://localhost:3000](http://localhost:3000)
-*   **API Test (Profiles):** Visit [http://localhost:3000/api/profiles](http://localhost:3000/api/profiles)
-*   **API Test (Auth Users):** Visit [http://localhost:3000/api/users](http://localhost:3000/api/users) (Admin Required)
-*   **API Test (Single Item):** Use `api/profiles/[id]` or `api/users/[id]` with a valid UUID.
+
+### 5. API Documentation
+
+The application provides standardized RESTful API endpoints for all 18 database tables (e.g., `profiles`, `users`, `customer`, `employee`, `booking`, `massage`, etc.).
+
+All endpoints are located at `http://localhost:3000/api/[table_name]`.
+
+#### Supported Operations (CRUD)
+
+**1. Create (POST)**
+- **Endpoint:** `POST /api/[table_name]`
+- **Body:** JSON object matching the table schema.
+- **Description:** Inserts a new record into the specified table.
+
+**2. Read (GET)**
+- **Endpoint (All):** `GET /api/[table_name]`
+  - fetches all records in the table.
+- **Endpoint (Single):** `GET /api/[table_name]/[id]`
+  - Fetches a specific record by its primary key UUID.
+
+**3. Update (PUT)** *(Only generated tables currently support PUT)*
+- **Endpoint:** `PUT /api/[table_name]/[id]`
+- **Body:** JSON object containing the fields to update.
+- **Description:** Updates the specified record. 
+
+**4. Delete (DELETE)** *(Only generated tables currently support DELETE)*
+- **Endpoint:** `DELETE /api/[table_name]/[id]`
+- **Description:** Deletes the specified record by its primary key.
+
+#### Examples using the `customer` table:
+*   `GET http://localhost:3000/api/customer`
+*   `GET http://localhost:3000/api/customer/123e4567-e89b-12d3...`
+*   `POST http://localhost:3000/api/customer` (with JSON body)
+*   `PUT http://localhost:3000/api/customer/123e4567-e89b-12d3...` (with JSON body)
+*   `DELETE http://localhost:3000/api/customer/123e4567-e89b-12d3...`
