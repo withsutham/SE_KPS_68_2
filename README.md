@@ -70,3 +70,20 @@ All endpoints are located at `http://localhost:3000/api/[table_name]`.
 *   `POST http://localhost:3000/api/customer` (with JSON body)
 *   `PUT http://localhost:3000/api/customer/123e4567-e89b-12d3...` (with JSON body)
 *   `DELETE http://localhost:3000/api/customer/123e4567-e89b-12d3...`
+
+### 6. Running Unit Tests
+
+The application includes automated unit testing for all 18 API modules using [Vitest](https://vitest.dev/). The tests use mocked Supabase clients to simulate database interactions safely and quickly.
+
+**Running the tests:**
+From the `src/application` folder:
+```bash
+npm run test
+```
+
+This will run all test suites in the `src/test/api/` directory and print a summary of which test modules pass or fail.
+
+**Running tests in watch mode (for development):**
+```bash
+npm run test:watch
+```
