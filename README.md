@@ -38,6 +38,8 @@ npm run dev
 
 ### 5. API Documentation
 
+📝 **Complete API Reference:** For comprehensive details on all available endpoints, request/response formats, and usage examples, please refer to the [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) file located in the root directory.
+
 The application provides standardized RESTful API endpoints for all 18 database tables (e.g., `profiles`, `users`, `customer`, `employee`, `booking`, `massage`, etc.).
 
 All endpoints are located at `http://localhost:3000/api/[table_name]`.
