@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
                 return new Response(JSON.stringify({ success: false, error: "User not found" }), { status: 404 });
             }
 
-            return new Response(JSON.stringify({ success: true, user }), { status: 200 });
+            return new Response(JSON.stringify({ success: true, data: user }), { status: 200 });
         }
 
         // Otherwise, list all users
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
             return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500 });
         }
 
-        return new Response(JSON.stringify({ success: true, users: data.users }), { status: 200 });
+        return new Response(JSON.stringify({ success: true, data: data.users }), { status: 200 });
     } catch (err: any) {
         return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500 });
     }

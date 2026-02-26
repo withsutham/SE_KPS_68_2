@@ -38,7 +38,7 @@ export async function GET(
             }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, user }, { status: 200 });
+        return NextResponse.json({ success: true, data: user }, { status: 200 });
 
     } catch (err: any) {
         console.error("Users API Exception:", err.message);

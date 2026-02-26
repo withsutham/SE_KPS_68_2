@@ -39,10 +39,10 @@ describe('profiles API', () => {
     expect(json.success).toBe(true);
   });
 
-  it('POST /api/profiles should create record using uuid and user_type', async () => {
+  it('POST /api/profiles should create record using profile_id and user_type', async () => {
     mockSupabase.single.mockResolvedValue({ data: { id: '123' }, error: null });
 
-    const req = createMockRequest('http://localhost:3000/api/profiles', 'POST', { uuid: '123', user_type: 'customer' });
+    const req = createMockRequest('http://localhost:3000/api/profiles', 'POST', { profile_id: '123', user_type: 'customer' });
     const response = await POST(req);
     const json = await response.json();
 
