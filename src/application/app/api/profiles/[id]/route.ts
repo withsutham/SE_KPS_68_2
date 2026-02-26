@@ -8,9 +8,9 @@ export async function GET(
     try {
         let { id } = await params;
 
-        // Defensively strip "id=" or "uuid=" if the user mistakenly includes it in the path
+        // Defensively strip "id=" or "profile_id=" if the user mistakenly includes it in the path
         if (id.startsWith("id=")) id = id.replace("id=", "");
-        if (id.startsWith("uuid=")) id = id.replace("uuid=", "");
+        if (id.startsWith("profile_id=")) id = id.replace("profile_id=", "");
 
         if (!id) {
             return NextResponse.json({ success: false, error: "ID parameter is required" }, { status: 400 });
@@ -21,7 +21,7 @@ export async function GET(
         const { data, error } = await supabase
             .from("profiles")
             .select("*")
-            .eq("id", id)
+            .eq("profile_id", id)
             .maybeSingle();
 
         if (error) {
@@ -37,7 +37,7 @@ export async function GET(
             return NextResponse.json({ success: false, error: "Profile not found" }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, profile: data }, { status: 200 });
+        return NextResponse.json({ success: true, data }, { status: 200 });
 
     } catch (err: any) {
         console.error("Profiles API Exception:", err.message);
