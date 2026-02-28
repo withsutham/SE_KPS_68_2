@@ -19,13 +19,12 @@ Inside the `src/application` directory, you will find a `.env.example` file.
 ```bash
 # src/application/.env.local
 
-NEXT_PUBLIC_SUPABASE_URL=YOUR_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
-NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
+NEXT_PUBLIC_SUPABASE_URL=https://kuopbajnxyxpzzgrkzcn.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_Nbj5PIhiuzhtaDVmBpNsZg_m5jI_7xq
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SECRET_API_KEY
 ```
 
-> **Note:** `.env.local` is ignored by Git. Never share your `SUPABASE_SERVICE_ROLE_KEY` publicly.
+> **Note:** `.env.local` is ignored by Git. Never share your `SUPABASE_SECRET_API_KEY` (service role) publicly.
 
 ### 3. Run the Development Server
 From the `src/application` folder:
