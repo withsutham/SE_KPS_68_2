@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Flower2, Sparkles, Wind, Droplets, Leaf, Clock, HeartHandshake } from "lucide-react";
+import { CurrentYear } from "@/components/current-year";
 
 export default function Home() {
   return (
@@ -183,7 +184,7 @@ export default function Home() {
         </div>
 
         <div className="max-w-5xl mx-auto mt-16 pt-8 border-t border-border/30 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} ฟื้นใจ มาสสาจ (Feun-Jai Massage). สงวนลิขสิทธิ์.</p>
+          <p>© <CurrentYear /> ฟื้นใจ มาสสาจ (Feun-Jai Massage). สงวนลิขสิทธิ์.</p>
           <p>
             สร้างโดย{" "}
             <a href="https://supabase.com" target="_blank" className="font-medium hover:underline" rel="noreferrer">
