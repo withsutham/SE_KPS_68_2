@@ -1,4 +1,6 @@
 {
+  "name": "feun-jai-massage-app",
+  "description": "Premium multi-service massage shop platform",
   "private": true,
   "scripts": {
     "dev": "next dev",

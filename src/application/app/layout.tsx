@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Mitr, Sarabun } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
@@ -19,6 +19,20 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const mitr = Mitr({
+  variable: "--font-mitr",
+  weight: ["200", "300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
+
+const sarabun = Sarabun({
+  variable: "--font-sarabun",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800"],
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,10 +40,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className={`${geistSans.variable} ${mitr.variable} ${sarabun.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
