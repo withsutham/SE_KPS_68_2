@@ -42,3 +42,4 @@ This project utilizes shadcn/ui. Before building primitive components from scrat
 1. **Maintain Theme Consistency:** Always use predefined Tailwind color variables and font classes.
 2. **Follow Component-Driven Design:** Keep `page.tsx` files small by extracting UI sections into dedicated component files.
 3. **Use Absolute Imports:** Use the `@/` alias for importing components and libraries (e.g., `import { Button } from "@/components/ui/button"`).
+4. **API Instructions:** For instructions related to APIs, available endpoints, and expected payloads, always refer to the `API_DOCUMENTATION.md` file located in the root directory.
