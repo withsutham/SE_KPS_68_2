@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Mitr, Sarabun } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Nav } from "@/components/nav";
+import { Footer } from "@/components/footer";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -47,7 +49,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="min-h-screen flex flex-col bg-background text-foreground font-sans selection:bg-primary/30">
+            <Nav />
+            {children}
+            <Footer />
+          </div>
         </ThemeProvider>
       </body>
     </html>
