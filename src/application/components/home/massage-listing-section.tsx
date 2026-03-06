@@ -376,11 +376,14 @@ export function MassageListingSection() {
                                     {/* Book Now */}
                                     <Button
                                         id={`book-massage-${massage.massage_id}`}
+                                        asChild
                                         className="w-full rounded-full mt-1 font-mitr gap-2 shadow-sm shadow-primary/20 hover:shadow-primary/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
                                         size="sm"
                                     >
-                                        <CalendarCheck className="h-4 w-4" />
-                                        จองเลย
+                                        <a href={`/booking?serviceId=${massage.massage_id}`}>
+                                            <CalendarCheck className="h-4 w-4" />
+                                            จองเลย
+                                        </a>
                                     </Button>
                                 </CardContent>
                             </Card>

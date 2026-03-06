@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { BookingProgress } from "@/components/booking/booking-progress";
 import { StepServiceSelection } from "@/components/booking/step-service-selection";
 import { StepDateTime } from "@/components/booking/step-date-time";
@@ -9,9 +10,39 @@ import { StepPayment } from "@/components/booking/step-payment";
 import { StepSummary } from "@/components/booking/step-summary";
 import { BookingData, BookingStep, INITIAL_BOOKING_DATA } from "@/components/booking/types";
 
-export default function BookingPage() {
+// Inner component that can safely use useSearchParams
+function BookingPageInner() {
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState<BookingStep>(1);
   const [bookingData, setBookingData] = useState<BookingData>(INITIAL_BOOKING_DATA);
+
+  // Pre-select a service if ?serviceId= is present in the URL
+  useEffect(() => {
+    const serviceId = searchParams.get("serviceId");
+    if (!serviceId) return;
+
+    async function preSelectService() {
+      try {
+        const res = await fetch(`/api/massage/${serviceId}`);
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        const massage = json.data;
+        setBookingData(prev => ({
+          ...prev,
+          selectedServices: [{
+            massage_id: massage.massage_id, // keep as-is (number) to match StepServiceSelection's runtime type
+            massage_name: massage.massage_name,
+            massage_price: massage.massage_price,
+            duration: massage.massage_time ?? 60,
+          }],
+        }));
+      } catch {
+        // Silently ignore — user can manually select
+      }
+    }
+    preSelectService();
+  }, [searchParams]);
 
   const updateData = (updates: Partial<BookingData>) => {
     setBookingData(prev => ({ ...prev, ...updates }));
@@ -64,5 +95,13 @@ export default function BookingPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense>
+      <BookingPageInner />
+    </Suspense>
   );
 }
