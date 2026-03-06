@@ -12,10 +12,6 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
   return (
     <div className="w-full max-w-3xl mx-auto px-4 py-8">
       <div className="relative flex items-start justify-between">
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 8ce04d8 (initial the booking)
         {/* Progress background line */}
         <div
           className="absolute top-5 h-[2px] bg-border -translate-y-1/2 z-0"
@@ -32,35 +28,6 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
             width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% - ${((currentStep - 1) / (STEPS.length - 1)) * (100 / STEPS.length)}%)`
           }}
         />
-<<<<<<< HEAD
-=======
-        {/* Connecting lines */}
-        {STEPS.map((step, index) => {
-          if (index === STEPS.length - 1) return null;
-          const isCompleted = currentStep > step.id;
-          return (
-            <div
-              key={`line-${step.id}`}
-              className="absolute top-5 left-0 right-0 flex"
-              style={{
-                left: `calc(${(index / (STEPS.length - 1)) * 100}% + 20px)`,
-                width: `calc(${(1 / (STEPS.length - 1)) * 100}% - 40px)`,
-              }}
-            >
-              <div className="relative w-full h-[2px] bg-border overflow-hidden rounded-full">
-                <div
-                  className={cn(
-                    "absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out",
-                    isCompleted ? "bg-primary w-full" : "bg-primary w-0"
-                  )}
-                />
-              </div>
-            </div>
-          );
-        })}
->>>>>>> 40ed005 (inital the booking)
-=======
->>>>>>> 8ce04d8 (initial the booking)
 
         {/* Step circles */}
         {STEPS.map((step) => {
@@ -78,24 +45,12 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
               <div
                 className={cn(
                   "h-10 w-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-500 border-2 font-mitr",
-                  isCompleted &&
-<<<<<<< HEAD
-                  "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/20",
-                  isActive &&
-<<<<<<< HEAD
-                  "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
-=======
-                    "bg-background border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
->>>>>>> 52774cc (feat: Implement automatic therapist and room assignment in booking API and dynamic time slot availability based on service duration.)
-                  isUpcoming &&
-                  "bg-background border-border text-muted-foreground"
-=======
+                  isCompleted && 
                     "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/20",
-                  isActive &&
-                    "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
-                  isUpcoming &&
+                  isActive && 
+                    "bg-background border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
+                  isUpcoming && 
                     "bg-background border-border text-muted-foreground"
->>>>>>> 40ed005 (inital the booking)
                 )}
               >
                 {isCompleted ? (

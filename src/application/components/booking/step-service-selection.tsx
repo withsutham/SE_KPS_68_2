@@ -1,21 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-<<<<<<< HEAD
 import { Button } from "@/components/ui/button";
 import { Clock, Leaf, Wind, Droplets, Flower, Sparkles, ChevronRight, Loader2, AlertCircle, CheckCircle2, Circle, Search, X } from "lucide-react";
-=======
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Clock, Leaf, Wind, Droplets, Flower, Sparkles, ChevronRight, Loader2, AlertCircle } from "lucide-react";
->>>>>>> 40ed005 (inital the booking)
 import { cn } from "@/lib/utils";
 import { MassageService, StepProps } from "./types";
 
 const SERVICE_ICONS = [Leaf, Wind, Droplets, Flower, Sparkles];
 
-// UI enrichment per service name (descriptions + durations — not stored in DB)
 const SERVICE_META: Record<string, { description: string; duration: number }> = {
   "นวดไทยต้นตำรับ":    { description: "ศาสตร์การนวดแผนโบราณที่ผสานการยืดเหยียดและการกดจุด เพื่อเพิ่มความยืดหยุ่นและกระตุ้นการไหลเวียนของพลังงาน", duration: 60 },
   "นวดสวีดิชผ่อนคลาย": { description: "เทคนิคการนวดแบบยุโรปคลาสสิกที่เน้นความนุ่มนวลและลื่นไหล เพื่อสลายความตึงเครียดอย่างสมบูรณ์", duration: 90 },
@@ -25,14 +17,12 @@ const SERVICE_META: Record<string, { description: string; duration: number }> = 
   "ทรีทเมนท์สปาหรู":   { description: "ประสบการณ์สปาสุดพิเศษ ผสานการนวดพร้อมหน้ากากโคลนและสครับสมุนไพรในบรรยากาศสุดหรู", duration: 150 },
 };
 
-
 const DEFAULT_DURATION = 60;
 
 export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
   const [services, setServices] = useState<MassageService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-<<<<<<< HEAD
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredServices = services
@@ -52,8 +42,6 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
       if (!aSelected && bSelected) return 1;
       return 0;
     });
-=======
->>>>>>> 40ed005 (inital the booking)
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -67,7 +55,6 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
           throw new Error(json.error ?? "Failed to load services");
         }
 
-        // Enrich with UI metadata using service name as key
         const enriched: MassageService[] = (json.data as MassageService[]).map(s => ({
           ...s,
           description: SERVICE_META[s.massage_name]?.description,
@@ -84,6 +71,7 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
     };
     fetchServices();
   }, []);
+
   const handleSelect = (service: MassageService) => {
     const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
     if (isSelected) {
@@ -104,31 +92,25 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
         </p>
       </div>
 
-      {/* Loading skeleton */}
       {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-52 rounded-xl bg-muted/40 animate-pulse" />
-          ))}
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground font-sans text-sm">
+          <Loader2 className="h-6 w-6 animate-spin mb-4" />
+          กำลังโหลดบริการ...
         </div>
       )}
 
-      {/* Error state */}
       {!loading && error && (
-        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground font-sans">
+        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground font-sans text-sm">
           <AlertCircle className="h-8 w-8 text-destructive/60" />
-          <p className="text-sm">โหลดบริการไม่สำเร็จ: {error}</p>
+          <p>โหลดบริการไม่สำเร็จ: {error}</p>
           <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
             ลองอีกครั้ง
           </Button>
         </div>
       )}
 
-      {/* Service grid */}
       {!loading && !error && (
         <>
-<<<<<<< HEAD
-          {/* Search Bar */}
           <div className="max-w-2xl mx-auto w-full mb-2">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -151,12 +133,12 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
           </div>
 
           {filteredServices.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground font-sans text-sm bg-card/20 rounded-[28px] max-w-2xl mx-auto w-full">
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground font-sans text-sm bg-card/20 rounded-[28px] max-w-2xl mx-auto w-full border border-dashed border-border/40">
               <p>ไม่พบบริการที่ตรงกับ "{searchQuery}"</p>
             </div>
           ) : (
-            <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-[28px] max-w-2xl mx-auto w-full overflow-hidden shadow-sm flex flex-col max-h-[400px]">
-              <div className="overflow-y-auto custom-scrollbar">
+            <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-[28px] max-w-2xl mx-auto w-full overflow-hidden shadow-sm flex flex-col max-h-[500px]">
+              <div className="overflow-y-auto custom-scrollbar p-2">
                 {filteredServices.map((service, index) => {
                   const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
                   const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
@@ -165,15 +147,14 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
                       key={service.massage_id}
                       onClick={() => handleSelect(service)}
                       className={cn(
-                        "group flex items-center justify-between p-4 px-5 w-full bg-transparent transition-colors text-left outline-none hover:bg-muted/30 active:bg-muted/50",
-                        index !== filteredServices.length - 1 && "border-b border-border/40",
-                        isSelected && "bg-primary/5 hover:bg-primary/10 active:bg-primary/15"
+                        "group flex items-center justify-between p-4 px-5 w-full bg-transparent transition-all text-left outline-none rounded-2xl mb-1",
+                        isSelected ? "bg-primary/10 shadow-sm" : "hover:bg-muted/40"
                       )}
                     >
                       <div className="flex items-center gap-4">
                         <div className={cn(
-                          "h-10 w-10 shrink-0 rounded-[14px] flex items-center justify-center transition-colors duration-200",
-                          isSelected ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "bg-primary/10 text-primary/70 group-hover:text-primary"
+                          "h-10 w-10 shrink-0 rounded-[14px] flex items-center justify-center transition-all duration-300",
+                          isSelected ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-105" : "bg-primary/10 text-primary/70 group-hover:scale-110"
                         )}>
                           <Icon className="h-5 w-5" />
                         </div>
@@ -209,80 +190,12 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
                   );
                 })}
               </div>
-=======
-          {services.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-muted-foreground font-sans text-sm">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              ไม่พบข้อมูลบริการ
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {services.map((service, index) => {
-                const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
-                const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
-                return (
-                  <Card
-                    key={service.massage_id}
-                    onClick={() => handleSelect(service)}
-                    className={cn(
-                      "group cursor-pointer border-2 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1",
-                      isSelected
-                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
-                        : "border-border/40 bg-card/40 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30"
-                    )}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className={cn(
-                          "h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110",
-                          isSelected ? "bg-primary/20" : "bg-primary/10"
-                        )}>
-                          <Icon className={cn("h-5 w-5 transition-colors", isSelected ? "text-primary" : "text-primary/70")} />
-                        </div>
-                        {isSelected && (
-                          <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                            <ChevronRight className="h-3 w-3 text-primary-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <CardTitle className="text-base font-medium font-mitr mt-3">
-                        {service.massage_name}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {service.description && (
-                        <CardDescription className="text-sm font-light leading-relaxed line-clamp-2 mb-3">
-                          {service.description}
-                        </CardDescription>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span className="text-xs font-sans">
-                            {service.duration ?? DEFAULT_DURATION} นาที
-                          </span>
-                        </div>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "text-xs font-medium font-sans transition-colors",
-                            isSelected && "bg-primary/15 text-primary border-primary/20"
-                          )}
-                        >
-                          ฿{Number(service.massage_price).toLocaleString()}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
->>>>>>> 40ed005 (inital the booking)
             </div>
           )}
         </>
       )}
 
-      <div className="flex justify-end pt-2">
+      <div className="flex justify-end pt-2 max-w-2xl mx-auto w-full">
         <Button
           onClick={onNext}
           disabled={data.selectedServices.length === 0}

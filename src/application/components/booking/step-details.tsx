@@ -5,11 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-<<<<<<< HEAD
 import { ChevronLeft, ChevronRight, User, Phone } from "lucide-react";
-=======
-import { ChevronLeft, ChevronRight, User, Phone, MessageSquare } from "lucide-react";
->>>>>>> 40ed005 (inital the booking)
 import { StepProps } from "./types";
 
 export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
@@ -99,30 +95,6 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
             {errors.phone && <p className="text-destructive text-xs font-sans">{errors.phone}</p>}
           </div>
 
-<<<<<<< HEAD
-=======
-          {/* Special requests */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="specialRequests" className="font-sans text-sm font-medium flex items-center gap-2">
-              <MessageSquare className="h-3.5 w-3.5 text-primary" />
-              ความต้องการพิเศษ
-              <span className="text-muted-foreground font-light text-xs">(ไม่บังคับ)</span>
-            </Label>
-            <textarea
-              id="specialRequests"
-              rows={3}
-              placeholder="เช่น มีอาการปวดบริเวณบ่า, แพ้น้ำมันบางชนิด..."
-              value={data.specialRequests}
-              onChange={e => onUpdate({ specialRequests: e.target.value })}
-              className={cn(
-                "w-full rounded-md border px-3 py-2 text-sm font-sans resize-none outline-none ring-offset-background",
-                "placeholder:text-muted-foreground bg-background/50 border-border/60",
-                "focus:border-primary focus:ring-2 focus:ring-ring/20 transition-colors"
-              )}
-            />
-          </div>
-
->>>>>>> 40ed005 (inital the booking)
           {/* Mini summary */}
           {data.selectedServices.length > 0 && data.selectedDate && data.selectedTime && (
             <div className="bg-primary/5 border border-primary/15 rounded-xl p-4 text-sm font-sans">
