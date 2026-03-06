@@ -1,6 +1,6 @@
 # Wellness Massage Management System
 
-## Getting Started
+## Getting Started.
 
 Follow these steps to set up the project locally:
 
