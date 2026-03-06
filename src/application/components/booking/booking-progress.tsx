@@ -46,11 +46,11 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
                 className={cn(
                   "h-10 w-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-500 border-2 font-mitr",
                   isCompleted &&
-                    "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/20",
+                  "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/20",
                   isActive &&
-                    "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
+                  "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
                   isUpcoming &&
-                    "bg-background border-border text-muted-foreground"
+                  "bg-background border-border text-muted-foreground"
                 )}
               >
                 {isCompleted ? (
