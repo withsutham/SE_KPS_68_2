@@ -40,9 +40,11 @@ describe('massage API', () => {
   });
 
   it('GET /api/massage should return records', async () => {
-    mockSupabase.select.mockResolvedValue({ data: [{ id: '123' }], error: null });
-    // Specifically for users API which uses auth.admin
-    mockSupabase.auth.admin.listUsers.mockResolvedValue({ data: { users: [{ id: '123' }] }, error: null });
+    mockSupabase.select.mockResolvedValue({
+      data: [{ massage_id: 1, massage_name: 'นวดไทย', massage_price: 500.00, massage_time: 60, image_src: 'https://example.com/thai-massage.jpg' }],
+      error: null
+    });
+    mockSupabase.auth.admin.listUsers.mockResolvedValue({ data: { users: [] }, error: null });
 
     const req = createMockRequest('http://localhost:3000/api/massage');
     const response = await GET_ALL(req);
@@ -53,13 +55,18 @@ describe('massage API', () => {
   });
 
   it('POST /api/massage should create record', async () => {
-    mockSupabase.single.mockResolvedValue({ data: { id: '123' }, error: null });
+    const newMassage = {
+      massage_name: 'นวดน้ำมันหอมระเหย',
+      massage_price: 850.00,
+      massage_time: 90,
+      image_src: 'https://example.com/aromatherapy.jpg',
+    };
+    mockSupabase.single.mockResolvedValue({ data: { massage_id: 2, ...newMassage }, error: null });
 
-    const req = createMockRequest('http://localhost:3000/api/massage', 'POST', { name: 'Test' });
+    const req = createMockRequest('http://localhost:3000/api/massage', 'POST', newMassage);
     const response = await POST(req);
     const json = await response.json();
 
-    // Profiles returns 201, typical CRUD returns 201.
     expect([200, 201]).toContain(response.status);
     expect(json.success).toBe(true);
   });
