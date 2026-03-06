@@ -1,4 +1,4 @@
-# Wellness Massage Management System22
+# Wellness Massage Management System2200
 
 ## Getting Started
 
