@@ -111,6 +111,10 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
 
       {!loading && !error && (
         <>
+<<<<<<< HEAD
+=======
+          {/* Search Bar */}
+>>>>>>> 52774cc (feat: Implement automatic therapist and room assignment in booking API and dynamic time slot availability based on service duration.)
           <div className="max-w-2xl mx-auto w-full mb-2">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -133,12 +137,21 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
           </div>
 
           {filteredServices.length === 0 ? (
+<<<<<<< HEAD
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground font-sans text-sm bg-card/20 rounded-[28px] max-w-2xl mx-auto w-full border border-dashed border-border/40">
               <p>ไม่พบบริการที่ตรงกับ "{searchQuery}"</p>
             </div>
           ) : (
             <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-[28px] max-w-2xl mx-auto w-full overflow-hidden shadow-sm flex flex-col max-h-[500px]">
               <div className="overflow-y-auto custom-scrollbar p-2">
+=======
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground font-sans text-sm bg-card/20 rounded-[28px] max-w-2xl mx-auto w-full">
+              <p>ไม่พบบริการที่ตรงกับ "{searchQuery}"</p>
+            </div>
+          ) : (
+            <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-[28px] max-w-2xl mx-auto w-full overflow-hidden shadow-sm flex flex-col max-h-[400px]">
+              <div className="overflow-y-auto custom-scrollbar">
+>>>>>>> 52774cc (feat: Implement automatic therapist and room assignment in booking API and dynamic time slot availability based on service duration.)
                 {filteredServices.map((service, index) => {
                   const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
                   const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
@@ -147,14 +160,25 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
                       key={service.massage_id}
                       onClick={() => handleSelect(service)}
                       className={cn(
+<<<<<<< HEAD
                         "group flex items-center justify-between p-4 px-5 w-full bg-transparent transition-all text-left outline-none rounded-2xl mb-1",
                         isSelected ? "bg-primary/10 shadow-sm" : "hover:bg-muted/40"
+=======
+                        "group flex items-center justify-between p-4 px-5 w-full bg-transparent transition-colors text-left outline-none hover:bg-muted/30 active:bg-muted/50",
+                        index !== filteredServices.length - 1 && "border-b border-border/40",
+                        isSelected && "bg-primary/5 hover:bg-primary/10 active:bg-primary/15"
+>>>>>>> 52774cc (feat: Implement automatic therapist and room assignment in booking API and dynamic time slot availability based on service duration.)
                       )}
                     >
                       <div className="flex items-center gap-4">
                         <div className={cn(
+<<<<<<< HEAD
                           "h-10 w-10 shrink-0 rounded-[14px] flex items-center justify-center transition-all duration-300",
                           isSelected ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-105" : "bg-primary/10 text-primary/70 group-hover:scale-110"
+=======
+                          "h-10 w-10 shrink-0 rounded-[14px] flex items-center justify-center transition-colors duration-200",
+                          isSelected ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "bg-primary/10 text-primary/70 group-hover:text-primary"
+>>>>>>> 52774cc (feat: Implement automatic therapist and room assignment in booking API and dynamic time slot availability based on service duration.)
                         )}>
                           <Icon className="h-5 w-5" />
                         </div>
