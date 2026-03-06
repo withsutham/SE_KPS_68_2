@@ -48,7 +48,11 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
                   isCompleted &&
                   "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/20",
                   isActive &&
+<<<<<<< HEAD
                   "bg-primary/10 border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
+=======
+                    "bg-background border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
+>>>>>>> 52774cc (feat: Implement automatic therapist and room assignment in booking API and dynamic time slot availability based on service duration.)
                   isUpcoming &&
                   "bg-background border-border text-muted-foreground"
                 )}

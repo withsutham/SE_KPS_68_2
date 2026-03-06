@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Leaf, Wind, Droplets, Flower, Sparkles, ChevronRight, Loader2, AlertCircle } from "lucide-react";
+import { Clock, Leaf, Wind, Droplets, Flower, Sparkles, ChevronRight, Loader2, AlertCircle, CheckCircle2, Circle, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MassageService, StepProps } from "./types";
 
@@ -27,6 +25,25 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
   const [services, setServices] = useState<MassageService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredServices = services
+    .filter(service => {
+      const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
+      if (isSelected) return true;
+      
+      const lowerQuery = searchQuery.toLowerCase();
+      return service.massage_name.toLowerCase().includes(lowerQuery) || 
+             (service.description && service.description.toLowerCase().includes(lowerQuery));
+    })
+    .sort((a, b) => {
+      const aSelected = data.selectedServices.some(s => s.massage_id === a.massage_id);
+      const bSelected = data.selectedServices.some(s => s.massage_id === b.massage_id);
+      
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return 0;
+    });
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -100,72 +117,87 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
       {/* Service grid */}
       {!loading && !error && (
         <>
-          {services.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-muted-foreground font-sans text-sm">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              ไม่พบข้อมูลบริการ
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto w-full mb-2">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <input 
+                type="text" 
+                placeholder="ค้นหาบริการ..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-10 py-3 bg-card/40 backdrop-blur-md border border-border/40 rounded-full outline-none focus:ring-2 focus:ring-primary/20 transition-all font-sans text-sm shadow-sm"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {filteredServices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground font-sans text-sm bg-card/20 rounded-[28px] max-w-2xl mx-auto w-full">
+              <p>ไม่พบบริการที่ตรงกับ "{searchQuery}"</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {services.map((service, index) => {
-                const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
-                const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
-                return (
-                  <Card
-                    key={service.massage_id}
-                    onClick={() => handleSelect(service)}
-                    className={cn(
-                      "group cursor-pointer border-2 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1",
-                      isSelected
-                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
-                        : "border-border/40 bg-card/40 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30"
-                    )}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className={cn(
-                          "h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110",
-                          isSelected ? "bg-primary/20" : "bg-primary/10"
-                        )}>
-                          <Icon className={cn("h-5 w-5 transition-colors", isSelected ? "text-primary" : "text-primary/70")} />
-                        </div>
-                        {isSelected && (
-                          <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                            <ChevronRight className="h-3 w-3 text-primary-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <CardTitle className="text-base font-medium font-mitr mt-3">
-                        {service.massage_name}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {service.description && (
-                        <CardDescription className="text-sm font-light leading-relaxed line-clamp-2 mb-3">
-                          {service.description}
-                        </CardDescription>
+            <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-[28px] max-w-2xl mx-auto w-full overflow-hidden shadow-sm flex flex-col max-h-[400px]">
+              <div className="overflow-y-auto custom-scrollbar">
+                {filteredServices.map((service, index) => {
+                  const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
+                  const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
+                  return (
+                    <button
+                      key={service.massage_id}
+                      onClick={() => handleSelect(service)}
+                      className={cn(
+                        "group flex items-center justify-between p-4 px-5 w-full bg-transparent transition-colors text-left outline-none hover:bg-muted/30 active:bg-muted/50",
+                        index !== filteredServices.length - 1 && "border-b border-border/40",
+                        isSelected && "bg-primary/5 hover:bg-primary/10 active:bg-primary/15"
                       )}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span className="text-xs font-sans">
-                            {service.duration ?? DEFAULT_DURATION} นาที
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={cn(
+                          "h-10 w-10 shrink-0 rounded-[14px] flex items-center justify-center transition-colors duration-200",
+                          isSelected ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "bg-primary/10 text-primary/70 group-hover:text-primary"
+                        )}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className={cn(
+                            "font-medium font-mitr transition-colors",
+                            isSelected ? "text-primary" : "text-foreground"
+                          )}>
+                            {service.massage_name}
+                          </h3>
+                          <div className="flex items-center gap-1.5 text-muted-foreground mt-0.5">
+                            <Clock className="h-3 w-3" />
+                            <span className="text-xs font-sans">{service.duration ?? DEFAULT_DURATION} นาที</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <span className="text-sm font-semibold text-primary font-sans">
+                            ฿{Number(service.massage_price).toLocaleString()}
                           </span>
                         </div>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "text-xs font-medium font-sans transition-colors",
-                            isSelected && "bg-primary/15 text-primary border-primary/20"
+                        <div className="flex items-center justify-center">
+                          {isSelected ? (
+                            <CheckCircle2 className="h-6 w-6 text-primary drop-shadow-sm" />
+                          ) : (
+                            <Circle className="h-6 w-6 text-muted-foreground/30 group-hover:text-muted-foreground/50 transition-colors" />
                           )}
-                        >
-                          ฿{Number(service.massage_price).toLocaleString()}
-                        </Badge>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </>

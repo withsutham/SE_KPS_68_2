@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Loader2 } from "lucide-react";
 import { StepProps } from "./types";
 
 const TIME_SLOTS = [
@@ -12,9 +12,6 @@ const TIME_SLOTS = [
   "14:00", "14:30", "15:00", "15:30",
   "16:00", "16:30", "17:00", "17:30",
 ];
-
-// Simulated unavailable slots
-const UNAVAILABLE_SLOTS = new Set(["10:30", "14:00", "15:30"]);
 
 const DAYS_OF_WEEK = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
 const MONTHS_TH = [
@@ -53,8 +50,68 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
   };
 
   const handleTimeClick = (slot: string) => {
-    if (UNAVAILABLE_SLOTS.has(slot)) return;
     onUpdate({ selectedTime: slot });
+  };
+
+  const [bookedSlots, setBookedSlots] = useState<{ start: Date; end: Date }[]>([]);
+  const [loadingTimes, setLoadingTimes] = useState(false);
+
+  // Fetch real times when date changes
+  useEffect(() => {
+    if (!data.selectedDate) return;
+
+    const fetchBookings = async () => {
+      setLoadingTimes(true);
+      try {
+        const year = data.selectedDate!.getFullYear();
+        const month = String(data.selectedDate!.getMonth() + 1).padStart(2, "0");
+        const day = String(data.selectedDate!.getDate()).padStart(2, "0");
+
+        const res = await fetch(`/api/booking_detail?date=${year}-${month}-${day}`);
+        const json = await res.json();
+
+        if (json.success) {
+          const slots = json.data.map((d: any) => ({
+            start: new Date(d.massage_start_dateTime),
+            end: new Date(d.massage_end_dateTime),
+          }));
+          setBookedSlots(slots);
+        }
+      } catch (err) {
+        console.error("Failed to fetch booked slots:", err);
+      } finally {
+        setLoadingTimes(false);
+      }
+    };
+    fetchBookings();
+  }, [data.selectedDate]);
+
+  const totalDuration = data.selectedServices.reduce((sum, s) => sum + (s.duration ?? 60), 0);
+
+  const checkSlotAvailability = (slot: string) => {
+    if (!data.selectedDate) return false;
+    
+    const [h, m] = slot.split(":").map(Number);
+    const proposedStart = new Date(data.selectedDate);
+    proposedStart.setHours(h, m, 0, 0);
+    
+    const proposedEnd = new Date(proposedStart.getTime() + totalDuration * 60000);
+
+    // Business closes at 20:00 (for example, to prevent impossibly long bookings past closing)
+    const closingTime = new Date(data.selectedDate);
+    closingTime.setHours(20, 0, 0, 0);
+    if (proposedEnd > closingTime) return false;
+
+    // Reject times in the past for today
+    if (proposedStart < new Date()) return false;
+
+    for (const b of bookedSlots) {
+       // if (StartA < EndB) and (EndA > StartB)
+       if (proposedStart < b.end && proposedEnd > b.start) {
+         return false; // overlap exists
+       }
+    }
+    return true;
   };
 
   const isDateDisabled = (day: number) => {
@@ -152,10 +209,16 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
           </div>
 
           {data.selectedDate ? (
+            loadingTimes ? (
+              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground font-sans text-sm">
+                <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                กำลังตรวจสอบคิวว่าง...
+              </div>
+            ) : (
             <>
               <div className="grid grid-cols-4 gap-2">
                 {TIME_SLOTS.map(slot => {
-                  const unavailable = UNAVAILABLE_SLOTS.has(slot);
+                  const unavailable = !checkSlotAvailability(slot);
                   const selected = data.selectedTime === slot;
                   return (
                     <button
@@ -183,6 +246,7 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
                 </span>
               </div>
             </>
+            )
           ) : (
             <div className="flex flex-col items-center justify-center h-40 text-muted-foreground font-sans text-sm">
               กรุณาเลือกวันที่ก่อน
