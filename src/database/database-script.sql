@@ -3,6 +3,7 @@
 -- ==========================================
 
 -- Drop tables with CASCADE to handle foreign key dependencies automatically
+DROP TABLE IF EXISTS operate_time CASCADE;
 DROP TABLE IF EXISTS booking_detail CASCADE;
 DROP TABLE IF EXISTS member_package CASCADE;
 DROP TABLE IF EXISTS member_coupon CASCADE;
@@ -74,6 +75,13 @@ CREATE TABLE massage (
     massage_price NUMERIC(10, 2) NOT NULL,
     massage_time INT,     -- Duration in minutes (e.g. 60, 90, 120)
     image_src TEXT        -- URL to the massage image
+);
+
+CREATE TABLE operate_time (
+    operate_time_id SERIAL PRIMARY KEY,
+    open_time TIME NOT NULL,
+    close_time TIME NOT NULL,
+    create_date TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE room_massage (

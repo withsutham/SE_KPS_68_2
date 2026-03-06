@@ -15,6 +15,7 @@ The following 18 entities have standard API endpoints available:
 - `employee`
 - `leave_record`
 - `massage`
+- `operate_time`
 - `member_coupon`
 - `member_package`
 - `package`
@@ -179,5 +180,22 @@ All standard endpoints return robust error objects when something goes wrong (e.
     "massage_price": 850.00,
     "massage_time": 90,
     "image_src": "https://<project>.supabase.co/storage/v1/object/public/massage-images/aromatherapy.jpg"
+}
+```
+
+### `operate_time`
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `operate_time_id` | `int` | Auto | Primary key (auto-increment) |
+| `open_time` | `time` | ✅ | Shop opening time (e.g. "09:00:00") |
+| `close_time` | `time` | ✅ | Shop closing time (e.g. "21:00:00") |
+| `create_date` | `timestamptz` | Auto | Timestamp of record creation |
+
+**Example POST body:**
+```json
+{
+    "open_time": "10:00:00",
+    "close_time": "22:00:00"
 }
 ```
