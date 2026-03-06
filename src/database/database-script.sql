@@ -71,7 +71,9 @@ CREATE TABLE room (
 CREATE TABLE massage (
     massage_id SERIAL PRIMARY KEY,
     massage_name TEXT NOT NULL,
-    massage_price NUMERIC(10, 2) NOT NULL
+    massage_price NUMERIC(10, 2) NOT NULL,
+    massage_time INT,     -- Duration in minutes (e.g. 60, 90, 120)
+    image_src TEXT        -- URL to the massage image
 );
 
 CREATE TABLE room_massage (
