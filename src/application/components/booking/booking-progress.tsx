@@ -12,30 +12,22 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
   return (
     <div className="w-full max-w-3xl mx-auto px-4 py-8">
       <div className="relative flex items-start justify-between">
-        {/* Connecting lines */}
-        {STEPS.map((step, index) => {
-          if (index === STEPS.length - 1) return null;
-          const isCompleted = currentStep > step.id;
-          return (
-            <div
-              key={`line-${step.id}`}
-              className="absolute top-5 left-0 right-0 flex"
-              style={{
-                left: `calc(${(index / (STEPS.length - 1)) * 100}% + 20px)`,
-                width: `calc(${(1 / (STEPS.length - 1)) * 100}% - 40px)`,
-              }}
-            >
-              <div className="relative w-full h-[2px] bg-border overflow-hidden rounded-full">
-                <div
-                  className={cn(
-                    "absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out",
-                    isCompleted ? "bg-primary w-full" : "bg-primary w-0"
-                  )}
-                />
-              </div>
-            </div>
-          );
-        })}
+        {/* Progress background line */}
+        <div
+          className="absolute top-5 h-[2px] bg-border -translate-y-1/2 z-0"
+          style={{
+            left: `${100 / (2 * STEPS.length)}%`,
+            right: `${100 / (2 * STEPS.length)}%`
+          }}
+        />
+        {/* Progress fill line */}
+        <div
+          className="absolute top-5 h-[2px] bg-primary transition-all duration-700 ease-out -translate-y-1/2 z-0"
+          style={{
+            left: `${100 / (2 * STEPS.length)}%`,
+            width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% - ${((currentStep - 1) / (STEPS.length - 1)) * (100 / STEPS.length)}%)`
+          }}
+        />
 
         {/* Step circles */}
         {STEPS.map((step) => {
