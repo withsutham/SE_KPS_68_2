@@ -58,7 +58,8 @@ function BookingPageInner() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const stepProps = { data: bookingData, onUpdate: updateData, onNext: goNext, onBack: goBack };
+  const serviceId = searchParams.get("serviceId");
+  const stepProps = { data: bookingData, onUpdate: updateData, onNext: goNext, onBack: goBack, autoOpenPicker: !serviceId };
 
   return (
     <main className="flex-1 w-full">

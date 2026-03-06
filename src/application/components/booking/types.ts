@@ -44,6 +44,7 @@ export interface StepProps {
   onUpdate: (updates: Partial<BookingData>) => void;
   onNext: () => void;
   onBack: () => void;
+  autoOpenPicker?: boolean;
 }
 
 export const STEPS = [

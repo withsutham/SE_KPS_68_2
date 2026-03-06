@@ -299,7 +299,7 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle 
 }
 
 // ─── Main Step Component ──────────────────────────────────────────────────────
-export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
+export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = true }: StepProps) {
   const [allServices, setAllServices] = useState<MassageService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -318,7 +318,7 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
           duration: SERVICE_META[s.massage_name]?.duration ?? (s.duration ?? DEFAULT_DURATION),
         }));
         setAllServices(enriched);
-        if (data.selectedServices.length === 0) setPickerOpen(true);
+        if (autoOpenPicker) setPickerOpen(true);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
       } finally {
