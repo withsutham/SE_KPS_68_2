@@ -147,7 +147,6 @@ export function StepSummary({ data }: Pick<StepProps, "data">) {
           </div>
 
 
-
           <div className="h-px bg-border/60" />
 
           {/* Payment */}

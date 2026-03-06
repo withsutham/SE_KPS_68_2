@@ -288,31 +288,32 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
                   <span className="inline-block w-3 h-3 rounded-sm bg-muted/50 border border-border/30" /> ไม่ว่าง
                 </span>
               </div>
-            {/* Total Duration Info */}
-            <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-primary" />
+              
+              {/* Total Duration Info */}
+              <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium font-mitr text-foreground">ระยะเวลาทั้งหมด</p>
+                    <p className="text-xs text-muted-foreground font-sans">รวมทุกบริการที่เลือก</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium font-mitr text-foreground">ระยะเวลาทั้งหมด</p>
-                  <p className="text-xs text-muted-foreground font-sans">รวมทุกบริการที่เลือก</p>
+                <div className="text-right">
+                  <span className="text-lg font-bold text-primary font-sans">{totalDuration}</span>
+                  <span className="ml-1 text-xs text-muted-foreground font-sans">นาที</span>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="text-lg font-bold text-primary font-sans">{totalDuration}</span>
-                <span className="ml-1 text-xs text-muted-foreground font-sans">นาที</span>
-              </div>
+            </>
+            )
+          ) : (
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground font-sans text-sm">
+              กรุณาเลือกวันที่ก่อน
             </div>
-          </>
-          )
-        ) : (
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground font-sans text-sm">
-            กรุณาเลือกวันที่ก่อน
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
 
       <div className="flex justify-between pt-2">
         <Button variant="outline" onClick={onBack} className="gap-2 font-sans" size="lg">

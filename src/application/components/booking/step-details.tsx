@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, User, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Phone, Mail } from "lucide-react";
 import { StepProps } from "./types";
 
 export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
@@ -78,42 +78,44 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
             </div>
           </div>
 
-          {/* Phone */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="phone" className="font-sans text-sm font-medium flex items-center gap-2">
-              <Phone className="h-3.5 w-3.5 text-primary" />
-              เบอร์โทรศัพท์ <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="phone"
-              placeholder="08X-XXX-XXXX"
-              type="tel"
-              value={data.phone}
-              onChange={e => { onUpdate({ phone: e.target.value }); setErrors(p => ({ ...p, phone: "" })); }}
-              className={fieldClass(errors.phone)}
-            />
-            {errors.phone && <p className="text-destructive text-xs font-sans">{errors.phone}</p>}
+          {/* Phone & Email */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="phone" className="font-sans text-sm font-medium flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5 text-primary" />
+                เบอร์โทรศัพท์ <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="phone"
+                placeholder="08X-XXX-XXXX"
+                type="tel"
+                value={data.phone}
+                onChange={e => { onUpdate({ phone: e.target.value }); setErrors(p => ({ ...p, phone: "" })); }}
+                className={fieldClass(errors.phone)}
+              />
+              {errors.phone && <p className="text-destructive text-xs font-sans">{errors.phone}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email" className="font-sans text-sm font-medium flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-primary" />
+                อีเมล
+              </Label>
+              <Input
+                id="email"
+                placeholder="example@email.com"
+                type="email"
+                value={data.email}
+                onChange={e => { onUpdate({ email: e.target.value }); setErrors(p => ({ ...p, email: "" })); }}
+                className={fieldClass(errors.email)}
+              />
+              {errors.email && <p className="text-destructive text-xs font-sans">{errors.email}</p>}
+            </div>
           </div>
 
-          {/* Email */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email" className="font-sans text-sm font-medium">
-              อีเมล
-            </Label>
-            <Input
-              id="email"
-              placeholder="example@email.com"
-              type="email"
-              value={data.email}
-              onChange={e => { onUpdate({ email: e.target.value }); setErrors(p => ({ ...p, email: "" })); }}
-              className={fieldClass(errors.email)}
-            />
-            {errors.email && <p className="text-destructive text-xs font-sans">{errors.email}</p>}
-          </div>
 
           {/* Mini summary */}
           {data.selectedServices.length > 0 && data.selectedDate && data.selectedTime && (
-            <div className="bg-primary/5 border border-primary/15 rounded-xl p-4 text-sm font-sans">
+            <div className="bg-primary/5 border border-primary/15 rounded-xl p-4 text-sm font-sans mt-2">
               <p className="font-medium text-primary mb-1.5 font-mitr">สรุปการจองเบื้องต้น</p>
               <div className="text-muted-foreground space-y-0.5">
                 <p>บริการ: {data.selectedServices.map(s => s.massage_name).join(', ')}</p>

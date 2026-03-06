@@ -124,7 +124,6 @@ export async function POST(request: NextRequest) {
 
             if (detailsError) {
                 console.error("booking POST error (booking_detail table):", detailsError.message);
-                // Non-fatal, but we should log it
             }
         }
 

@@ -48,6 +48,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
       const payload = {
         customer_name: `${data.firstName} ${data.lastName}`,
         customer_phone: data.phone,
+        customer_email: data.email,
         booking_datetime: bookingDateTime,
         services: data.selectedServices.map(s => ({
           massage_id: s.massage_id,
@@ -56,7 +57,6 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
         })),
         payment_method: data.paymentMethod,
         total_price: data.selectedServices.reduce((sum, s) => sum + Number(s.massage_price), 0),
-        customer_email: data.email,
       };
 
       let bookingId: string | null = null;
@@ -70,8 +70,8 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
           const json = await res.json();
           bookingId = json.data?.id ?? null;
         }
-      } catch {
-        // Fallback ID when API not available
+      } catch (err) {
+        console.error("Booking submission error:", err);
       }
 
       onUpdate({
@@ -128,6 +128,12 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
               <span className="text-muted-foreground">ผู้จอง</span>
               <span>{data.firstName} {data.lastName}</span>
             </div>
+            {data.email && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">อีเมล</span>
+                <span>{data.email}</span>
+              </div>
+            )}
             <div className="h-px bg-border/60 my-2" />
             <div className="flex justify-between text-base font-semibold">
               <span>ยอดชำระ</span>
