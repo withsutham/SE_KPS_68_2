@@ -4,6 +4,7 @@ export interface MassageService {
   massage_id: string;
   massage_name: string;
   massage_price: number;
+  image_src?: string | null;
   // UI-only enrichments (not in DB)
   description?: string;
   duration?: number;

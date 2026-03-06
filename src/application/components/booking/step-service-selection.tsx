@@ -1,79 +1,341 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Clock, Leaf, Wind, Droplets, Flower, Sparkles, ChevronRight, Loader2, AlertCircle, CheckCircle2, Circle, Search, X } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Clock,
+  Leaf,
+  Wind,
+  Droplets,
+  Flower,
+  Sparkles,
+  ChevronRight,
+  Loader2,
+  AlertCircle,
+  Search,
+  X,
+  Plus,
+  Trash2,
+  SlidersHorizontal,
+  CheckCircle2,
+  ImageOff,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { MassageService, StepProps } from "./types";
 
 const SERVICE_ICONS = [Leaf, Wind, Droplets, Flower, Sparkles];
-
 const SERVICE_META: Record<string, { description: string; duration: number }> = {
-  "นวดไทยต้นตำรับ":    { description: "ศาสตร์การนวดแผนโบราณที่ผสานการยืดเหยียดและการกดจุด เพื่อเพิ่มความยืดหยุ่นและกระตุ้นการไหลเวียนของพลังงาน", duration: 60 },
-  "นวดสวีดิชผ่อนคลาย": { description: "เทคนิคการนวดแบบยุโรปคลาสสิกที่เน้นความนุ่มนวลและลื่นไหล เพื่อสลายความตึงเครียดอย่างสมบูรณ์", duration: 90 },
-  "นวดอโรมาเธอราพี":   { description: "การเดินทางสู่ความสมดุลแบบองค์รวม ผสานท่านวดที่ผ่อนคลายร่วมกับน้ำมันหอมระเหยสูตรพิเศษ", duration: 90 },
-  "นวดหินร้อน":         { description: "สัมผัสความอบอุ่นจากหินภูเขาไฟที่ถูกคัดสรรมาเป็นพิเศษ ช่วยคลายกล้ามเนื้อที่ตึงเครียดในเชิงลึก", duration: 120 },
-  "นวดฝ่าเท้า":         { description: "กระตุ้นจุดรีเฟล็กซ์บนฝ่าเท้าที่สอดคล้องกับอวัยวะภายใน เพื่อฟื้นฟูพลังงานและความสดชื่น", duration: 45 },
-  "ทรีทเมนท์สปาหรู":   { description: "ประสบการณ์สปาสุดพิเศษ ผสานการนวดพร้อมหน้ากากโคลนและสครับสมุนไพรในบรรยากาศสุดหรู", duration: 150 },
+  "นวดไทยต้นตำรับ": { description: "ศาสตร์การนวดแผนโบราณที่ผสานการยืดเหยียดและการกดจุด", duration: 60 },
+  "นวดสวีดิชผ่อนคลาย": { description: "เทคนิคการนวดแบบยุโรปคลาสสิกที่เน้นความนุ่มนวลและลื่นไหล", duration: 90 },
+  "นวดอโรมาเธอราพี": { description: "ผสานท่านวดที่ผ่อนคลายกับน้ำมันหอมระเหยสูตรพิเศษ", duration: 90 },
+  "นวดหินร้อน": { description: "สัมผัสความอบอุ่นจากหินภูเขาไฟ ช่วยคลายกล้ามเนื้อในเชิงลึก", duration: 120 },
+  "นวดฝ่าเท้า": { description: "กระตุ้นจุดรีเฟล็กซ์บนฝ่าเท้าเพื่อฟื้นฟูพลังงาน", duration: 45 },
+  "ทรีทเมนท์สปาหรู": { description: "ประสบการณ์สปาผสานการนวดและสครับสมุนไพร", duration: 150 },
 };
-
 const DEFAULT_DURATION = 60;
 
+type SortKey = "default" | "price_asc" | "price_desc" | "time_asc" | "time_desc";
+
+// ─── Service Card inside the Picker Modal ─────────────────────────────────────
+function PickerCard({
+  service,
+  isSelected,
+  index,
+  onToggle,
+}: {
+  service: MassageService;
+  isSelected: boolean;
+  index: number;
+  onToggle: () => void;
+}) {
+  const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        "group relative flex flex-col rounded-2xl border overflow-hidden text-left transition-all duration-200",
+        isSelected
+          ? "border-primary/50 ring-2 ring-primary/20 shadow-md shadow-primary/10"
+          : "border-border/40 hover:border-border/70 hover:shadow-md"
+      )}
+    >
+      {/* Image */}
+      <div className="relative h-36 w-full bg-muted/40 overflow-hidden">
+        {service.image_src ? (
+          <Image
+            src={service.image_src}
+            alt={service.massage_name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <div className={cn(
+              "h-12 w-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110",
+              isSelected ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary/70"
+            )}>
+              <Icon className="h-6 w-6" />
+            </div>
+          </div>
+        )}
+        {!service.image_src && (
+          <ImageOff className="absolute top-2 right-2 h-3.5 w-3.5 text-muted-foreground/30" />
+        )}
+        {/* Selected overlay */}
+        {isSelected && (
+          <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+            <CheckCircle2 className="h-10 w-10 text-primary drop-shadow-lg" />
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className={cn(
+        "flex flex-col gap-2 p-3 transition-colors",
+        isSelected ? "bg-primary/5" : "bg-card/60"
+      )}>
+        <p className={cn(
+          "font-medium font-mitr text-sm leading-snug line-clamp-2",
+          isSelected ? "text-primary" : "text-foreground"
+        )}>
+          {service.massage_name}
+        </p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="outline" className="rounded-full px-2 py-0.5 text-xs font-medium border-primary/30 text-primary bg-primary/5">
+            ฿{Number(service.massage_price).toLocaleString()}
+          </Badge>
+          {(service.duration ?? DEFAULT_DURATION) > 0 && (
+            <Badge variant="outline" className="rounded-full px-2 py-0.5 text-xs border-border/40 text-muted-foreground flex items-center gap-1">
+              <Clock className="h-2.5 w-2.5" />
+              {service.duration ?? DEFAULT_DURATION} นาที
+            </Badge>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ─── Service Picker Modal ─────────────────────────────────────────────────────
+interface ServicePickerProps {
+  open: boolean;
+  onClose: () => void;
+  allServices: MassageService[];
+  selectedIds: Set<string | number>;
+  onToggle: (service: MassageService) => void;
+}
+
+function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle }: ServicePickerProps) {
+  const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("default");
+
+  const bounds = useMemo(() => {
+    if (!allServices.length) return { minPrice: 0, maxPrice: 9999, minTime: 0, maxTime: 999 };
+    const prices = allServices.map(s => s.massage_price);
+    const times = allServices.filter(s => s.duration != null).map(s => s.duration as number);
+    return {
+      minPrice: Math.floor(Math.min(...prices)),
+      maxPrice: Math.ceil(Math.max(...prices)),
+      minTime: times.length ? Math.min(...times) : 0,
+      maxTime: times.length ? Math.max(...times) : 999,
+    };
+  }, [allServices]);
+
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 9999]);
+  const [timeRange, setTimeRange] = useState<[number, number]>([0, 999]);
+
+  useEffect(() => {
+    if (allServices.length) {
+      setPriceRange([bounds.minPrice, bounds.maxPrice]);
+      setTimeRange([bounds.minTime, bounds.maxTime]);
+    }
+  }, [allServices.length, bounds.minPrice, bounds.maxPrice, bounds.minTime, bounds.maxTime]);
+
+  const filtered = useMemo(() => {
+    let result = allServices.filter(s => {
+      const nameMatch = s.massage_name.toLowerCase().includes(search.toLowerCase());
+      const priceMatch = s.massage_price >= priceRange[0] && s.massage_price <= priceRange[1];
+      const timeMatch = s.duration == null || (s.duration >= timeRange[0] && s.duration <= timeRange[1]);
+      return nameMatch && priceMatch && timeMatch;
+    });
+    switch (sortKey) {
+      case "price_asc": result = [...result].sort((a, b) => a.massage_price - b.massage_price); break;
+      case "price_desc": result = [...result].sort((a, b) => b.massage_price - a.massage_price); break;
+      case "time_asc": result = [...result].sort((a, b) => (a.duration ?? 0) - (b.duration ?? 0)); break;
+      case "time_desc": result = [...result].sort((a, b) => (b.duration ?? 0) - (a.duration ?? 0)); break;
+    }
+    return result;
+  }, [allServices, search, priceRange, timeRange, sortKey]);
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-2xl w-full p-0 overflow-hidden max-h-[90vh] flex flex-col">
+        <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
+          <DialogTitle className="font-mitr text-xl">เพิ่มบริการ</DialogTitle>
+        </DialogHeader>
+
+        {/* Controls */}
+        <div className="px-6 pt-4 pb-3 flex flex-col gap-3 border-b border-border/30 shrink-0">
+          {/* Row 1: Search + Sort + Filter */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="ค้นหาบริการ..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-10 pr-8 py-2 rounded-full border border-border/50 bg-muted/30 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Sort */}
+            <Select value={sortKey} onValueChange={v => setSortKey(v as SortKey)}>
+              <SelectTrigger className="w-40 rounded-full border-border/50 bg-muted/30 text-sm h-9">
+                <SelectValue placeholder="เรียงตาม" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">ค่าเริ่มต้น</SelectItem>
+                <SelectItem value="price_asc">ราคา: น้อย → มาก</SelectItem>
+                <SelectItem value="price_desc">ราคา: มาก → น้อย</SelectItem>
+                <SelectItem value="time_asc">เวลา: สั้น → ยาว</SelectItem>
+                <SelectItem value="time_desc">เวลา: ยาว → สั้น</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Filter toggle */}
+            <button
+              onClick={() => setShowFilters(v => !v)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium transition-all h-9",
+                showFilters ? "border-primary/50 bg-primary/10 text-primary" : "border-border/50 bg-muted/30 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              กรอง
+            </button>
+          </div>
+
+          {/* Row 2: Filter sliders */}
+          {showFilters && (
+            <div className="flex flex-col gap-3 pb-1 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between text-xs">
+                  <span className="font-medium">ช่วงราคา</span>
+                  <span className="text-primary">฿{priceRange[0].toLocaleString()} – ฿{priceRange[1].toLocaleString()}</span>
+                </div>
+                <Slider min={bounds.minPrice} max={bounds.maxPrice} step={50} value={priceRange} onValueChange={v => setPriceRange(v as [number, number])} />
+              </div>
+              {bounds.maxTime > bounds.minTime && (
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-medium">ระยะเวลา</span>
+                    <span className="text-primary">{timeRange[0]}–{timeRange[1]} นาที</span>
+                  </div>
+                  <Slider min={bounds.minTime} max={bounds.maxTime} step={15} value={timeRange} onValueChange={v => setTimeRange(v as [number, number])} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Card Grid */}
+        <div className="overflow-y-auto flex-1 p-4">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-2">
+              <Search className="h-8 w-8 opacity-20" />
+              <p>ไม่พบบริการที่ตรงกับเงื่อนไข</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {filtered.map((service, index) => (
+                <PickerCard
+                  key={service.massage_id}
+                  service={service}
+                  isSelected={selectedIds.has(service.massage_id)}
+                  index={index}
+                  onToggle={() => onToggle(service)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-border/30 flex items-center justify-between shrink-0">
+          <span className="text-sm text-muted-foreground">
+            เลือกแล้ว <span className="text-foreground font-medium">{selectedIds.size}</span> บริการ
+          </span>
+          <DialogClose asChild>
+            <Button className="rounded-full px-6 font-mitr" onClick={onClose}>เสร็จสิ้น</Button>
+          </DialogClose>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Step Component ──────────────────────────────────────────────────────
 export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
-  const [services, setServices] = useState<MassageService[]>([]);
+  const [allServices, setAllServices] = useState<MassageService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredServices = services
-    .filter(service => {
-      const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
-      if (isSelected) return true;
-      
-      const lowerQuery = searchQuery.toLowerCase();
-      return service.massage_name.toLowerCase().includes(lowerQuery) || 
-             (service.description && service.description.toLowerCase().includes(lowerQuery));
-    })
-    .sort((a, b) => {
-      const aSelected = data.selectedServices.some(s => s.massage_id === a.massage_id);
-      const bSelected = data.selectedServices.some(s => s.massage_id === b.massage_id);
-      
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return 0;
-    });
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
         setLoading(true);
-        setError(null);
         const res = await fetch("/api/massage");
         const json = await res.json();
-
-        if (!res.ok || !json.success) {
-          throw new Error(json.error ?? "Failed to load services");
-        }
-
+        if (!res.ok || !json.success) throw new Error(json.error ?? "Failed to load services");
         const enriched: MassageService[] = (json.data as MassageService[]).map(s => ({
           ...s,
           description: SERVICE_META[s.massage_name]?.description,
-          duration:    SERVICE_META[s.massage_name]?.duration ?? DEFAULT_DURATION,
+          duration: SERVICE_META[s.massage_name]?.duration ?? (s.duration ?? DEFAULT_DURATION),
         }));
-
-        setServices(enriched);
+        setAllServices(enriched);
+        if (data.selectedServices.length === 0) setPickerOpen(true);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "เกิดข้อผิดพลาด";
-        setError(message);
+        setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
       } finally {
         setLoading(false);
       }
     };
     fetchServices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSelect = (service: MassageService) => {
-    const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
+  const selectedIds = useMemo(
+    () => new Set(data.selectedServices.map(s => s.massage_id)),
+    [data.selectedServices]
+  );
+
+  const handleToggle = (service: MassageService) => {
+    const isSelected = selectedIds.has(service.massage_id);
     if (isSelected) {
       onUpdate({ selectedServices: data.selectedServices.filter(s => s.massage_id !== service.massage_id) });
     } else {
@@ -81,120 +343,111 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
     }
   };
 
+  const handleRemove = (id: string | number) => {
+    onUpdate({ selectedServices: data.selectedServices.filter(s => s.massage_id !== id) });
+  };
+
+  const totalPrice = data.selectedServices.reduce((sum, s) => sum + Number(s.massage_price), 0);
+  const totalTime = data.selectedServices.reduce((sum, s) => sum + (s.duration ?? DEFAULT_DURATION), 0);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground font-sans text-sm">
+        <Loader2 className="h-6 w-6 animate-spin mb-4" />
+        กำลังโหลดบริการ...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground font-sans text-sm">
+        <AlertCircle className="h-8 w-8 text-destructive/60" />
+        <p>โหลดบริการไม่สำเร็จ: {error}</p>
+        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>ลองอีกครั้ง</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center">
-        <h2 className="text-2xl md:text-3xl font-medium font-mitr text-foreground">
-          เลือกบริการที่ต้องการ
-        </h2>
-        <p className="text-muted-foreground mt-2 font-sans">
-          เลือกทรีทเมนท์ที่เหมาะกับความต้องการของคุณ
-        </p>
+        <h2 className="text-2xl md:text-3xl font-medium font-mitr text-foreground">เลือกบริการที่ต้องการ</h2>
+        <p className="text-muted-foreground mt-2 font-sans text-sm">เลือกทรีทเมนท์ที่เหมาะกับความต้องการของคุณ</p>
       </div>
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground font-sans text-sm">
-          <Loader2 className="h-6 w-6 animate-spin mb-4" />
-          กำลังโหลดบริการ...
-        </div>
-      )}
-
-      {!loading && error && (
-        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground font-sans text-sm">
-          <AlertCircle className="h-8 w-8 text-destructive/60" />
-          <p>โหลดบริการไม่สำเร็จ: {error}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            ลองอีกครั้ง
-          </Button>
-        </div>
-      )}
-
-      {!loading && !error && (
-        <>
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto w-full mb-2">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input 
-                type="text" 
-                placeholder="ค้นหาบริการ..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-10 py-3 bg-card/40 backdrop-blur-md border border-border/40 rounded-full outline-none focus:ring-2 focus:ring-primary/20 transition-all font-sans text-sm shadow-sm"
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      <div className="max-w-2xl mx-auto w-full flex flex-col gap-3">
+        {/* Empty Placeholder */}
+        {data.selectedServices.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 rounded-2xl border border-dashed border-border/50 bg-card/20 text-muted-foreground text-sm gap-2">
+            <Leaf className="h-8 w-8 opacity-20" />
+            <p>ยังไม่ได้เลือกบริการ</p>
+            <p className="text-xs opacity-70">กด "เพิ่มบริการ" เพื่อเริ่มต้น</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {data.selectedServices.map((service, index) => {
+              const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
+              return (
+                <div
+                  key={service.massage_id}
+                  className="flex items-center justify-between p-4 px-5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl group animate-in fade-in slide-in-from-bottom-2 duration-200"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 shrink-0 rounded-[14px] bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium font-mitr text-foreground">{service.massage_name}</p>
+                      <div className="flex items-center gap-1 text-muted-foreground mt-0.5">
+                        <Clock className="h-3 w-3" />
+                        <span className="text-xs">{service.duration ?? DEFAULT_DURATION} นาที</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-primary">฿{Number(service.massage_price).toLocaleString()}</span>
+                    <button
+                      onClick={() => handleRemove(service.massage_id)}
+                      className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                      aria-label="ลบบริการ"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Summary */}
+            <div className="flex items-center justify-between px-5 py-3 rounded-2xl bg-primary/5 border border-primary/20 text-sm font-medium">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                รวมเวลา {totalTime} นาที
+              </div>
+              <span className="text-primary font-semibold text-base">รวม ฿{totalPrice.toLocaleString()}</span>
             </div>
           </div>
+        )}
 
-          {filteredServices.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground font-sans text-sm bg-card/20 rounded-[28px] max-w-2xl mx-auto w-full border border-dashed border-border/40">
-              <p>ไม่พบบริการที่ตรงกับ "{searchQuery}"</p>
-            </div>
-          ) : (
-            <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-[28px] max-w-2xl mx-auto w-full overflow-hidden shadow-sm flex flex-col max-h-[500px]">
-              <div className="overflow-y-auto custom-scrollbar p-2">
-                {filteredServices.map((service, index) => {
-                  const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
-                  const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
-                  return (
-                    <button
-                      key={service.massage_id}
-                      onClick={() => handleSelect(service)}
-                      className={cn(
-                        "group flex items-center justify-between p-4 px-5 w-full bg-transparent transition-all text-left outline-none rounded-2xl mb-1",
-                        isSelected ? "bg-primary/10 shadow-sm" : "hover:bg-muted/40"
-                      )}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={cn(
-                          "h-10 w-10 shrink-0 rounded-[14px] flex items-center justify-center transition-all duration-300",
-                          isSelected ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-105" : "bg-primary/10 text-primary/70 group-hover:scale-110"
-                        )}>
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className={cn(
-                            "font-medium font-mitr transition-colors",
-                            isSelected ? "text-primary" : "text-foreground"
-                          )}>
-                            {service.massage_name}
-                          </h3>
-                          <div className="flex items-center gap-1.5 text-muted-foreground mt-0.5">
-                            <Clock className="h-3 w-3" />
-                            <span className="text-xs font-sans">{service.duration ?? DEFAULT_DURATION} นาที</span>
-                          </div>
-                        </div>
-                      </div>
+        {/* Add Service */}
+        <Button
+          variant="outline"
+          onClick={() => setPickerOpen(true)}
+          className="w-full rounded-full border-dashed border-border/60 text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 gap-2 font-sans transition-all"
+        >
+          <Plus className="h-4 w-4" />
+          เพิ่มบริการ
+        </Button>
+      </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <span className="text-sm font-semibold text-primary font-sans">
-                            ฿{Number(service.massage_price).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-center">
-                          {isSelected ? (
-                            <CheckCircle2 className="h-6 w-6 text-primary drop-shadow-sm" />
-                          ) : (
-                            <Circle className="h-6 w-6 text-muted-foreground/30 group-hover:text-muted-foreground/50 transition-colors" />
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <ServicePickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        allServices={allServices}
+        selectedIds={selectedIds}
+        onToggle={handleToggle}
+      />
 
       <div className="flex justify-end pt-2 max-w-2xl mx-auto w-full">
         <Button
