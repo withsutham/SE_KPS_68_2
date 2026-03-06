@@ -45,7 +45,7 @@ CREATE TABLE profiles (
 );
 
 CREATE TABLE customer (
-    customer_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_id SERIAL PRIMARY KEY,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     phone_number TEXT,
@@ -55,7 +55,7 @@ CREATE TABLE customer (
 );
 
 CREATE TABLE employee (
-    employee_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    employee_id SERIAL PRIMARY KEY,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     phone_number TEXT,
@@ -64,56 +64,56 @@ CREATE TABLE employee (
 );
 
 CREATE TABLE room (
-    room_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    room_id SERIAL PRIMARY KEY,
     room_name TEXT NOT NULL
 );
 
 CREATE TABLE massage (
-    massage_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    massage_id SERIAL PRIMARY KEY,
     massage_name TEXT NOT NULL,
     massage_price NUMERIC(10, 2) NOT NULL
 );
 
 CREATE TABLE room_massage (
-    room_massage_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    room_massage_id SERIAL PRIMARY KEY,
     capacity INT NOT NULL DEFAULT 1,
-    room_id UUID REFERENCES room(room_id) ON DELETE CASCADE,
-    massage_id UUID REFERENCES massage(massage_id) ON DELETE CASCADE
+    room_id INT REFERENCES room(room_id) ON DELETE CASCADE,
+    massage_id INT REFERENCES massage(massage_id) ON DELETE CASCADE
 );
 
 CREATE TABLE therapist_massage_skill (
-    therapist_massage_skill_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    employee_id UUID REFERENCES employee(employee_id) ON DELETE CASCADE,
-    massage_id UUID REFERENCES massage(massage_id) ON DELETE CASCADE
+    therapist_massage_skill_id SERIAL PRIMARY KEY,
+    employee_id INT REFERENCES employee(employee_id) ON DELETE CASCADE,
+    massage_id INT REFERENCES massage(massage_id) ON DELETE CASCADE
 );
 
 CREATE TABLE leave_record (
-    leave_record_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    leave_record_id SERIAL PRIMARY KEY,
     approval_status TEXT DEFAULT 'pending',
     start_dateTime TIMESTAMPTZ NOT NULL,
     end_dateTime TIMESTAMPTZ NOT NULL,
     reason TEXT,
-    employee_id UUID REFERENCES employee(employee_id) ON DELETE CASCADE
+    employee_id INT REFERENCES employee(employee_id) ON DELETE CASCADE
 );
 
 CREATE TABLE work_schedule (
-    work_schedule_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    work_schedule_id SERIAL PRIMARY KEY,
     weekday weekday_enum NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     dateTime_added TIMESTAMPTZ DEFAULT NOW(),
-    employee_id UUID REFERENCES employee(employee_id) ON DELETE CASCADE
+    employee_id INT REFERENCES employee(employee_id) ON DELETE CASCADE
 );
 
 CREATE TABLE coupon (
-    coupon_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    coupon_id SERIAL PRIMARY KEY,
     coupon_name TEXT NOT NULL,
     discount_percent NUMERIC(5, 2) NOT NULL,
     description TEXT
 );
 
 CREATE TABLE package (
-    package_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    package_id SERIAL PRIMARY KEY,
     package_name TEXT NOT NULL,
     package_price NUMERIC(10, 2) NOT NULL,
     campaign_start_dateTime TIMESTAMPTZ,
@@ -121,55 +121,55 @@ CREATE TABLE package (
 );
 
 CREATE TABLE package_detail (
-    package_detail_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    package_id UUID REFERENCES package(package_id) ON DELETE CASCADE,
-    massage_id UUID REFERENCES massage(massage_id) ON DELETE CASCADE
+    package_detail_id SERIAL PRIMARY KEY,
+    package_id INT REFERENCES package(package_id) ON DELETE CASCADE,
+    massage_id INT REFERENCES massage(massage_id) ON DELETE CASCADE
 );
 
 CREATE TABLE booking (
-    booking_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_id SERIAL PRIMARY KEY,
     customer_name TEXT NOT NULL,
     customer_phone TEXT,
     customer_email TEXT,
     booking_dateTime TIMESTAMPTZ NOT NULL,
     is_coupon_use BOOLEAN DEFAULT FALSE,
-    customer_id UUID REFERENCES customer(customer_id) ON DELETE SET NULL
+    customer_id INT REFERENCES customer(customer_id) ON DELETE SET NULL
 );
 
 CREATE TABLE payment (
-    payment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    payment_id SERIAL PRIMARY KEY,
     payment_date TIMESTAMPTZ DEFAULT NOW(),
     payment_method TEXT NOT NULL,
     payment_status TEXT DEFAULT 'pending',
     amount NUMERIC(10, 2) NOT NULL,
-    booking_id UUID REFERENCES booking(booking_id) ON DELETE CASCADE
+    booking_id INT REFERENCES booking(booking_id) ON DELETE CASCADE
 );
 
 CREATE TABLE member_coupon (
-    member_coupon_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    member_coupon_id SERIAL PRIMARY KEY,
     is_used BOOLEAN DEFAULT FALSE,
     expire_dateTime TIMESTAMPTZ,
-    coupon_id UUID REFERENCES coupon(coupon_id) ON DELETE CASCADE,
-    customer_id UUID REFERENCES customer(customer_id) ON DELETE CASCADE,
-    booking_id UUID REFERENCES booking(booking_id) ON DELETE SET NULL
+    coupon_id INT REFERENCES coupon(coupon_id) ON DELETE CASCADE,
+    customer_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    booking_id INT REFERENCES booking(booking_id) ON DELETE SET NULL
 );
 
 CREATE TABLE member_package (
-    member_package_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    member_package_id SERIAL PRIMARY KEY,
     is_used BOOLEAN DEFAULT FALSE,
     expire_dateTime TIMESTAMPTZ,
-    member_id UUID REFERENCES customer(customer_id) ON DELETE CASCADE, 
-    package_detail_id UUID REFERENCES package_detail(package_detail_id) ON DELETE CASCADE
+    member_id INT REFERENCES customer(customer_id) ON DELETE CASCADE, 
+    package_detail_id INT REFERENCES package_detail(package_detail_id) ON DELETE CASCADE
 );
 
 CREATE TABLE booking_detail (
-    booking_detail_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_detail_id SERIAL PRIMARY KEY,
     massage_start_dateTime TIMESTAMPTZ NOT NULL,
     massage_end_dateTime TIMESTAMPTZ NOT NULL,
     price NUMERIC(10, 2) NOT NULL,
-    employee_id UUID REFERENCES employee(employee_id) ON DELETE SET NULL,
-    booking_id UUID REFERENCES booking(booking_id) ON DELETE CASCADE,
-    member_package_id UUID REFERENCES member_package(member_package_id) ON DELETE SET NULL,
-    room_id UUID REFERENCES room(room_id) ON DELETE SET NULL,
-    massage_id UUID REFERENCES massage(massage_id) ON DELETE SET NULL
+    employee_id INT REFERENCES employee(employee_id) ON DELETE SET NULL,
+    booking_id INT REFERENCES booking(booking_id) ON DELETE CASCADE,
+    member_package_id INT REFERENCES member_package(member_package_id) ON DELETE SET NULL,
+    room_id INT REFERENCES room(room_id) ON DELETE SET NULL,
+    massage_id INT REFERENCES massage(massage_id) ON DELETE SET NULL
 );

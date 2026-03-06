@@ -126,7 +126,7 @@ const result = await response.json();
 
 ### Updating a customer
 ```typescript
-const customerId = "123e4567-e89b-12d3-a456-426614174000";
+const customerId = 1;
 const updates = { phone: "0987654321" };
 
 const response = await fetch(`/api/customer/${customerId}`, {
@@ -138,7 +138,7 @@ const response = await fetch(`/api/customer/${customerId}`, {
 
 ### Deleting a customer
 ```typescript
-const customerId = "123e4567-e89b-12d3-a456-426614174000";
+const customerId = 1;
 
 const response = await fetch(`/api/customer/${customerId}`, {
     method: 'DELETE'
