@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export function HeroSection() {
     return (
@@ -19,9 +20,11 @@ export function HeroSection() {
                     สัมผัสประสบการณ์การนวดบำบัดระดับพรีเมียมที่ผสานศาสตร์แห่งประสาทสัมผัส เพื่อปรับสมดุลออร่าในพื้นที่แห่งความสงบที่หลอมรวมธรรมชาติและจิตวิญญาณ
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
-                    <Button size="lg" className="rounded-full px-12 py-8 text-xl font-medium shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:scale-105 active:scale-95 font-mitr">
-                        จองคิวรับบริการ
-                    </Button>
+                    <Link href="/booking">
+                        <Button size="lg" className="rounded-full px-12 py-8 text-xl font-medium shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:scale-105 active:scale-95 font-mitr">
+                            จองคิวรับบริการ
+                        </Button>
+                    </Link>
                     <Button size="lg" variant="outline" className="rounded-full px-12 py-8 text-xl font-medium border-border/50 hover:bg-muted/50 transition-all hover:scale-105 active:scale-95 font-mitr">
                         เลือกชมแพ็คเกจ
                     </Button>

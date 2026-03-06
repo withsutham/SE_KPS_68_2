@@ -40,16 +40,22 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
     setLoading(true);
 
     try {
+      // Date and Time properly formatted
+      const datePart = data.selectedDate?.toISOString().split("T")[0];
+      const timePart = data.selectedTime;
+      const bookingDateTime = `${datePart}T${timePart}:00+07:00`;
+
       const payload = {
-        service_id: data.selectedServices.map(s => s.massage_id).join(','),
         customer_name: `${data.firstName} ${data.lastName}`,
-        phone: data.phone,
-        booking_date: data.selectedDate?.toISOString().split("T")[0],
-        booking_time: data.selectedTime,
-        special_requests: data.specialRequests,
+        customer_phone: data.phone,
+        booking_dateTime: bookingDateTime,
+        services: data.selectedServices.map(s => ({
+          massage_id: s.massage_id,
+          price: s.massage_price,
+          duration: s.duration || 60,
+        })),
         payment_method: data.paymentMethod,
         total_price: data.selectedServices.reduce((sum, s) => sum + Number(s.massage_price), 0),
-        status: "pending",
       };
 
       let bookingId: string | null = null;
