@@ -157,3 +157,27 @@ All standard endpoints return robust error objects when something goes wrong (e.
     "error": "Error message details here"
 }
 ```
+
+---
+
+## Table Schemas
+
+### `massage`
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `massage_id` | `int` | Auto | Primary key (auto-increment) |
+| `massage_name` | `text` | ✅ | Name of the massage service |
+| `massage_price` | `numeric` | ✅ | Price in Thai Baht |
+| `massage_time` | `int` | ❌ | Duration in minutes (e.g. `60`, `90`, `120`) |
+| `image_src` | `text` | ❌ | Public URL to the massage image (e.g. from Supabase Storage) |
+
+**Example POST body:**
+```json
+{
+    "massage_name": "นวดน้ำมันหอมระเหย (Aromatherapy Oil Massage)",
+    "massage_price": 850.00,
+    "massage_time": 90,
+    "image_src": "https://<project>.supabase.co/storage/v1/object/public/massage-images/aromatherapy.jpg"
+}
+```
