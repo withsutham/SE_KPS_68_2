@@ -19,7 +19,7 @@ export interface BookingData {
   firstName: string;
   lastName: string;
   phone: string;
-  specialRequests: string;
+  email: string;
   // Step 4
   paymentMethod: "cash" | "qr" | "credit" | null;
   // Step 5
@@ -33,7 +33,7 @@ export const INITIAL_BOOKING_DATA: BookingData = {
   firstName: "",
   lastName: "",
   phone: "",
-  specialRequests: "",
+  email: "",
   paymentMethod: null,
   bookingId: null,
 };
@@ -48,7 +48,7 @@ export interface StepProps {
 export const STEPS = [
   { id: 1, label: "เลือกบริการ" },
   { id: 2, label: "เลือกวัน/เวลา" },
-  { id: 3, label: "รายละเอียด" },
+  { id: 3, label: "ข้อมูลผู้จอง" },
   { id: 4, label: "ชำระเงิน" },
   { id: 5, label: "สรุปการจอง" },
 ] as const;

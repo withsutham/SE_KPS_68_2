@@ -37,7 +37,7 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <h2 className="text-2xl md:text-3xl font-medium font-mitr text-foreground">
-          กรอกรายละเอียด
+          ข้อมูลผู้จอง
         </h2>
         <p className="text-muted-foreground mt-2 font-sans">
           กรุณากรอกข้อมูลของคุณเพื่อยืนยันการจอง
@@ -93,6 +93,22 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
               className={fieldClass(errors.phone)}
             />
             {errors.phone && <p className="text-destructive text-xs font-sans">{errors.phone}</p>}
+          </div>
+
+          {/* Email */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="email" className="font-sans text-sm font-medium">
+              อีเมล
+            </Label>
+            <Input
+              id="email"
+              placeholder="example@email.com"
+              type="email"
+              value={data.email}
+              onChange={e => { onUpdate({ email: e.target.value }); setErrors(p => ({ ...p, email: "" })); }}
+              className={fieldClass(errors.email)}
+            />
+            {errors.email && <p className="text-destructive text-xs font-sans">{errors.email}</p>}
           </div>
 
           {/* Mini summary */}

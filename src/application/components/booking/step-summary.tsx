@@ -146,11 +146,7 @@ export function StepSummary({ data }: Pick<StepProps, "data">) {
             </div>
           </div>
 
-          {data.specialRequests && (
-            <div className="bg-muted/30 rounded-xl px-4 py-3 text-xs text-muted-foreground italic font-sans">
-              "{data.specialRequests}"
-            </div>
-          )}
+
 
           <div className="h-px bg-border/60" />
 

@@ -6,12 +6,8 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Clock, Loader2 } from "lucide-react";
 import { StepProps } from "./types";
 
-const TIME_SLOTS = [
-  "09:00", "09:30", "10:00", "10:30",
-  "11:00", "11:30", "13:00", "13:30",
-  "14:00", "14:30", "15:00", "15:30",
-  "16:00", "16:30", "17:00", "17:30",
-];
+const FALLBACK_START = "09:00";
+const FALLBACK_END = "20:00";
 
 const DAYS_OF_WEEK = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
 const MONTHS_TH = [
@@ -30,9 +26,55 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [operatingHours, setOperatingHours] = useState({ open: FALLBACK_START, close: FALLBACK_END });
 
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstDay = getFirstDayOfMonth(viewYear, viewMonth);
+
+  // Fetch Operating Hours
+  useEffect(() => {
+    const fetchOperatingHours = async () => {
+      try {
+        const res = await fetch("/api/operate_time");
+        const json = await res.json();
+        if (json.success && json.data) {
+          const { open_time, close_time } = json.data;
+          // Format from HH:mm:ss to HH:mm
+          const open = open_time.slice(0, 5);
+          const close = close_time.slice(0, 5);
+          setOperatingHours({ open, close });
+        }
+      } catch (err) {
+        console.error("Failed to fetch operating hours:", err);
+      }
+    };
+    fetchOperatingHours();
+  }, []);
+
+  // Generate dynamic time slots when operating hours change
+  useEffect(() => {
+    const slots = [];
+    const [startH, startM] = operatingHours.open.split(":").map(Number);
+    const [endH, endM] = operatingHours.close.split(":").map(Number);
+    
+    let currentH = startH;
+    let currentM = startM;
+    
+    // Create 30-min intervals
+    while (currentH < endH || (currentH === endH && currentM < endM)) {
+      const hStr = String(currentH).padStart(2, "0");
+      const mStr = String(currentM).padStart(2, "0");
+      slots.push(`${hStr}:${mStr}`);
+      
+      currentM += 30;
+      if (currentM >= 60) {
+        currentH += 1;
+        currentM = 0;
+      }
+    }
+    setTimeSlots(slots);
+  }, [operatingHours]);
 
   const handlePrevMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
@@ -56,7 +98,7 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
   const [bookedSlots, setBookedSlots] = useState<{ start: Date; end: Date }[]>([]);
   const [loadingTimes, setLoadingTimes] = useState(false);
 
-  // Fetch real times when date changes
+  // Fetch real bookings when date changes
   useEffect(() => {
     if (!data.selectedDate) return;
 
@@ -72,8 +114,8 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
 
         if (json.success) {
           const slots = json.data.map((d: any) => ({
-            start: new Date(d.massage_start_dateTime),
-            end: new Date(d.massage_end_dateTime),
+            start: new Date(d.massage_start_datetime),
+            end: new Date(d.massage_end_datetime),
           }));
           setBookedSlots(slots);
         }
@@ -97,18 +139,19 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
     
     const proposedEnd = new Date(proposedStart.getTime() + totalDuration * 60000);
 
-    // Business closes at 20:00 (for example, to prevent impossibly long bookings past closing)
+    // Business close boundary
+    const [endH, endM] = operatingHours.close.split(":").map(Number);
     const closingTime = new Date(data.selectedDate);
-    closingTime.setHours(20, 0, 0, 0);
+    closingTime.setHours(endH, endM, 0, 0);
+    
     if (proposedEnd > closingTime) return false;
 
-    // Reject times in the past for today
+    // Reject past times for today
     if (proposedStart < new Date()) return false;
 
     for (const b of bookedSlots) {
-       // if (StartA < EndB) and (EndA > StartB)
        if (proposedStart < b.end && proposedEnd > b.start) {
-         return false; // overlap exists
+         return false;
        }
     }
     return true;
@@ -217,7 +260,7 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
             ) : (
             <>
               <div className="grid grid-cols-4 gap-2">
-                {TIME_SLOTS.map(slot => {
+                {timeSlots.map(slot => {
                   const unavailable = !checkSlotAvailability(slot);
                   const selected = data.selectedTime === slot;
                   return (
@@ -245,15 +288,31 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
                   <span className="inline-block w-3 h-3 rounded-sm bg-muted/50 border border-border/30" /> ไม่ว่าง
                 </span>
               </div>
-            </>
-            )
-          ) : (
-            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground font-sans text-sm">
-              กรุณาเลือกวันที่ก่อน
+            {/* Total Duration Info */}
+            <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium font-mitr text-foreground">ระยะเวลาทั้งหมด</p>
+                  <p className="text-xs text-muted-foreground font-sans">รวมทุกบริการที่เลือก</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-lg font-bold text-primary font-sans">{totalDuration}</span>
+                <span className="ml-1 text-xs text-muted-foreground font-sans">นาที</span>
+              </div>
             </div>
-          )}
-        </div>
+          </>
+          )
+        ) : (
+          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground font-sans text-sm">
+            กรุณาเลือกวันที่ก่อน
+          </div>
+        )}
       </div>
+    </div>
 
       <div className="flex justify-between pt-2">
         <Button variant="outline" onClick={onBack} className="gap-2 font-sans" size="lg">

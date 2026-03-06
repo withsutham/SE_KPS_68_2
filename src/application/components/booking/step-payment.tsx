@@ -48,7 +48,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
       const payload = {
         customer_name: `${data.firstName} ${data.lastName}`,
         customer_phone: data.phone,
-        booking_dateTime: bookingDateTime,
+        booking_datetime: bookingDateTime,
         services: data.selectedServices.map(s => ({
           massage_id: s.massage_id,
           price: s.massage_price,
@@ -56,6 +56,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
         })),
         payment_method: data.paymentMethod,
         total_price: data.selectedServices.reduce((sum, s) => sum + Number(s.massage_price), 0),
+        customer_email: data.email,
       };
 
       let bookingId: string | null = null;

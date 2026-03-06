@@ -45,21 +45,11 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
               <div
                 className={cn(
                   "h-10 w-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-500 border-2 font-mitr",
-<<<<<<< HEAD
                   isCompleted && 
-=======
-                  isCompleted &&
->>>>>>> 0924b41 (fix: Resolve merge conflict in booking progress styling, updating active step background color.)
                     "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/20",
-<<<<<<< HEAD
                   isActive && 
                     "bg-background border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
                   isUpcoming && 
-=======
-                  isActive &&
-                    "bg-background border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
-                  isUpcoming &&
->>>>>>> 52774cc (feat: Implement automatic therapist and room assignment in booking API and dynamic time slot availability based on service duration.)
                     "bg-background border-border text-muted-foreground"
                 )}
               >

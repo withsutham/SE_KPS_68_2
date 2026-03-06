@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
         const bookingPayload = {
             customer_name: body.customer_name,
             customer_phone: body.customer_phone,
-            booking_dateTime: body.booking_dateTime,
+            customer_email: body.customer_email || null,
+            booking_datetime: body.booking_datetime,
         };
 
         const { data: bookingData, error: bookingError } = await supabase
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
 
         // 2. Create booking details
         if (body.services && Array.isArray(body.services)) {
-            const startDateTime = new Date(body.booking_dateTime);
+            const startDateTime = new Date(body.booking_datetime);
             const dateStr = startDateTime.toLocaleDateString('en-CA'); // 'YYYY-MM-DD'
             
             // Auto-assignment Prep: Fetch all relevant data for the day
@@ -50,9 +51,9 @@ export async function POST(request: NextRequest) {
                 { data: rooms }
             ] = await Promise.all([
                 supabase.from("booking_detail")
-                    .select("employee_id, room_id, massage_start_dateTime, massage_end_dateTime")
-                    .gte("massage_start_dateTime", `${dateStr}T00:00:00+07:00`)
-                    .lt("massage_start_dateTime", `${dateStr}T23:59:59+07:00`),
+                    .select("employee_id, room_id, massage_start_datetime, massage_end_datetime")
+                    .gte("massage_start_datetime", `${dateStr}T00:00:00+07:00`)
+                    .lt("massage_start_datetime", `${dateStr}T23:59:59+07:00`),
                 supabase.from("therapist_massage_skill").select("employee_id, massage_id"),
                 supabase.from("room_massage").select("room_id, massage_id, capacity")
             ]);
@@ -65,13 +66,13 @@ export async function POST(request: NextRequest) {
                 const endDateTime = new Date(currentStartTime.getTime() + (service.duration || 60) * 60000);
 
                 // Find available employee mapping
-                const skilledEmployees = skills?.filter(s => s.massage_id === service.massage_id).map(s => s.employee_id) || [];
+                const skilledEmployees = skills?.filter(s => String(s.massage_id) === String(service.massage_id)).map(s => s.employee_id) || [];
                 let assignedEmployeeId = null;
                 for (const empId of skilledEmployees) {
                     const isOverlapping = localBookings.some((b: any) => 
                         b.employee_id === empId && 
-                        new Date(b.massage_start_dateTime) < endDateTime && 
-                        new Date(b.massage_end_dateTime) > currentStartTime
+                        new Date(b.massage_start_datetime) < endDateTime && 
+                        new Date(b.massage_end_datetime) > currentStartTime
                     );
                     if (!isOverlapping) {
                         assignedEmployeeId = empId;
@@ -80,13 +81,13 @@ export async function POST(request: NextRequest) {
                 }
 
                 // Find available room mapping
-                const validRooms = rooms?.filter(r => r.massage_id === service.massage_id) || [];
+                const validRooms = rooms?.filter(r => String(r.massage_id) === String(service.massage_id)) || [];
                 let assignedRoomId = null;
                 for (const rm of validRooms) {
                     const overlappingCount = localBookings.filter((b: any) => 
                         b.room_id === rm.room_id && 
-                        new Date(b.massage_start_dateTime) < endDateTime && 
-                        new Date(b.massage_end_dateTime) > currentStartTime
+                        new Date(b.massage_start_datetime) < endDateTime && 
+                        new Date(b.massage_end_datetime) > currentStartTime
                     ).length;
                     
                     if (overlappingCount < rm.capacity) {
@@ -99,8 +100,8 @@ export async function POST(request: NextRequest) {
                     booking_id: bookingId,
                     massage_id: service.massage_id,
                     price: service.price,
-                    massage_start_dateTime: currentStartTime.toISOString(),
-                    massage_end_dateTime: endDateTime.toISOString(),
+                    massage_start_datetime: currentStartTime.toISOString(),
+                    massage_end_datetime: endDateTime.toISOString(),
                     employee_id: assignedEmployeeId,
                     room_id: assignedRoomId
                 };
@@ -110,8 +111,8 @@ export async function POST(request: NextRequest) {
                 localBookings.push({
                     employee_id: assignedEmployeeId,
                     room_id: assignedRoomId,
-                    massage_start_dateTime: currentStartTime.toISOString(),
-                    massage_end_dateTime: endDateTime.toISOString(),
+                    massage_start_datetime: currentStartTime.toISOString(),
+                    massage_end_datetime: endDateTime.toISOString(),
                 });
 
                 currentStartTime = new Date(endDateTime);
