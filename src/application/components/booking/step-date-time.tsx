@@ -1,9 +1,16 @@
 "use client";
 
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Clock, Loader2 } from "lucide-react";
+=======
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+>>>>>>> 40ed005 (inital the booking)
 import { StepProps } from "./types";
 
 const TIME_SLOTS = [
@@ -13,6 +20,12 @@ const TIME_SLOTS = [
   "16:00", "16:30", "17:00", "17:30",
 ];
 
+<<<<<<< HEAD
+=======
+// Simulated unavailable slots
+const UNAVAILABLE_SLOTS = new Set(["10:30", "14:00", "15:30"]);
+
+>>>>>>> 40ed005 (inital the booking)
 const DAYS_OF_WEEK = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
 const MONTHS_TH = [
   "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
@@ -50,6 +63,7 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
   };
 
   const handleTimeClick = (slot: string) => {
+<<<<<<< HEAD
     onUpdate({ selectedTime: slot });
   };
 
@@ -114,6 +128,12 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
     return true;
   };
 
+=======
+    if (UNAVAILABLE_SLOTS.has(slot)) return;
+    onUpdate({ selectedTime: slot });
+  };
+
+>>>>>>> 40ed005 (inital the booking)
   const isDateDisabled = (day: number) => {
     const d = new Date(viewYear, viewMonth, day);
     const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -209,6 +229,7 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
           </div>
 
           {data.selectedDate ? (
+<<<<<<< HEAD
             loadingTimes ? (
               <div className="flex flex-col items-center justify-center h-40 text-muted-foreground font-sans text-sm">
                 <Loader2 className="h-6 w-6 animate-spin mb-2" />
@@ -219,6 +240,12 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
               <div className="grid grid-cols-4 gap-2">
                 {TIME_SLOTS.map(slot => {
                   const unavailable = !checkSlotAvailability(slot);
+=======
+            <>
+              <div className="grid grid-cols-4 gap-2">
+                {TIME_SLOTS.map(slot => {
+                  const unavailable = UNAVAILABLE_SLOTS.has(slot);
+>>>>>>> 40ed005 (inital the booking)
                   const selected = data.selectedTime === slot;
                   return (
                     <button
@@ -246,7 +273,10 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
                 </span>
               </div>
             </>
+<<<<<<< HEAD
             )
+=======
+>>>>>>> 40ed005 (inital the booking)
           ) : (
             <div className="flex flex-col items-center justify-center h-40 text-muted-foreground font-sans text-sm">
               กรุณาเลือกวันที่ก่อน

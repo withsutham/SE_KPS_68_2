@@ -1,8 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+<<<<<<< HEAD
 import { Button } from "@/components/ui/button";
 import { Clock, Leaf, Wind, Droplets, Flower, Sparkles, ChevronRight, Loader2, AlertCircle, CheckCircle2, Circle, Search, X } from "lucide-react";
+=======
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Clock, Leaf, Wind, Droplets, Flower, Sparkles, ChevronRight, Loader2, AlertCircle } from "lucide-react";
+>>>>>>> 40ed005 (inital the booking)
 import { cn } from "@/lib/utils";
 import { MassageService, StepProps } from "./types";
 
@@ -25,6 +32,7 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
   const [services, setServices] = useState<MassageService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+<<<<<<< HEAD
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredServices = services
@@ -44,6 +52,8 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
       if (!aSelected && bSelected) return 1;
       return 0;
     });
+=======
+>>>>>>> 40ed005 (inital the booking)
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -117,6 +127,7 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
       {/* Service grid */}
       {!loading && !error && (
         <>
+<<<<<<< HEAD
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto w-full mb-2">
             <div className="relative">
@@ -198,6 +209,74 @@ export function StepServiceSelection({ data, onUpdate, onNext }: StepProps) {
                   );
                 })}
               </div>
+=======
+          {services.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground font-sans text-sm">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              ไม่พบข้อมูลบริการ
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {services.map((service, index) => {
+                const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
+                const isSelected = data.selectedServices.some(s => s.massage_id === service.massage_id);
+                return (
+                  <Card
+                    key={service.massage_id}
+                    onClick={() => handleSelect(service)}
+                    className={cn(
+                      "group cursor-pointer border-2 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1",
+                      isSelected
+                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                        : "border-border/40 bg-card/40 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30"
+                    )}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className={cn(
+                          "h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110",
+                          isSelected ? "bg-primary/20" : "bg-primary/10"
+                        )}>
+                          <Icon className={cn("h-5 w-5 transition-colors", isSelected ? "text-primary" : "text-primary/70")} />
+                        </div>
+                        {isSelected && (
+                          <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                            <ChevronRight className="h-3 w-3 text-primary-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <CardTitle className="text-base font-medium font-mitr mt-3">
+                        {service.massage_name}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {service.description && (
+                        <CardDescription className="text-sm font-light leading-relaxed line-clamp-2 mb-3">
+                          {service.description}
+                        </CardDescription>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span className="text-xs font-sans">
+                            {service.duration ?? DEFAULT_DURATION} นาที
+                          </span>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "text-xs font-medium font-sans transition-colors",
+                            isSelected && "bg-primary/15 text-primary border-primary/20"
+                          )}
+                        >
+                          ฿{Number(service.massage_price).toLocaleString()}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+>>>>>>> 40ed005 (inital the booking)
             </div>
           )}
         </>
