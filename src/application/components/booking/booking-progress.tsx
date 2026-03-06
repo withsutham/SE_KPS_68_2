@@ -13,6 +13,9 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
     <div className="w-full max-w-3xl mx-auto px-4 py-8">
       <div className="relative flex items-start justify-between">
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8ce04d8 (initial the booking)
         {/* Progress background line */}
         <div
           className="absolute top-5 h-[2px] bg-border -translate-y-1/2 z-0"
@@ -29,6 +32,7 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
             width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% - ${((currentStep - 1) / (STEPS.length - 1)) * (100 / STEPS.length)}%)`
           }}
         />
+<<<<<<< HEAD
 =======
         {/* Connecting lines */}
         {STEPS.map((step, index) => {
@@ -55,6 +59,8 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
           );
         })}
 >>>>>>> 40ed005 (inital the booking)
+=======
+>>>>>>> 8ce04d8 (initial the booking)
 
         {/* Step circles */}
         {STEPS.map((step) => {
