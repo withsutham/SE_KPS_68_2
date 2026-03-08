@@ -17,11 +17,14 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const supabase = await createAdminClient();
+        
+        // Ensure body is an array for batch insert. If it's a single object, wrap it in array.
+        const payload = Array.isArray(body) ? body : [body];
+
         const { data, error } = await supabase
             .from("package_detail")
-            .insert([body])
-            .select()
-            .single();
+            .insert(payload)
+            .select();
 
         if (error) {
             console.error("package_detail POST error:", error.message);

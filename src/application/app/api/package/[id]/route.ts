@@ -13,11 +13,28 @@ export async function GET(
 
         const supabase = await createAdminClient();
         const primaryKey = "package_id";
-        
-        const { data, error } = await supabase
+
+        // const { data, error } = await supabase
+        //     .from("package")
+        //     .select("*")
+        //     .eq(primaryKey, id)
+        //     .single();
+
+        const { data, error } = await supabase //add by myselft
             .from("package")
-            .select("*")
-            .eq(primaryKey, id)
+            .select(`
+                *,
+                package_detail (
+                    quantity,
+                    massage (
+                        massage_id,
+                        massage_name,
+                        massage_price,
+                        massage_time
+                    )
+                )
+            `)
+            .eq("package_id", id)
             .single();
 
         if (error) {
