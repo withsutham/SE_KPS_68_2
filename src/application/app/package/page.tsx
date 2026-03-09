@@ -178,22 +178,6 @@ export default function PackagePage() {
                             {Object.values(groupedMyPackages).map(({ pkgInfo, details }, index) => {
                                 const totalUsed = details.filter(d => d.is_used).length;
                                 const totalServices = details.length;
-                                const isAllUsed = totalUsed === totalServices;
-
-                                let statusBadge;
-                                if (isAllUsed) {
-                                    statusBadge = (
-                                        <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
-                                            ใช้หมดแล้ว
-                                        </Badge>
-                                    );
-                                } else {
-                                    statusBadge = (
-                                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                                            พร้อมใช้งาน
-                                        </Badge>
-                                    );
-                                }
 
                                 return (
                                     <Dialog key={`${pkgInfo.package_id}-${index}`}>
@@ -206,7 +190,6 @@ export default function PackagePage() {
                                                             {pkgInfo.package_name}
                                                             <ExternalLink className="h-3 w-3 opacity-0 group-hover/card:opacity-50 transition-opacity" />
                                                         </CardTitle>
-                                                        {statusBadge}
                                                     </div>
                                                 </CardHeader>
                                                 <CardContent className="flex-1 pb-4">
