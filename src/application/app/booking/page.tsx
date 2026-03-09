@@ -9,21 +9,28 @@ import { StepDateTime } from "@/components/booking/step-date-time";
 import { StepDetails } from "@/components/booking/step-details";
 import { StepPayment } from "@/components/booking/step-payment";
 import { StepSummary } from "@/components/booking/step-summary";
-import { BookingData, BookingStep, INITIAL_BOOKING_DATA } from "@/components/booking/types";
+import {
+  BookingData,
+  BookingStep,
+  INITIAL_BOOKING_DATA,
+} from "@/components/booking/types";
 
 // Inner component that can safely use useSearchParams
 function BookingPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<BookingStep>(1);
-  const [bookingData, setBookingData] = useState<BookingData>(INITIAL_BOOKING_DATA);
+  const [bookingData, setBookingData] =
+    useState<BookingData>(INITIAL_BOOKING_DATA);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
 
   // Check authentication
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!session) {
         // Redirect to login via full page load or push depending on preference; push is fine here.
@@ -32,18 +39,21 @@ function BookingPageInner() {
       } else {
         // Fetch user data from database and pre-fill step 3
         try {
-          const res = await fetch(`/api/customer?profile_id=${session.user.id}`);
+          const res = await fetch(
+            `/api/customer?profile_id=${session.user.id}`,
+          );
           if (res.ok) {
             const { data } = await res.json();
             if (data && data.length > 0) {
               const customer = data[0];
-              setBookingData(prev => ({
+              setBookingData((prev) => ({
                 ...prev,
                 customerId: customer.customer_id,
                 firstName: customer.first_name || prev.firstName,
                 lastName: customer.last_name || prev.lastName,
                 phone: customer.phone_number || prev.phone,
-                email: session.user.email || customer.email_address || prev.email,
+                email:
+                  session.user.email || customer.email_address || prev.email,
               }));
             }
           }
@@ -68,14 +78,16 @@ function BookingPageInner() {
         if (!json.success || !json.data) return;
 
         const massage = json.data;
-        setBookingData(prev => ({
+        setBookingData((prev) => ({
           ...prev,
-          selectedServices: [{
-            massage_id: massage.massage_id, // keep as-is (number) to match StepServiceSelection's runtime type
-            massage_name: massage.massage_name,
-            massage_price: massage.massage_price,
-            duration: massage.massage_time ?? 60,
-          }],
+          selectedServices: [
+            {
+              massage_id: massage.massage_id, // keep as-is (number) to match StepServiceSelection's runtime type
+              massage_name: massage.massage_name,
+              massage_price: massage.massage_price,
+              duration: massage.massage_time ?? 60,
+            },
+          ],
         }));
       } catch {
         // Silently ignore — user can manually select
@@ -85,21 +97,59 @@ function BookingPageInner() {
   }, [searchParams]);
 
   const updateData = (updates: Partial<BookingData>) => {
-    setBookingData(prev => ({ ...prev, ...updates }));
+    setBookingData((prev) => ({ ...prev, ...updates }));
   };
 
   const goNext = () => {
-    setCurrentStep(prev => Math.min(prev + 1, 5) as BookingStep);
+    setCurrentStep((prev) => Math.min(prev + 1, 5) as BookingStep);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goBack = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1) as BookingStep);
+    setCurrentStep((prev) => Math.max(prev - 1, 1) as BookingStep);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const goToStep = (step: BookingStep) => {
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const canGoToStep = (targetStep: BookingStep) => {
+    if (targetStep === 5) return currentStep === 5; // Can only view step 5 if already there (completed)
+    if (targetStep === 1) return true; // Always able to go to step 1
+
+    // To go to step 2 (or beyond), must have selected at least one service
+    if (bookingData.selectedServices.length === 0) return false;
+    if (targetStep === 2) return true;
+
+    // To go to step 3 (or beyond), must have selected a date and time
+    if (!bookingData.selectedDate || !bookingData.selectedTime) return false;
+    if (targetStep === 3) return true;
+
+    // To go to step 4, must have completed basic user details
+    const isPhoneValid = /^[0-9]{9,10}$/.test(
+      bookingData.phone.replace(/[-\s]/g, ""),
+    );
+    if (
+      !bookingData.firstName.trim() ||
+      !bookingData.lastName.trim() ||
+      !isPhoneValid
+    )
+      return false;
+    if (targetStep === 4) return true;
+
+    return false;
+  };
+
   const serviceId = searchParams.get("serviceId");
-  const stepProps = { data: bookingData, onUpdate: updateData, onNext: goNext, onBack: goBack, autoOpenPicker: !serviceId };
+  const stepProps = {
+    data: bookingData,
+    onUpdate: updateData,
+    onNext: goNext,
+    onBack: goBack,
+    autoOpenPicker: !serviceId,
+  };
 
   if (isAuthenticating) {
     return (
@@ -130,7 +180,11 @@ function BookingPageInner() {
 
         {/* Step progress */}
         <div className="print:hidden">
-          <BookingProgress currentStep={currentStep} />
+          <BookingProgress
+            currentStep={currentStep}
+            onStepClick={goToStep}
+            canGoToStep={canGoToStep}
+          />
         </div>
 
         {/* Divider */}
