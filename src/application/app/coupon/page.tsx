@@ -7,7 +7,6 @@ import { Loader2, TicketPercent, CheckCircle2, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 
 export default function CouponPage() {
     const router = useRouter();
@@ -15,6 +14,12 @@ export default function CouponPage() {
     const [coupons, setCoupons] = useState<any[]>([]);
     const [myCoupons, setMyCoupons] = useState<any[]>([]);
     const [isClaiming, setIsClaiming] = useState<string | null>(null);
+    const [alertMessage, setAlertMessage] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+    const showAlert = (message: string, type: 'success' | 'error') => {
+        setAlertMessage({ message, type });
+        setTimeout(() => setAlertMessage(null), 3000);
+    };
 
     useEffect(() => {
         const checkUserAndFetchCoupons = async () => {
@@ -76,7 +81,7 @@ export default function CouponPage() {
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session) {
-                toast.error("Please sign in first");
+                showAlert("Please sign in first", "error");
                 return;
             }
 
@@ -85,14 +90,14 @@ export default function CouponPage() {
             const customer_id = customerData.data?.customer_id;
 
             if (!customer_id) {
-                toast.error("Customer record not found");
+                showAlert("Customer record not found", "error");
                 return;
             }
 
             // check if already claimed
             const alreadyClaimed = myCoupons.find(mc => mc.coupon_id === coupon_id);
             if (alreadyClaimed) {
-                toast.error("You have already claimed this coupon");
+                showAlert("คุณมีคูปองนี้แล้ว", "error");
                 setIsClaiming(null);
                 return;
             }
@@ -104,21 +109,21 @@ export default function CouponPage() {
                     customer_id: customer_id,
                     coupon_id: coupon_id,
                     is_used: false,
-                    expire_datetime: null
+                    expire_dateTime: null
                 }),
             });
 
             const data = await res.json();
             if (data.success) {
-                toast.success("Coupon claimed successfully!");
+                showAlert("เก็บคูปองสำเร็จแล้ว!", "success");
                 // Refresh list
                 await fetchCoupons(customer_id);
             } else {
-                toast.error(data.error || "Failed to claim coupon");
+                showAlert(data.error || "Failed to claim coupon", "error");
             }
         } catch (error) {
             console.error(error);
-            toast.error("An error occurred while claiming");
+            showAlert("An error occurred while claiming", "error");
         } finally {
             setIsClaiming(null);
         }
@@ -126,6 +131,12 @@ export default function CouponPage() {
 
     return (
         <main className="min-h-screen bg-background font-mitr relative overflow-hidden">
+            {alertMessage && (
+                <div className={`fixed bottom-8 right-8 z-50 p-4 px-6 rounded-2xl shadow-xl border flex items-center gap-3 transition-all duration-300 animate-in slide-in-from-bottom-5 fade-in ${alertMessage.type === 'success' ? 'bg-[#f0fdf4] border-[#bbf7d0] text-[#166534]' : 'bg-[#fef2f2] border-[#fecaca] text-[#991b1b]'}`}>
+                    {alertMessage.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+                    <p className="font-medium">{alertMessage.message}</p>
+                </div>
+            )}
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
             <div className="absolute top-[40%] right-[-10%] w-[30%] h-[50%] rounded-full bg-secondary/5 blur-[100px] pointer-events-none" />
 
@@ -194,64 +205,64 @@ export default function CouponPage() {
                     </section>
 
                     <section className="pt-8 border-t border-border/40">
-                        {(() => {
-                            const uncollectedCoupons = coupons.filter(c => !myCoupons.some(mc => mc.coupon_id === c.coupon_id));
+                        <div className="flex items-center gap-3 mb-8">
+                            <h2 className="text-2xl font-bold text-foreground">คูปองทั้งหมดที่สามารถเก็บได้</h2>
+                            <Badge variant="secondary" className="bg-primary/10 text-primary border-0 rounded-full px-3">{coupons.length} รายการ</Badge>
+                        </div>
 
-                            return (
-                                <>
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <h2 className="text-2xl font-bold text-foreground">คูปองทั้งหมดที่สามารถเก็บได้</h2>
-                                        <Badge variant="secondary" className="bg-primary/10 text-primary border-0 rounded-full px-3">{uncollectedCoupons.length} รายการ</Badge>
-                                    </div>
+                        {coupons.length === 0 ? (
+                            <div className="bg-muted/30 border border-border/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+                                <TicketPercent className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                                <p className="text-lg text-muted-foreground">ไม่มีคูปองที่สามารถเก็บได้ในขณะนี้</p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {coupons.map((coupon, index) => {
+                                    const isClaimed = myCoupons.some(mc => mc.coupon_id === coupon.coupon_id);
 
-                                    {uncollectedCoupons.length === 0 ? (
-                                        <div className="bg-muted/30 border border-border/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
-                                            <TicketPercent className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-                                            <p className="text-lg text-muted-foreground">ไม่มีคูปองที่สามารถเก็บได้ในขณะนี้</p>
-                                        </div>
-                                    ) : (
-                                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                            {uncollectedCoupons.map((coupon, index) => {
-                                                return (
-                                                    <Card key={`avail-${coupon.coupon_id}-${index}`} className="border-primary/20 bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col transition-all hover:shadow-md hover:border-primary/40 group">
-                                                        <div className="flex aspect-[3/1] bg-primary/5 border-b border-primary/10 relative overflow-hidden items-center justify-center">
-                                                            <div className="absolute -left-4 w-8 h-8 rounded-full bg-background border-r border-primary/10"></div>
-                                                            <div className="absolute -right-4 w-8 h-8 rounded-full bg-background border-l border-primary/10"></div>
-                                                            <TicketPercent className="h-12 w-12 text-primary/40 group-hover:scale-110 transition-transform duration-500" />
-                                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                                <span className="text-3xl font-bold tracking-tighter text-primary">
-                                                                    {coupon.discount_percent}%
-                                                                </span>
-                                                                <span className="text-xs font-medium uppercase tracking-widest text-primary/70">ส่วนลด</span>
-                                                            </div>
-                                                        </div>
-                                                        <CardHeader className="pt-6">
-                                                            <CardTitle className="text-xl font-medium line-clamp-1">{coupon.coupon_name}</CardTitle>
-                                                            <CardDescription className="line-clamp-2 min-h-[40px] mt-2">
-                                                                {coupon.description || "ใช้เป็นส่วนลดในการจองบริการ"}
-                                                            </CardDescription>
-                                                        </CardHeader>
-                                                        <CardFooter className="pt-2 pb-6 mt-auto">
-                                                            <Button
-                                                                className="w-full gap-2 relative overflow-hidden group/btn"
-                                                                disabled={isClaiming === coupon.coupon_id.toString()}
-                                                                onClick={() => handleClaimCoupon(coupon.coupon_id)}
-                                                            >
-                                                                {isClaiming === coupon.coupon_id.toString() ? (
-                                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                                ) : (
-                                                                    "เก็บคูปอง"
-                                                                )}
-                                                            </Button>
-                                                        </CardFooter>
-                                                    </Card>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </>
-                            );
-                        })()}
+                                    return (
+                                        <Card key={`avail-${coupon.coupon_id}-${index}`} className="border-primary/20 bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col transition-all hover:shadow-md hover:border-primary/40 group">
+                                            <div className="flex aspect-[3/1] bg-primary/5 border-b border-primary/10 relative overflow-hidden items-center justify-center">
+                                                <div className="absolute -left-4 w-8 h-8 rounded-full bg-background border-r border-primary/10"></div>
+                                                <div className="absolute -right-4 w-8 h-8 rounded-full bg-background border-l border-primary/10"></div>
+                                                <TicketPercent className="h-12 w-12 text-primary/40 group-hover:scale-110 transition-transform duration-500" />
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                    <span className="text-3xl font-bold tracking-tighter text-primary">
+                                                        {coupon.discount_percent}%
+                                                    </span>
+                                                    <span className="text-xs font-medium uppercase tracking-widest text-primary/70">ส่วนลด</span>
+                                                </div>
+                                            </div>
+                                            <CardHeader className="pt-6">
+                                                <CardTitle className="text-xl font-medium line-clamp-1">{coupon.coupon_name}</CardTitle>
+                                                <CardDescription className="line-clamp-2 min-h-[40px] mt-2">
+                                                    {coupon.description || "ใช้เป็นส่วนลดในการจองบริการ"}
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardFooter className="pt-2 pb-6 mt-auto">
+                                                <Button
+                                                    className={`w-full gap-2 relative overflow-hidden transition-all ${isClaimed ? 'bg-muted text-muted-foreground hover:bg-muted font-medium' : 'group/btn'}`}
+                                                    disabled={isClaimed || isClaiming === coupon.coupon_id.toString()}
+                                                    onClick={() => handleClaimCoupon(coupon.coupon_id)}
+                                                    variant={isClaimed ? "secondary" : "default"}
+                                                >
+                                                    {isClaiming === coupon.coupon_id.toString() ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : isClaimed ? (
+                                                        <>
+                                                            <CheckCircle2 className="h-4 w-4" />
+                                                            เก็บคูปองแล้ว
+                                                        </>
+                                                    ) : (
+                                                        "เก็บคูปอง"
+                                                    )}
+                                                </Button>
+                                            </CardFooter>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </section>
                 </div>
             )}
