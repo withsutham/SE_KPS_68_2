@@ -102,6 +102,7 @@ export function SignUpForm({
                     required
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -112,6 +113,7 @@ export function SignUpForm({
                     required
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -123,6 +125,7 @@ export function SignUpForm({
                   required
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
               <div className="grid gap-2">
@@ -134,6 +137,7 @@ export function SignUpForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
               <div className="grid gap-2">
@@ -146,6 +150,7 @@ export function SignUpForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                 />
               </div>
               <div className="grid gap-2">
@@ -158,6 +163,7 @@ export function SignUpForm({
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
+                  autoComplete="new-password"
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
