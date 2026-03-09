@@ -51,13 +51,13 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="firstName" className="font-sans text-sm font-medium flex items-center gap-2">
                 <User className="h-3.5 w-3.5 text-primary" />
-                ชื่อ <span className="text-destructive">*</span>
+                ชื่อ
               </Label>
               <Input
                 id="firstName"
                 placeholder="ชื่อ"
                 value={data.firstName}
-                onChange={e => { onUpdate({ firstName: e.target.value }); setErrors(p => ({ ...p, firstName: "" })); }}
+                disabled
                 className={fieldClass(errors.firstName)}
               />
               {errors.firstName && <p className="text-destructive text-xs font-sans">{errors.firstName}</p>}
@@ -65,13 +65,13 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="lastName" className="font-sans text-sm font-medium flex items-center gap-2">
                 <User className="h-3.5 w-3.5 text-transparent" />
-                นามสกุล <span className="text-destructive">*</span>
+                นามสกุล
               </Label>
               <Input
                 id="lastName"
                 placeholder="นามสกุล"
                 value={data.lastName}
-                onChange={e => { onUpdate({ lastName: e.target.value }); setErrors(p => ({ ...p, lastName: "" })); }}
+                disabled
                 className={fieldClass(errors.lastName)}
               />
               {errors.lastName && <p className="text-destructive text-xs font-sans">{errors.lastName}</p>}
@@ -83,7 +83,7 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="phone" className="font-sans text-sm font-medium flex items-center gap-2">
                 <Phone className="h-3.5 w-3.5 text-primary" />
-                เบอร์โทรศัพท์ <span className="text-destructive">*</span>
+                เบอร์โทรศัพท์
               </Label>
               <Input
                 id="phone"
@@ -105,7 +105,7 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
                 placeholder="example@email.com"
                 type="email"
                 value={data.email}
-                onChange={e => { onUpdate({ email: e.target.value }); setErrors(p => ({ ...p, email: "" })); }}
+                disabled
                 className={fieldClass(errors.email)}
               />
               {errors.email && <p className="text-destructive text-xs font-sans">{errors.email}</p>}

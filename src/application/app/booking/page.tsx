@@ -30,6 +30,25 @@ function BookingPageInner() {
         const currentPath = window.location.pathname + window.location.search;
         window.location.href = `/auth/login?returnTo=${encodeURIComponent(currentPath)}&message=booking`;
       } else {
+        // Fetch user data from database and pre-fill step 3
+        try {
+          const res = await fetch(`/api/customer?profile_id=${session.user.id}`);
+          if (res.ok) {
+            const { data } = await res.json();
+            if (data && data.length > 0) {
+              const customer = data[0];
+              setBookingData(prev => ({
+                ...prev,
+                firstName: customer.first_name || prev.firstName,
+                lastName: customer.last_name || prev.lastName,
+                phone: customer.phone_number || prev.phone,
+                email: session.user.email || customer.email_address || prev.email,
+              }));
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch customer data:", error);
+        }
         setIsAuthenticating(false);
       }
     };
