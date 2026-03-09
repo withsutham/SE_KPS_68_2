@@ -212,7 +212,7 @@ function BookingDetailModal({ booking, open, onClose }: { booking: Booking | nul
                 <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/30">
                     <div className="flex items-start gap-2">
                         <div>
-                            <DialogTitle className="font-mitr text-lg leading-snug">
+                            <DialogTitle className="font-mitr text-lg leading-snug text-foreground">
                                 รายละเอียดการจอง
                                 <span className={cn("inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium ml-2 align-middle", cfg.color)}>
                                     <Icon className="h-3 w-3" />
