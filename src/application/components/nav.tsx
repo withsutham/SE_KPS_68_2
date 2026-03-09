@@ -79,13 +79,13 @@ async function NavLinkGroup() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-52 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
             <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-              <Link href="/booking/history" className="w-full cursor-pointer py-2.5 px-3 text-base">
-                ดูประวัติการจอง
+              <Link href="/booking" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                จองคิวรับบริการ
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-              <Link href="/booking" className="w-full cursor-pointer py-2.5 px-3 text-base">
-                ทำการจอง
+              <Link href="/booking/history" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                ดูประวัติการจอง
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
