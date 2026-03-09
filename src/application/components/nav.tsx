@@ -23,6 +23,12 @@ export function Nav() {
           </Link>
 
           <div className="hidden md:flex items-center gap-2">
+            <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+              <Link href="/#services" className="text-[1.05rem]">
+                ดูบริการนวด
+              </Link>
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-4">
