@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NavScrollLink } from "@/components/nav-scroll-link";
 
 export function Nav() {
@@ -55,8 +56,9 @@ async function NavLinkGroup() {
 
   if (!user) return null;
 
-  // Fetch the user's role from the profiles table
-  const { data: profile } = await supabase
+  // Use admin client to read the profile — user identity already verified above via getUser()
+  const adminSupabase = await createAdminClient();
+  const { data: profile } = await adminSupabase
     .from("profiles")
     .select("user_type")
     .eq("profile_id", user.id)
