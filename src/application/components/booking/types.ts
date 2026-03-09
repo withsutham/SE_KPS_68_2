@@ -17,6 +17,7 @@ export interface BookingData {
   selectedDate: Date | null;
   selectedTime: string | null;
   // Step 3
+  customerId?: number;
   firstName: string;
   lastName: string;
   phone: string;

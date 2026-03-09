@@ -39,6 +39,7 @@ function BookingPageInner() {
               const customer = data[0];
               setBookingData(prev => ({
                 ...prev,
+                customerId: customer.customer_id,
                 firstName: customer.first_name || prev.firstName,
                 lastName: customer.last_name || prev.lastName,
                 phone: customer.phone_number || prev.phone,
