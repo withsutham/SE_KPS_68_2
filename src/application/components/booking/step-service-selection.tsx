@@ -209,7 +209,7 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle 
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-2xl w-full p-0 overflow-hidden max-h-[90vh] flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
-          <DialogTitle className="font-mitr text-xl">เพิ่มบริการ</DialogTitle>
+          <DialogTitle className="font-mitr text-xl text-foreground">เพิ่มบริการ</DialogTitle>
         </DialogHeader>
 
         {/* Controls */}

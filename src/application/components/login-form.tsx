@@ -76,6 +76,7 @@ export function LoginForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
               <div className="grid gap-2">
@@ -94,6 +95,7 @@ export function LoginForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}

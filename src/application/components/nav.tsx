@@ -11,6 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { NavScrollLink } from "@/components/nav-scroll-link";
 
 export function Nav() {
   return (
@@ -23,38 +26,16 @@ export function Nav() {
           </Link>
 
           <div className="hidden md:flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-4">
-                  <span className="text-[1.05rem]">การจอง</span>
-                  <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
-                <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-                  <Link href="/booking/history" className="w-full cursor-pointer py-2.5 px-3 text-base">
-                    ดูประวัติการจอง
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-                  <Link href="/booking" className="w-full cursor-pointer py-2.5 px-3 text-base">
-                    ทำการจอง
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <NavScrollLink
+              href="/#services"
+              className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
+            >
+              ดูบริการนวด
+            </NavScrollLink>
 
-            <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-              <Link href="/coupon" className="text-[1.05rem]">
-                คูปอง
-              </Link>
-            </Button>
-
-            <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-              <Link href="/package" className="text-[1.05rem]">
-                แพคเกจ
-              </Link>
-            </Button>
+            <Suspense fallback={null}>
+              <NavLinkGroup />
+            </Suspense>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -67,4 +48,64 @@ export function Nav() {
       </div>
     </nav>
   );
+}
+
+async function NavLinkGroup() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  // Use admin client to read the profile — user identity already verified above via getUser()
+  const adminSupabase = await createAdminClient();
+  const { data: profile } = await adminSupabase
+    .from("profiles")
+    .select("user_type")
+    .eq("profile_id", user.id)
+    .single();
+
+  const role = profile?.user_type;
+
+  // Customer-specific nav links
+  if (role === "customer") {
+    return (
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
+              <span className="text-sm">การจอง</span>
+              <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/booking" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                จองคิวรับบริการ
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/booking/history" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                ดูประวัติการจอง
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/coupon" className="text-sm">
+            คูปอง
+          </Link>
+        </Button>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/package" className="text-sm">
+            แพคเกจ
+          </Link>
+        </Button>
+      </>
+    );
+  }
+
+  // manager, therapist, shop_owner — their nav links will be added later
+  return null;
 }

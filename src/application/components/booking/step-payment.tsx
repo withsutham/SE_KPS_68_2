@@ -40,12 +40,14 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
     setLoading(true);
 
     try {
-      // Date and Time properly formatted
-      const datePart = data.selectedDate?.toISOString().split("T")[0];
+      // Build date string from local date parts to avoid UTC shift (toISOString shifts to UTC, causing wrong date for UTC+7)
+      const d = data.selectedDate!;
+      const datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       const timePart = data.selectedTime;
       const bookingDateTime = `${datePart}T${timePart}:00+07:00`;
 
       const payload = {
+        customer_id: data.customerId ?? null,
         customer_name: `${data.firstName} ${data.lastName}`,
         customer_phone: data.phone,
         customer_email: data.email,
