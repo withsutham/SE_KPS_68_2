@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createAdminClient();
     let query = supabase.from("member_coupon").select("*, coupon(*)");
 
-    if (customer_id) {
+    if (customer_id && customer_id !== "undefined") {
         query = query.eq("customer_id", customer_id);
     }
 

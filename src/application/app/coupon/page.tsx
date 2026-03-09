@@ -40,7 +40,13 @@ export default function CouponPage() {
                     throw new Error("Could not fetch customer info");
                 }
 
-                const customer_id = customerData.data.customer_id;
+                const customer_id = Array.isArray(customerData.data)
+                    ? customerData.data[0]?.customer_id
+                    : customerData.data?.customer_id;
+
+                if (!customer_id) {
+                    throw new Error("Customer ID not found");
+                }
 
                 await fetchCoupons(customer_id);
             } catch (err) {
@@ -87,7 +93,9 @@ export default function CouponPage() {
 
             const customerRes = await fetch(`/api/customer?profile_id=${session.user.id}`);
             const customerData = await customerRes.json();
-            const customer_id = customerData.data?.customer_id;
+            const customer_id = Array.isArray(customerData.data)
+                ? customerData.data[0]?.customer_id
+                : customerData.data?.customer_id;
 
             if (!customer_id) {
                 showAlert("Customer record not found", "error");
