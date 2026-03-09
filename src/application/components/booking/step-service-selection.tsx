@@ -434,7 +434,9 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
           duration: SERVICE_META[s.massage_name]?.duration ?? (s.duration ?? DEFAULT_DURATION),
         }));
         setAllServices(enriched);
-        if (autoOpenPicker) setPickerOpen(true);
+        if (autoOpenPicker && data.selectedServices.length === 0) {
+          setPickerOpen(true);
+        }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
       } finally {
