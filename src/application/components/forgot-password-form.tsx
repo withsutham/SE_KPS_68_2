@@ -47,32 +47,30 @@ export function ForgotPasswordForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       {success ? (
-        <Card>
+        <Card className="font-mitr">
           <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
+            <CardTitle className="text-2xl">เช็คอีเมลของคุณ</CardTitle>
+            <CardDescription>ส่งคำแนะนำการตั้งรหัสผ่านใหม่แล้ว</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              If you registered using your email and password, you will receive
-              a password reset email.
+              หากคุณลงทะเบียนไว้ด้วยอีเมลนี้ คุณจะได้รับอีเมลสำหรับตั้งรหัสผ่านใหม่
             </p>
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="font-mitr">
           <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+            <CardTitle className="text-2xl">ตั้งรหัสผ่านใหม่</CardTitle>
             <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
-              password
+              ใส่อีเมลของคุณแล้วเราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ให้
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleForgotPassword}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">อีเมล</Label>
                   <Input
                     id="email"
                     type="email"
@@ -83,17 +81,17 @@ export function ForgotPasswordForm({
                   />
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset email"}
+                <Button type="submit" className="w-full font-mitr" disabled={isLoading}>
+                  {isLoading ? "กำลังส่ง..." : "ส่งลิงก์ตั้งรหัสผ่าน"}
                 </Button>
               </div>
-              <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
+              <div className="mt-4 text-center text-sm font-mitr">
+                มีบัญชีอยู่แล้วใช่หรือไม่?{" "}
                 <Link
                   href="/auth/login"
                   className="underline underline-offset-4"
                 >
-                  Login
+                  เข้าสู่ระบบ
                 </Link>
               </div>
             </form>
