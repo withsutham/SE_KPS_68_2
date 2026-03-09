@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { BookingProgress } from "@/components/booking/booking-progress";
 import { StepServiceSelection } from "@/components/booking/step-service-selection";
 import { StepDateTime } from "@/components/booking/step-date-time";
@@ -13,8 +14,27 @@ import { BookingData, BookingStep, INITIAL_BOOKING_DATA } from "@/components/boo
 // Inner component that can safely use useSearchParams
 function BookingPageInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<BookingStep>(1);
   const [bookingData, setBookingData] = useState<BookingData>(INITIAL_BOOKING_DATA);
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
+
+  // Check authentication
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        // Redirect to login via full page load or push depending on preference; push is fine here.
+        const currentPath = window.location.pathname + window.location.search;
+        window.location.href = `/auth/login?returnTo=${encodeURIComponent(currentPath)}&message=booking`;
+      } else {
+        setIsAuthenticating(false);
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   // Pre-select a service if ?serviceId= is present in the URL
   useEffect(() => {
@@ -60,6 +80,14 @@ function BookingPageInner() {
 
   const serviceId = searchParams.get("serviceId");
   const stepProps = { data: bookingData, onUpdate: updateData, onNext: goNext, onBack: goBack, autoOpenPicker: !serviceId };
+
+  if (isAuthenticating) {
+    return (
+      <main className="flex-1 w-full flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 w-full">
