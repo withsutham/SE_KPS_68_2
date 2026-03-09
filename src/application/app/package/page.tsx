@@ -88,8 +88,6 @@ export default function PackagePage() {
         try {
             // For each package_detail, create a member_package
             const details = pkg.package_detail;
-            const expireDate = new Date();
-            expireDate.setMonth(expireDate.getMonth() + 6); // Set valid for 6 months
 
             const insertPromises = details.map((d: any) => fetch('/api/member_package', {
                 method: 'POST',
@@ -98,7 +96,7 @@ export default function PackagePage() {
                     member_id: customerId,
                     package_detail_id: d.package_detail_id,
                     is_used: false,
-                    expire_datetime: expireDate.toISOString()
+                    expire_datetime: null
                 })
             }));
 
@@ -167,28 +165,37 @@ export default function PackagePage() {
                 {Object.keys(groupedMyPackages).length > 0 && (
                     <section className="mb-16">
                         <h2 className="text-2xl mb-6 font-medium flex items-center gap-2">
-                            <CheckCircle2 className="h-6 w-6 text-primary" /> แพคเกจที่ฉันมี
+                            <CheckCircle2 className="h-6 w-6 text-primary" /> แพคเกจที่มี
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {Object.values(groupedMyPackages).map(({ pkgInfo, details }, index) => {
                                 const totalUsed = details.filter(d => d.is_used).length;
                                 const totalServices = details.length;
-                                const expireStr = details[0]?.expire_datetime
-                                    ? new Date(details[0].expire_datetime).toLocaleDateString("th-TH") : "-";
+                                const isAllUsed = totalUsed === totalServices;
+
+                                let statusBadge;
+                                if (isAllUsed) {
+                                    statusBadge = (
+                                        <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
+                                            ใช้หมดแล้ว
+                                        </Badge>
+                                    );
+                                } else {
+                                    statusBadge = (
+                                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                                            พร้อมใช้งาน
+                                        </Badge>
+                                    );
+                                }
 
                                 return (
                                     <Card key={`${pkgInfo.package_id}-${index}`} className="border-primary/20 bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col transition-all hover:shadow-md">
-                                        <div className="h-1 bg-gradient-to-r from-primary to-secondary w-full" />
+                                        <div className="h-1 w-full bg-gradient-to-r from-primary to-secondary" />
                                         <CardHeader className="pb-3">
                                             <div className="flex justify-between items-start">
                                                 <CardTitle className="text-lg font-medium">{pkgInfo.package_name}</CardTitle>
-                                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                                                    {totalUsed === totalServices ? "ใช้หมดแล้ว" : "พร้อมใช้งาน"}
-                                                </Badge>
+                                                {statusBadge}
                                             </div>
-                                            <CardDescription className="flex items-center gap-1 mt-2 text-xs">
-                                                <Clock className="h-3 w-3" /> หมดอายุ {expireStr}
-                                            </CardDescription>
                                         </CardHeader>
                                         <CardContent className="flex-1 pb-4">
                                             <p className="font-semibold text-sm mb-3">บริการในแพคเกจ:</p>
@@ -234,7 +241,12 @@ export default function PackagePage() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {availablePackages.map((pkg) => {
+                            {availablePackages.filter(pkg => {
+                                const now = new Date();
+                                const start = pkg.campaign_start_datetime ? new Date(pkg.campaign_start_datetime) : null;
+                                const end = pkg.campaign_end_datetime ? new Date(pkg.campaign_end_datetime) : null;
+                                return (!start || start <= now) && (!end || end >= now);
+                            }).map((pkg) => {
                                 const isBuying = buyingPackageId === pkg.package_id;
                                 const endStr = pkg.campaign_end_datetime
                                     ? new Date(pkg.campaign_end_datetime).toLocaleDateString("th-TH") : "";
