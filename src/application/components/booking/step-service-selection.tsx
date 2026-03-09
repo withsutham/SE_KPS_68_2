@@ -5,6 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -26,6 +43,8 @@ import {
   Flower,
   Sparkles,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Loader2,
   AlertCircle,
   Search,
@@ -35,6 +54,7 @@ import {
   SlidersHorizontal,
   CheckCircle2,
   ImageOff,
+  GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -298,6 +318,102 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle 
   );
 }
 
+// ─── Sortable Item ──────────────────────────────────────────────────────────────
+function SortableServiceItem({
+  service,
+  index,
+  totalItems,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+}: {
+  service: MassageService;
+  index: number;
+  totalItems: number;
+  onRemove: (id: string | number) => void;
+  onMoveUp: (index: number) => void;
+  onMoveDown: (index: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: service.massage_id });
+  const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center justify-between p-4 px-5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl group transition-all duration-200",
+        isDragging && "opacity-90 shadow-xl border-primary scale-[1.02]"
+      )}
+    >
+      <div className="flex items-center gap-4 cursor-default">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab text-muted-foreground/50 hover:text-foreground touch-none mr-1 -ml-2 p-1 focus:outline-none"
+        >
+          <GripVertical className="h-5 w-5" />
+        </div>
+        <span className="font-mitr font-medium text-lg text-primary min-w-[1.2rem] text-center">{index + 1}.</span>
+        <div className="h-10 w-10 shrink-0 rounded-[14px] bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="font-medium font-mitr text-foreground">{service.massage_name}</p>
+          <div className="flex items-center gap-1 text-muted-foreground mt-0.5">
+            <Clock className="h-3 w-3" />
+            <span className="text-xs">{service.duration ?? DEFAULT_DURATION} นาที</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4">
+        <span className="text-sm font-semibold text-primary pt-1 sm:pt-0">฿{Number(service.massage_price).toLocaleString()}</span>
+
+        <div className="flex items-center gap-1 border border-border/60 rounded-full py-0.5 px-1 bg-background/50">
+          <button
+            onClick={() => onMoveUp(index)}
+            disabled={index === 0}
+            className={cn(
+              "h-7 w-7 rounded-full flex items-center justify-center transition-all",
+              index === 0 ? "opacity-30 cursor-not-allowed" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            aria-label="เลื่อนขึ้น"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => onMoveDown(index)}
+            disabled={index === totalItems - 1}
+            className={cn(
+              "h-7 w-7 rounded-full flex items-center justify-center transition-all",
+              index === totalItems - 1 ? "opacity-30 cursor-not-allowed" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            aria-label="เลื่อนลง"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+
+          <div className="w-px h-4 bg-border/60 mx-1" />
+
+          <button
+            onClick={() => onRemove(service.massage_id)}
+            className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+            aria-label="ลบบริการ"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Step Component ──────────────────────────────────────────────────────
 export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = true }: StepProps) {
   const [allServices, setAllServices] = useState<MassageService[]>([]);
@@ -347,6 +463,36 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
     onUpdate({ selectedServices: data.selectedServices.filter(s => s.massage_id !== id) });
   };
 
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    const newServices = [...data.selectedServices];
+    [newServices[index - 1], newServices[index]] = [newServices[index], newServices[index - 1]];
+    onUpdate({ selectedServices: newServices });
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === data.selectedServices.length - 1) return;
+    const newServices = [...data.selectedServices];
+    [newServices[index + 1], newServices[index]] = [newServices[index], newServices[index + 1]];
+    onUpdate({ selectedServices: newServices });
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = data.selectedServices.findIndex(s => s.massage_id === active.id);
+      const newIndex = data.selectedServices.findIndex(s => s.massage_id === over.id);
+      onUpdate({ selectedServices: arrayMove(data.selectedServices, oldIndex, newIndex) });
+    }
+  };
+
   const totalPrice = data.selectedServices.reduce((sum, s) => sum + Number(s.massage_price), 0);
   const totalTime = data.selectedServices.reduce((sum, s) => sum + (s.duration ?? DEFAULT_DURATION), 0);
 
@@ -386,38 +532,28 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {data.selectedServices.map((service, index) => {
-              const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
-              return (
-                <div
-                  key={service.massage_id}
-                  className="flex items-center justify-between p-4 px-5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl group animate-in fade-in slide-in-from-bottom-2 duration-200"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 shrink-0 rounded-[14px] bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="font-medium font-mitr text-foreground">{service.massage_name}</p>
-                      <div className="flex items-center gap-1 text-muted-foreground mt-0.5">
-                        <Clock className="h-3 w-3" />
-                        <span className="text-xs">{service.duration ?? DEFAULT_DURATION} นาที</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-primary">฿{Number(service.massage_price).toLocaleString()}</span>
-                    <button
-                      onClick={() => handleRemove(service.massage_id)}
-                      className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
-                      aria-label="ลบบริการ"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={data.selectedServices.map(s => s.massage_id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {data.selectedServices.map((service, index) => (
+                  <SortableServiceItem
+                    key={service.massage_id}
+                    service={service}
+                    index={index}
+                    totalItems={data.selectedServices.length}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
+                    onRemove={handleRemove}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
 
             {/* Summary */}
             <div className="flex items-center justify-between px-5 py-3 rounded-2xl bg-primary/5 border border-primary/20 text-sm font-medium">
