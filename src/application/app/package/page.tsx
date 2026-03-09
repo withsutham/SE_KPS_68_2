@@ -53,39 +53,26 @@ export default function PackagePage() {
 
     const fetchPackages = async () => {
         setIsLoading(true);
-        const supabase = createClient();
 
         try {
-            // Fetch available packages
-            const { data: pkgs, error: pkgsError } = await supabase
-                .from('package')
-                .select(`
-          *,
-          package_detail (
-            *,
-            massage (*)
-          )
-        `);
-
-            if (!pkgsError && pkgs) {
-                setAvailablePackages(pkgs);
+            // Fetch available packages via API
+            const pkgsRes = await fetch('/api/package');
+            if (pkgsRes.ok) {
+                const pkgsJson = await pkgsRes.json();
+                if (pkgsJson.success && pkgsJson.data) {
+                    setAvailablePackages(pkgsJson.data);
+                }
             }
 
-            // Fetch my packages
-            const { data: myPkgs, error: myPkgsError } = await supabase
-                .from('member_package')
-                .select(`
-          *,
-          package_detail (
-            *,
-            package (*),
-            massage (*)
-          )
-        `)
-                .eq('member_id', customerId);
-
-            if (!myPkgsError && myPkgs) {
-                setMyPackages(myPkgs);
+            // Fetch my packages via API
+            if (customerId) {
+                const myPkgsRes = await fetch(`/api/member_package?member_id=${customerId}`);
+                if (myPkgsRes.ok) {
+                    const myPkgsJson = await myPkgsRes.json();
+                    if (myPkgsJson.success && myPkgsJson.data) {
+                        setMyPackages(myPkgsJson.data);
+                    }
+                }
             }
         } catch (error) {
             console.error("Error fetching packages:", error);
@@ -98,35 +85,37 @@ export default function PackagePage() {
         if (!customerId) return;
         setBuyingPackageId(pkg.package_id);
 
-        const supabase = createClient();
         try {
             // For each package_detail, create a member_package
             const details = pkg.package_detail;
             const expireDate = new Date();
             expireDate.setMonth(expireDate.getMonth() + 6); // Set valid for 6 months
 
-            const insertRows = details.map((d: any) => ({
-                member_id: customerId,
-                package_detail_id: d.package_detail_id,
-                is_used: false,
-                expire_datetime: expireDate.toISOString()
+            const insertPromises = details.map((d: any) => fetch('/api/member_package', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    member_id: customerId,
+                    package_detail_id: d.package_detail_id,
+                    is_used: false,
+                    expire_datetime: expireDate.toISOString()
+                })
             }));
 
-            const { error } = await supabase
-                .from('member_package')
-                .insert(insertRows);
+            const results = await Promise.all(insertPromises);
+            const hasError = results.some(r => !r.ok);
 
-            if (!error) {
+            if (!hasError) {
                 // Refresh packages
                 await fetchPackages();
                 // Give time for user to see they bought it
                 alert("Package purchased successfully!");
             } else {
-                console.error("Purchase error", error);
                 alert("Failed to purchase package");
             }
         } catch (e) {
             console.error(e);
+            alert("Failed to purchase package");
         } finally {
             setBuyingPackageId(null);
         }
