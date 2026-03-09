@@ -3,10 +3,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag } from "lucide-react";
+import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function PackagePage() {
     const router = useRouter();
@@ -189,41 +196,105 @@ export default function PackagePage() {
                                 }
 
                                 return (
-                                    <Card key={`${pkgInfo.package_id}-${index}`} className="border-primary/20 bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col transition-all hover:shadow-md">
-                                        <div className="h-1 w-full bg-gradient-to-r from-primary to-secondary" />
-                                        <CardHeader className="pb-3">
-                                            <div className="flex justify-between items-start">
-                                                <CardTitle className="text-lg font-medium">{pkgInfo.package_name}</CardTitle>
-                                                {statusBadge}
+                                    <Dialog key={`${pkgInfo.package_id}-${index}`}>
+                                        <DialogTrigger asChild>
+                                            <Card className="border-primary/20 bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col transition-all hover:shadow-md cursor-pointer group/card">
+                                                <div className="h-1 w-full bg-gradient-to-r from-primary to-secondary" />
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex justify-between items-start">
+                                                        <CardTitle className="text-lg font-medium group-hover/card:text-primary transition-colors flex items-center gap-2">
+                                                            {pkgInfo.package_name}
+                                                            <ExternalLink className="h-3 w-3 opacity-0 group-hover/card:opacity-50 transition-opacity" />
+                                                        </CardTitle>
+                                                        {statusBadge}
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="flex-1 pb-4">
+                                                    <p className="font-semibold text-sm mb-3">บริการในแพคเกจ:</p>
+                                                    <ul className="space-y-2">
+                                                        {details.map((mp, i) => {
+                                                            const massage = mp.package_detail?.massage;
+                                                            return (
+                                                                <li key={mp.member_package_id || i} className="flex justify-between items-center text-sm border-b border-border/40 pb-2 last:border-0">
+                                                                    <span className="flex items-center gap-2">
+                                                                        <span className={`h-1.5 w-1.5 rounded-full ${mp.is_used ? 'bg-muted-foreground' : 'bg-primary'}`}></span>
+                                                                        <span className={mp.is_used ? 'text-muted-foreground line-through' : ''}>
+                                                                            {massage?.massage_name || "บริการ"}
+                                                                        </span>
+                                                                    </span>
+                                                                    {mp.is_used ? (
+                                                                        <Badge variant="secondary" className="text-[10px] h-5">ใช้แล้ว</Badge>
+                                                                    ) : (
+                                                                        <Badge variant="default" className="text-[10px] h-5 px-1.5 bg-primary/10 text-primary border-0">พร้อมใช้</Badge>
+                                                                    )}
+                                                                </li>
+                                                            );
+                                                        })}
+                                                    </ul>
+                                                </CardContent>
+                                                <CardFooter className="pt-0 justify-between text-xs text-muted-foreground">
+                                                    <span>ใช้ไปแล้ว {totalUsed}/{totalServices} บริการ</span>
+                                                </CardFooter>
+                                            </Card>
+                                        </DialogTrigger>
+
+                                        <DialogContent className="sm:max-w-md font-mitr">
+                                            <DialogHeader>
+                                                <DialogTitle className="text-2xl font-medium text-primary flex items-center gap-2">
+                                                    <CheckCircle2 className="h-6 w-6" /> {pkgInfo.package_name}
+                                                </DialogTitle>
+                                            </DialogHeader>
+                                            <div className="mt-4 space-y-4">
+                                                <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                                                    <h4 className="text-sm font-semibold mb-2">สรุปการใช้งาน</h4>
+                                                    <div className="flex items-end justify-between">
+                                                        <span className="text-xs text-muted-foreground">ใช้ไปแล้ว {totalUsed} จากทั้งหมด {totalServices} ครั้ง</span>
+                                                        <span className="text-2xl font-bold text-primary">{Math.round((totalUsed / totalServices) * 100)}%</span>
+                                                    </div>
+                                                    <div className="w-full h-2 bg-muted rounded-full mt-2 overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-primary transition-all duration-500"
+                                                            style={{ width: `${(totalUsed / totalServices) * 100}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <h4 className="text-sm font-semibold flex items-center gap-1">
+                                                        <Tag className="h-4 w-4 text-primary" /> เลือกบริการที่ต้องการจอง
+                                                    </h4>
+                                                    <div className="grid gap-3">
+                                                        {details.map((mp, i) => {
+                                                            const massage = mp.package_detail?.massage;
+                                                            return (
+                                                                <div key={mp.member_package_id || i} className={`p-3 rounded-lg border ${mp.is_used ? 'bg-muted/30 border-border/50 text-muted-foreground' : 'bg-background border-primary/20 hover:border-primary/50 transition-colors'}`}>
+                                                                    <div className="flex justify-between items-center">
+                                                                        <div className="flex flex-col">
+                                                                            <span className={`font-medium ${mp.is_used ? 'line-through' : ''}`}>
+                                                                                {massage?.massage_name || "บริการ"}
+                                                                            </span>
+                                                                            <span className="text-[10px] flex items-center gap-1 opacity-70">
+                                                                                <Clock className="h-3 w-3" /> {massage?.massage_time || 60} นาที
+                                                                            </span>
+                                                                        </div>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant={mp.is_used ? "secondary" : "default"}
+                                                                            className="h-8 gap-1"
+                                                                            disabled={mp.is_used}
+                                                                            onClick={() => alert(`Booking for ${massage?.massage_name} using member_package_id: ${mp.member_package_id}`)}
+                                                                        >
+                                                                            {mp.is_used ? "ใช้แล้ว" : "จองทันที"}
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </CardHeader>
-                                        <CardContent className="flex-1 pb-4">
-                                            <p className="font-semibold text-sm mb-3">บริการในแพคเกจ:</p>
-                                            <ul className="space-y-2">
-                                                {details.map((mp, i) => {
-                                                    const massage = mp.package_detail?.massage;
-                                                    return (
-                                                        <li key={mp.member_package_id || i} className="flex justify-between items-center text-sm border-b border-border/40 pb-2 last:border-0">
-                                                            <span className="flex items-center gap-2">
-                                                                <span className={`h-1.5 w-1.5 rounded-full ${mp.is_used ? 'bg-muted-foreground' : 'bg-primary'}`}></span>
-                                                                <span className={mp.is_used ? 'text-muted-foreground line-through' : ''}>
-                                                                    {massage?.massage_name || "บริการ"}
-                                                                </span>
-                                                            </span>
-                                                            {mp.is_used ? (
-                                                                <Badge variant="secondary" className="text-[10px] h-5">ใช้แล้ว</Badge>
-                                                            ) : (
-                                                                <Badge variant="default" className="text-[10px] h-5 px-1.5 bg-primary/10 text-primary hover:bg-primary/20 border-0">รอใช้งาน</Badge>
-                                                            )}
-                                                        </li>
-                                                    );
-                                                })}
-                                            </ul>
-                                        </CardContent>
-                                        <CardFooter className="pt-0 justify-between text-xs text-muted-foreground">
-                                            <span>ใช้ไปแล้ว {totalUsed}/{totalServices} บริการ</span>
-                                        </CardFooter>
-                                    </Card>
+                                        </DialogContent>
+                                    </Dialog>
                                 );
                             })}
                         </div>
