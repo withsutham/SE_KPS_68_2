@@ -136,18 +136,13 @@ export default function CouponPage() {
             ) : (
                 <div className="max-w-6xl mx-auto px-6 py-12 relative z-10 space-y-16">
 
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 border-b border-border/50 pb-8">
-                        <div>
-                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground flex items-center gap-4 mb-4">
-                                <span className="bg-primary/10 p-3 rounded-2xl">
-                                    <TicketPercent className="h-10 w-10 text-primary" />
-                                </span>
-                                คูปองส่วนลด
-                            </h1>
-                            <p className="text-lg text-muted-foreground max-w-2xl font-light">
-                                เก็บคูปองส่วนลดพิเศษเพื่อใช้เป็นส่วนลดในการจองบริการนวดของคุณ
-                            </p>
-                        </div>
+                    <div className="flex flex-col items-center text-center mb-12 border-b border-border/50 pb-8">
+                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4">
+                            คูปองส่วนลด
+                        </h1>
+                        <p className="text-lg text-muted-foreground max-w-2xl font-light">
+                            เก็บคูปองส่วนลดพิเศษเพื่อใช้เป็นส่วนลดในการจองบริการนวดของคุณ
+                        </p>
                     </div>
 
                     <section>
