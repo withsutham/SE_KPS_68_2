@@ -33,6 +33,7 @@ export default function CreatePackagePage() {
     const [selectedMassages, setSelectedMassages] = useState<SelectedMassage[]>([]);
 
     useEffect(() => {
+        setSubmitting(false);
         fetchMassages();
     }, []);
 
@@ -127,6 +128,7 @@ export default function CreatePackagePage() {
         } catch (error) {
             console.error("Error saving package:", error);
             alert("Unexpected error occurred.");
+        } finally {
             setSubmitting(false);
         }
     }
@@ -193,6 +195,20 @@ export default function CreatePackagePage() {
                                     onChange={(e) => setEndDate(e.target.value)}
                                 />
                             </div>
+                        </div>
+
+                        <div className="flex justify-start gap-4 pt-4">
+                            <Button type="button" variant="outline" onClick={() => router.push("/manager/packages")} disabled={submitting}>
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                form="create-package-form"
+                                className="min-w-[150px]"
+                                disabled={submitting || selectedMassages.length === 0}
+                            >
+                                {submitting ? "Saving..." : "Save Package"}
+                            </Button>
                         </div>
                     </form>
                 </div>
@@ -275,20 +291,6 @@ export default function CreatePackagePage() {
                 </div>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="flex justify-end gap-4 mt-4 pt-6 border-t">
-                <Button variant="outline" onClick={() => router.push("/manager/packages")} disabled={submitting}>
-                    Cancel
-                </Button>
-                <Button 
-                    type="submit" 
-                    form="create-package-form" 
-                    className="min-w-[150px]"
-                    disabled={submitting || selectedMassages.length === 0}
-                >
-                    {submitting ? "Saving..." : "Save Package"}
-                </Button>
-            </div>
         </div>
     );
 }

@@ -25,7 +25,6 @@ export async function GET(
             .select(`
                 *,
                 package_detail (
-                    quantity,
                     massage (
                         massage_id,
                         massage_name,

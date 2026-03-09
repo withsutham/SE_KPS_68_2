@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
-import { use } from "react";
 
 interface Massage {
     massage_id: string;
@@ -14,8 +13,24 @@ interface Massage {
     massage_time: number;
 }
 
+interface PackageDetail {
+    massage: Massage | null;
+}
+
+interface PackageRecord {
+    package_name: string;
+    package_price: number;
+    campaign_start_datetime: string | null;
+    campaign_end_datetime: string | null;
+    package_detail?: PackageDetail[];
+}
+
 interface SelectedMassage extends Massage {
-    uniqueId: string; // for React keys
+    uniqueId: string;
+}
+
+function createUniqueId() {
+    return Math.random().toString(36).substring(2, 9);
 }
 
 export default function EditPackagePage({ params }: { params: Promise<{ id: string }> }) {
@@ -25,87 +40,51 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-
-    // Form inputs
     const [packageName, setPackageName] = useState("");
     const [packagePrice, setPackagePrice] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
-
-    // Massages
     const [availableMassages, setAvailableMassages] = useState<Massage[]>([]);
     const [selectedMassages, setSelectedMassages] = useState<SelectedMassage[]>([]);
 
     useEffect(() => {
         if (packageId) {
-            fetchInitialData();
+            setSubmitting(false);
+            void fetchInitialData();
         }
     }, [packageId]);
 
     async function fetchInitialData() {
         setLoading(true);
         try {
-            // 1. Fetch available massages
             const massageRes = await fetch("/api/massage");
             const massageJson = await massageRes.json();
             if (massageJson.success) {
                 setAvailableMassages(massageJson.data || []);
             }
 
-            // 2. Fetch specific package
             const pkgRes = await fetch(`/api/package/${packageId}`);
             const pkgJson = await pkgRes.json();
 
-            if (pkgJson.success && pkgJson.data) {
-                const pkg = pkgJson.data;
-                setPackageName(pkg.package_name);
-                setPackagePrice(pkg.package_price.toString());
-                setStartDate(pkg.campaign_start_datetime ? pkg.campaign_start_datetime.split("T")[0] : "");
-                setEndDate(pkg.campaign_end_datetime ? pkg.campaign_end_datetime.split("T")[0] : "");
+            if (!pkgRes.ok || !pkgJson.success || !pkgJson.data) {
+                throw new Error(pkgJson.error || "Failed to load package");
             }
 
-            // 3. Fetch package details to populate selected massages
-            // Since we updated GET /api/package to include package_detail, we can fetch from there
-            // const allPkgRes = await fetch("/api/package");
-            // const allPkgJson = await allPkgRes.json();
+            const pkg = pkgJson.data as PackageRecord;
+            setPackageName(pkg.package_name);
+            setPackagePrice(pkg.package_price.toString());
+            setStartDate(pkg.campaign_start_datetime ? pkg.campaign_start_datetime.split("T")[0] : "");
+            setEndDate(pkg.campaign_end_datetime ? pkg.campaign_end_datetime.split("T")[0] : "");
 
-            // if (allPkgJson.success) {
-            //     const currentPackage = allPkgJson.data.find((p: any) => p.package_id === packageId);
+            const loadedMassages = (pkg.package_detail || [])
+                .map((detail) => detail.massage)
+                .filter((massage): massage is Massage => Boolean(massage))
+                .map((massage) => ({
+                    ...massage,
+                    uniqueId: createUniqueId(),
+                }));
 
-            //     if (currentPackage && currentPackage.package_detail) {
-            //         const loadedMassages = currentPackage.package_detail.map((detail: any) => ({
-            //             massage_id: detail.massage.massage_id,
-            //             massage_name: detail.massage.massage_name,
-            //             massage_price: detail.massage.massage_price,
-            //             massage_time: detail.massage.massage_time,
-            //             uniqueId: Math.random().toString(36).substring(2, 9)
-            //         }));
-            //         setSelectedMassages(loadedMassages);
-            //     }
-            // }
-
-            if (pkgJson.success && pkgJson.data) { //add
-                const pkg = pkgJson.data;
-
-                setPackageName(pkg.package_name);
-                setPackagePrice(pkg.package_price.toString());
-                setStartDate(pkg.campaign_start_datetime ? pkg.campaign_start_datetime.split("T")[0] : "");
-                setEndDate(pkg.campaign_end_datetime ? pkg.campaign_end_datetime.split("T")[0] : "");
-
-                // ✅ โหลด massages ที่อยู่ใน package
-                if (pkg.package_detail) {
-                    const loadedMassages = pkg.package_detail.map((detail: any) => ({
-                        massage_id: detail.massage.massage_id,
-                        massage_name: detail.massage.massage_name,
-                        massage_price: detail.massage.massage_price,
-                        massage_time: detail.massage.massage_time,
-                        uniqueId: Math.random().toString(36).substring(2, 9)
-                    }));
-
-                    setSelectedMassages(loadedMassages);
-                }
-            }
-
+            setSelectedMassages(loadedMassages);
         } catch (error) {
             console.error("Error fetching initial data:", error);
             alert("Failed to load package data");
@@ -117,26 +96,23 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
     function addMassageToPackage(massage: Massage) {
         const newSelection: SelectedMassage = {
             ...massage,
-            uniqueId: Math.random().toString(36).substring(2, 9)
+            uniqueId: createUniqueId(),
         };
         setSelectedMassages([...selectedMassages, newSelection]);
     }
 
-
     function removeMassageFromPackage(uniqueId: string) {
-        setSelectedMassages(selectedMassages.filter(m => m.uniqueId !== uniqueId));
+        setSelectedMassages(selectedMassages.filter((massage) => massage.uniqueId !== uniqueId));
     }
 
-    // Calculations
-    const totalTime = selectedMassages.reduce((sum, m) => sum + m.massage_time, 0);
-    const totalPriceOfMassages = selectedMassages.reduce((sum, m) => sum + m.massage_price, 0);
+    const totalTime = selectedMassages.reduce((sum, massage) => sum + massage.massage_time, 0);
+    const totalPriceOfMassages = selectedMassages.reduce((sum, massage) => sum + massage.massage_price, 0);
 
     async function handleSavePackage(e: React.FormEvent) {
         e.preventDefault();
         setSubmitting(true);
 
         try {
-            // 1. Update Package
             const packagePayload = {
                 package_name: packageName,
                 package_price: Number(packagePrice),
@@ -157,17 +133,21 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                 return;
             }
 
-            // 2. Overwrite Package Details
-            // Step 2a: Delete all old details
-            await fetch(`/api/package_detail/by-package/${packageId}`, {
+            const deleteDetailsRes = await fetch(`/api/package_detail/by-package/${packageId}`, {
                 method: "DELETE",
             });
 
-            // Step 2b: Insert new details
+            if (!deleteDetailsRes.ok) {
+                const err = await deleteDetailsRes.json();
+                alert("Error clearing package massages: " + (err.error || "Unknown error"));
+                setSubmitting(false);
+                return;
+            }
+
             if (selectedMassages.length > 0) {
-                const detailsPayload = selectedMassages.map((sm) => ({
+                const detailsPayload = selectedMassages.map((massage) => ({
                     package_id: packageId,
-                    massage_id: sm.massage_id
+                    massage_id: massage.massage_id,
                 }));
 
                 const detailsRes = await fetch("/api/package_detail", {
@@ -177,16 +157,18 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                 });
 
                 if (!detailsRes.ok) {
-                    console.error("Failed to insert new package details");
+                    const err = await detailsRes.json();
+                    alert("Error updating package massages: " + (err.error || "Unknown error"));
+                    setSubmitting(false);
+                    return;
                 }
             }
 
-            // Success, back to list
             router.push("/manager/packages");
-
         } catch (error) {
             console.error("Error updating package:", error);
             alert("Unexpected error occurred.");
+        } finally {
             setSubmitting(false);
         }
     }
@@ -205,7 +187,6 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left Column: Form Info */}
                 <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 h-fit">
                     <h3 className="text-xl font-semibold mb-6">Package Details</h3>
 
@@ -233,7 +214,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                                 required
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                                Recommendation: Total price of individual massages is ฿{totalPriceOfMassages.toLocaleString()}
+                                Recommendation: Total price of individual massages is THB {totalPriceOfMassages.toLocaleString()}
                             </p>
                         </div>
 
@@ -258,12 +239,24 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                                 />
                             </div>
                         </div>
+
+                        <div className="flex justify-start gap-4 pt-4">
+                            <Button type="button" variant="outline" onClick={() => router.push("/manager/packages")} disabled={submitting}>
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                form="edit-package-form"
+                                className="min-w-[150px]"
+                                disabled={submitting}
+                            >
+                                {submitting ? "Saving..." : "Save Changes"}
+                            </Button>
+                        </div>
                     </form>
                 </div>
 
-                {/* Right Column: Massage Selection */}
                 <div className="flex flex-col gap-6">
-                    {/* Selected Massages Summary */}
                     <div className="bg-emerald-50 p-6 rounded-lg shadow-sm border border-emerald-100">
                         <h3 className="text-lg font-semibold text-emerald-800 mb-4">Included Massages in Package</h3>
 
@@ -274,24 +267,24 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                         ) : (
                             <>
                                 <ul className="space-y-2 mb-4 max-h-[300px] overflow-y-auto pr-2">
-                                    {selectedMassages.map((sm, idx) => (
-                                        <li key={sm.uniqueId} className="flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-emerald-100/50">
+                                    {selectedMassages.map((massage, idx) => (
+                                        <li key={massage.uniqueId} className="flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-emerald-100/50">
                                             <div className="flex items-center gap-3">
                                                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center">
                                                     {idx + 1}
                                                 </span>
                                                 <div>
-                                                    <p className="font-medium text-emerald-950">{sm.massage_name}</p>
-                                                    <p className="text-xs text-emerald-600">{sm.massage_time} mins | ฿{sm.massage_price}</p>
+                                                    <p className="font-medium text-emerald-950">{massage.massage_name}</p>
+                                                    <p className="text-xs text-emerald-600">{massage.massage_time} mins | THB {massage.massage_price}</p>
                                                 </div>
                                             </div>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => removeMassageFromPackage(sm.uniqueId)}
+                                                onClick={() => removeMassageFromPackage(massage.uniqueId)}
                                                 className="text-red-500 hover:text-red-700 hover:bg-red-50"
                                             >
-                                                ✕
+                                                X
                                             </Button>
                                         </li>
                                     ))}
@@ -304,23 +297,21 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                                     </div>
                                     <div className="text-emerald-800 text-right">
                                         <p className="text-sm">Individual Total Value:</p>
-                                        <p className="text-2xl font-bold">฿{totalPriceOfMassages.toLocaleString()}</p>
+                                        <p className="text-2xl font-bold">THB {totalPriceOfMassages.toLocaleString()}</p>
                                     </div>
                                 </div>
                             </>
                         )}
                     </div>
 
-                    {/* Available Massages to Pick */}
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                         <h3 className="text-xl font-semibold mb-4">Available Massages</h3>
-                        {/* List available massages */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
                             {availableMassages.map((massage) => (
                                 <div key={massage.massage_id} className="flex justify-between items-center p-3 border rounded-lg hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors">
                                     <div>
                                         <p className="font-medium text-sm">{massage.massage_name}</p>
-                                        <p className="text-xs text-gray-500">{massage.massage_time} min | ฿{massage.massage_price}</p>
+                                        <p className="text-xs text-gray-500">{massage.massage_time} min | THB {massage.massage_price}</p>
                                     </div>
                                     <Button
                                         size="sm"
@@ -336,20 +327,6 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                 </div>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="flex justify-end gap-4 mt-4 pt-6 border-t">
-                <Button variant="outline" onClick={() => router.push("/manager/packages")} disabled={submitting}>
-                    Cancel
-                </Button>
-                <Button
-                    type="submit"
-                    form="edit-package-form"
-                    className="min-w-[150px]"
-                    disabled={submitting || selectedMassages.length === 0}
-                >
-                    {submitting ? "Saving..." : "Save Changes"}
-                </Button>
-            </div>
         </div>
     );
 }
