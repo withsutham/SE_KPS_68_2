@@ -24,15 +24,15 @@ export function Nav() {
 
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-              <Link href="/#services" className="text-[1.05rem]">
+              <Link href="/#services" className="text-base">
                 ดูบริการนวด
               </Link>
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-4">
-                  <span className="text-[1.05rem]">การจอง</span>
+                <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
+                  <span className="text-sm">การจอง</span>
                   <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -51,13 +51,13 @@ export function Nav() {
             </DropdownMenu>
 
             <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-              <Link href="/coupon" className="text-[1.05rem]">
+              <Link href="/coupon" className="text-base">
                 คูปอง
               </Link>
             </Button>
 
             <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-              <Link href="/package" className="text-[1.05rem]">
+              <Link href="/package" className="text-base">
                 แพคเกจ
               </Link>
             </Button>
