@@ -105,7 +105,7 @@ export default function CouponPage() {
             // check if already claimed
             const alreadyClaimed = myCoupons.find(mc => mc.coupon_id === coupon_id);
             if (alreadyClaimed) {
-                showAlert("คุณมีคูปองนี้แล้ว", "error");
+                showAlert(alreadyClaimed.is_used ? "คุณเคยเก็บและใช้คูปองนี้แล้ว" : "คุณมีคูปองนี้แล้ว", "error");
                 setIsClaiming(null);
                 return;
             }
@@ -226,7 +226,9 @@ export default function CouponPage() {
                         ) : (
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                 {coupons.map((coupon, index) => {
-                                    const isClaimed = myCoupons.some(mc => mc.coupon_id === coupon.coupon_id);
+                                    const claimedRecord = myCoupons.find(mc => mc.coupon_id === coupon.coupon_id);
+                                    const isClaimed = !!claimedRecord;
+                                    const isUsed = claimedRecord?.is_used;
 
                                     return (
                                         <Card key={`avail-${coupon.coupon_id}-${index}`} className="border-primary/20 bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col transition-all hover:shadow-md hover:border-primary/40 group">
@@ -249,7 +251,7 @@ export default function CouponPage() {
                                             </CardHeader>
                                             <CardFooter className="pt-2 pb-6 mt-auto">
                                                 <Button
-                                                    className={`w-full gap-2 relative overflow-hidden transition-all ${isClaimed ? 'bg-muted text-muted-foreground hover:bg-muted font-medium' : 'group/btn'}`}
+                                                    className={`w-full gap-2 relative overflow-hidden transition-all ${isClaimed ? 'bg-muted text-muted-foreground hover:bg-muted text-xs' : 'group/btn'}`}
                                                     disabled={isClaimed || isClaiming === coupon.coupon_id.toString()}
                                                     onClick={() => handleClaimCoupon(coupon.coupon_id)}
                                                     variant={isClaimed ? "secondary" : "default"}
@@ -258,8 +260,10 @@ export default function CouponPage() {
                                                         <Loader2 className="h-4 w-4 animate-spin" />
                                                     ) : isClaimed ? (
                                                         <>
-                                                            <CheckCircle2 className="h-4 w-4" />
-                                                            เก็บคูปองแล้ว
+                                                            <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                                                            <span className="truncate">
+                                                                {isUsed ? 'คุณเคยเก็บและใช้คูปองนี้แล้ว' : 'คุณมีคูปองนี้แล้ว'}
+                                                            </span>
                                                         </>
                                                     ) : (
                                                         "เก็บคูปอง"
