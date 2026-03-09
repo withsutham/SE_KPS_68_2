@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
                 { data: rooms }
             ] = await Promise.all([
                 supabase.from("booking_detail")
-                    .select("employee_id, room_id, massage_start_datetime, massage_end_datetime")
-                    .gte("massage_start_datetime", `${dateStr}T00:00:00+07:00`)
-                    .lt("massage_start_datetime", `${dateStr}T23:59:59+07:00`),
+                    .select("employee_id, room_id, massage_start_dateTime, massage_end_dateTime")
+                    .gte("massage_start_dateTime", `${dateStr}T00:00:00+07:00`)
+                    .lt("massage_start_dateTime", `${dateStr}T23:59:59+07:00`),
                 supabase.from("therapist_massage_skill").select("employee_id, massage_id"),
                 supabase.from("room_massage").select("room_id, massage_id, capacity")
             ]);
@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
                 for (const empId of skilledEmployees) {
                     const isOverlapping = localBookings.some((b: any) =>
                         b.employee_id === empId &&
-                        new Date(b.massage_start_datetime) < endDateTime &&
-                        new Date(b.massage_end_datetime) > currentStartTime
+                        new Date(b.massage_start_dateTime) < endDateTime &&
+                        new Date(b.massage_end_dateTime) > currentStartTime
                     );
                     if (!isOverlapping) {
                         assignedEmployeeId = empId;
@@ -91,8 +91,8 @@ export async function POST(request: NextRequest) {
                 for (const rm of validRooms) {
                     const overlappingCount = localBookings.filter((b: any) =>
                         b.room_id === rm.room_id &&
-                        new Date(b.massage_start_datetime) < endDateTime &&
-                        new Date(b.massage_end_datetime) > currentStartTime
+                        new Date(b.massage_start_dateTime) < endDateTime &&
+                        new Date(b.massage_end_dateTime) > currentStartTime
                     ).length;
 
                     if (overlappingCount < rm.capacity) {
@@ -105,8 +105,8 @@ export async function POST(request: NextRequest) {
                     booking_id: bookingId,
                     massage_id: service.massage_id,
                     price: service.price,
-                    massage_start_datetime: currentStartTime.toISOString(),
-                    massage_end_datetime: endDateTime.toISOString(),
+                    massage_start_dateTime: currentStartTime.toISOString(),
+                    massage_end_dateTime: endDateTime.toISOString(),
                     employee_id: assignedEmployeeId,
                     room_id: assignedRoomId
                 };
@@ -116,8 +116,8 @@ export async function POST(request: NextRequest) {
                 localBookings.push({
                     employee_id: assignedEmployeeId,
                     room_id: assignedRoomId,
-                    massage_start_datetime: currentStartTime.toISOString(),
-                    massage_end_datetime: endDateTime.toISOString(),
+                    massage_start_dateTime: currentStartTime.toISOString(),
+                    massage_end_dateTime: endDateTime.toISOString(),
                 });
 
                 currentStartTime = new Date(endDateTime);
