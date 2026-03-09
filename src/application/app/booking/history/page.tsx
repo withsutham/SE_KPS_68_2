@@ -340,8 +340,8 @@ export default function BookingHistoryPage() {
     useEffect(() => {
         const init = async () => {
             const supabase = createClient();
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
                 router.push(`/auth/login?returnTo=/booking/history&message=booking`);
                 return;
             }
