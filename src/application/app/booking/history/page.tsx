@@ -210,16 +210,20 @@ function BookingDetailModal({ booking, open, onClose }: { booking: Booking | nul
         <Dialog open={open} onOpenChange={v => !v && onClose()}>
             <DialogContent className="max-w-lg w-full max-h-[90vh] overflow-y-auto p-0">
                 <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/30">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                        <DialogTitle className="font-mitr text-lg">รายละเอียดการจอง</DialogTitle>
-                        {status !== "completed" && (
-                            <span className={cn("inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border font-medium", cfg.color)}>
-                                <Icon className="h-3.5 w-3.5" />
-                                {cfg.label}
-                            </span>
-                        )}
+                    <div className="flex items-start gap-2">
+                        <div>
+                            <DialogTitle className="font-mitr text-lg leading-snug">
+                                รายละเอียดการจอง
+                                {status !== "completed" && (
+                                    <span className={cn("inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium ml-2 align-middle", cfg.color)}>
+                                        <Icon className="h-3 w-3" />
+                                        {cfg.label}
+                                    </span>
+                                )}
+                            </DialogTitle>
+                            <p className="text-xs text-muted-foreground font-sans mt-1">เลขที่จอง: <span className="font-mono text-foreground">#{booking.booking_id}</span></p>
+                        </div>
                     </div>
-                    <p className="text-xs text-muted-foreground font-sans mt-1">เลขที่จอง: <span className="font-mono text-foreground">#{booking.booking_id}</span></p>
                 </DialogHeader>
 
                 <div className="px-6 py-5 flex flex-col gap-5">
