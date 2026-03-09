@@ -4,7 +4,7 @@ import { CurrentYear } from "@/components/current-year";
 
 export function Footer() {
     return (
-        <footer className="w-full border-t border-border/30 bg-background pt-24 pb-12 px-8 mt-auto">
+        <footer className="w-full border-t border-border/30 bg-background pt-24 pb-12 px-8 mt-auto print:hidden">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center md:items-start gap-12">
                 <div className="flex flex-col gap-4 text-center md:text-left">
                     <Link href="/" className="flex items-center gap-2 justify-center md:justify-start">

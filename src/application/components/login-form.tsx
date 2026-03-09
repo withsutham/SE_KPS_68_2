@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm({
@@ -25,6 +25,9 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo") || "/";
+  const message = searchParams.get("message");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +41,8 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      window.location.href = "/";
+      // Redirect to the intended page, or home by default
+      window.location.href = returnTo;
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -57,6 +60,11 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {message === "booking" && (
+            <div className="bg-amber-100 text-amber-900 text-sm p-3 mb-6 rounded-md font-mitr border border-amber-200">
+              กรุณาเข้าสู่ระบบก่อนทำการจองบริการ
+            </div>
+          )}
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
@@ -96,7 +104,7 @@ export function LoginForm({
             <div className="mt-4 text-center text-sm">
               ยังไม่มีบัญชีใช่หรือไม่?{" "}
               <Link
-                href="/auth/sign-up"
+                href={`/auth/sign-up${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
                 className="underline underline-offset-4"
               >
                 สมัครสมาชิก

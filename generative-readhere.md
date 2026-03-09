@@ -1,4 +1,4 @@
-# Generative AI Context File
+# Generative AI Context File.
 
 **Project:** "ฟื้นใจ" (Feun-Jai) Massage & Spa Web Application
 **Framework:** Next.js (App Router), Tailwind CSS, TypeScript

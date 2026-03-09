@@ -1,15 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 
 export const createAdminClient = () => {
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!key) {
-        console.error("DEBUG: SUPABASE_SERVICE_ROLE_KEY is missing from process.env");
-    } else {
-        console.log("DEBUG: SUPABASE_SERVICE_ROLE_KEY is present (length: " + key.length + ")");
-    }
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-    return createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        key!
-    );
-}
+    return createClient(url, key, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+        },
+        global: {
+            headers: {
+                // Explicitly set the Authorization header so the new sb_secret_* key
+                // format is correctly sent as a Bearer token and bypasses RLS.
+                Authorization: `Bearer ${key}`,
+            },
+        },
+    });
+};

@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function SignUpForm({
@@ -29,6 +29,8 @@ export function SignUpForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo") || "/";
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +49,7 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}${returnTo}`,
         },
       });
 
@@ -73,7 +75,7 @@ export function SignUpForm({
         }
       }
 
-      window.location.href = "/";
+      window.location.href = returnTo;
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -165,7 +167,7 @@ export function SignUpForm({
             </div>
             <div className="mt-4 text-center text-sm font-mitr">
               มีบัญชีอยู่แล้วใช่หรือไม่?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <Link href={`/auth/login${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className="underline underline-offset-4">
                 เข้าสู่ระบบ
               </Link>
             </div>
