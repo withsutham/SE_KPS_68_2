@@ -51,44 +51,59 @@ export function Nav() {
 
 async function NavLinkGroup() {
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session?.user) return null;
+  if (!user) return null;
 
-  return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
-            <span className="text-sm">การจอง</span>
-            <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-52 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
-          <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-            <Link href="/booking/history" className="w-full cursor-pointer py-2.5 px-3 text-base">
-              ดูประวัติการจอง
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-            <Link href="/booking" className="w-full cursor-pointer py-2.5 px-3 text-base">
-              ทำการจอง
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+  // Fetch the user's role from the profiles table
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_type")
+    .eq("profile_id", user.id)
+    .single();
 
-      <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-        <Link href="/coupon" className="text-sm">
-          คูปอง
-        </Link>
-      </Button>
+  const role = profile?.user_type;
 
-      <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-        <Link href="/package" className="text-sm">
-          แพคเกจ
-        </Link>
-      </Button>
-    </>
-  );
+  // Customer-specific nav links
+  if (role === "customer") {
+    return (
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
+              <span className="text-sm">การจอง</span>
+              <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/booking/history" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                ดูประวัติการจอง
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/booking" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                ทำการจอง
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/coupon" className="text-sm">
+            คูปอง
+          </Link>
+        </Button>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/package" className="text-sm">
+            แพคเกจ
+          </Link>
+        </Button>
+      </>
+    );
+  }
+
+  // manager, therapist, shop_owner — their nav links will be added later
+  return null;
 }
