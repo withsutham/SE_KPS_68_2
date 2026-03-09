@@ -463,6 +463,10 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
     onUpdate({ selectedServices: data.selectedServices.filter(s => s.massage_id !== id) });
   };
 
+  const handleClearAll = () => {
+    onUpdate({ selectedServices: [] });
+  };
+
   const handleMoveUp = (index: number) => {
     if (index === 0) return;
     const newServices = [...data.selectedServices];
@@ -567,14 +571,26 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
         )}
 
         {/* Add Service */}
-        <Button
-          variant="outline"
-          onClick={() => setPickerOpen(true)}
-          className="w-full rounded-full border-dashed border-border/60 text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 gap-2 font-sans transition-all"
-        >
-          <Plus className="h-4 w-4" />
-          เพิ่มบริการ
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setPickerOpen(true)}
+            className="w-full rounded-full border-dashed border-border/60 text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 gap-2 font-sans transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            เพิ่มบริการ
+          </Button>
+          {data.selectedServices.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={handleClearAll}
+              className="shrink-0 rounded-full border border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive transition-all font-sans"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" />
+              ล้างทั้งหมด
+            </Button>
+          )}
+        </div>
       </div>
 
       <ServicePickerModal
