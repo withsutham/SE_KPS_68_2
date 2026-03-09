@@ -19,12 +19,17 @@ export async function POST(request: NextRequest) {
         const supabase = await createAdminClient();
 
         // 1. Create booking
-        const bookingPayload = {
+        const bookingPayload: Record<string, any> = {
             customer_name: body.customer_name,
             customer_phone: body.customer_phone,
             customer_email: body.customer_email || null,
-            booking_datetime: body.booking_datetime,
+            booking_dateTime: body.booking_datetime,
         };
+
+        // Link to customer record if provided (enables booking history per user)
+        if (body.customer_id) {
+            bookingPayload.customer_id = body.customer_id;
+        }
 
         const { data: bookingData, error: bookingError } = await supabase
             .from("booking")
@@ -44,7 +49,7 @@ export async function POST(request: NextRequest) {
         if (body.services && Array.isArray(body.services)) {
             const startDateTime = new Date(body.booking_datetime);
             const dateStr = startDateTime.toLocaleDateString('en-CA'); // 'YYYY-MM-DD'
-            
+
             // Auto-assignment Prep: Fetch all relevant data for the day
             const [
                 { data: existingBookings },
@@ -69,9 +74,9 @@ export async function POST(request: NextRequest) {
                 const skilledEmployees = skills?.filter(s => String(s.massage_id) === String(service.massage_id)).map(s => s.employee_id) || [];
                 let assignedEmployeeId = null;
                 for (const empId of skilledEmployees) {
-                    const isOverlapping = localBookings.some((b: any) => 
-                        b.employee_id === empId && 
-                        new Date(b.massage_start_datetime) < endDateTime && 
+                    const isOverlapping = localBookings.some((b: any) =>
+                        b.employee_id === empId &&
+                        new Date(b.massage_start_datetime) < endDateTime &&
                         new Date(b.massage_end_datetime) > currentStartTime
                     );
                     if (!isOverlapping) {
@@ -84,12 +89,12 @@ export async function POST(request: NextRequest) {
                 const validRooms = rooms?.filter(r => String(r.massage_id) === String(service.massage_id)) || [];
                 let assignedRoomId = null;
                 for (const rm of validRooms) {
-                    const overlappingCount = localBookings.filter((b: any) => 
-                        b.room_id === rm.room_id && 
-                        new Date(b.massage_start_datetime) < endDateTime && 
+                    const overlappingCount = localBookings.filter((b: any) =>
+                        b.room_id === rm.room_id &&
+                        new Date(b.massage_start_datetime) < endDateTime &&
                         new Date(b.massage_end_datetime) > currentStartTime
                     ).length;
-                    
+
                     if (overlappingCount < rm.capacity) {
                         assignedRoomId = rm.room_id;
                         break;
@@ -106,7 +111,7 @@ export async function POST(request: NextRequest) {
                     room_id: assignedRoomId
                 };
                 detailsPayload.push(payload);
-                
+
                 // Track this new booking locally to prevent internal double booking for consecutive services
                 localBookings.push({
                     employee_id: assignedEmployeeId,

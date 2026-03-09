@@ -68,12 +68,24 @@ type TabKey = "upcoming" | "completed" | "all";
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function getBookingStatus(booking: Booking): "upcoming" | "completed" | "cancelled" {
     const now = new Date();
-    const bookingDate = new Date(booking.booking_dateTime);
     const paymentStatus = booking.payment?.[0]?.payment_status;
 
     if (paymentStatus === "cancelled") return "cancelled";
-    if (bookingDate > now) return "upcoming";
-    return "completed";
+
+    // Find the end time of the last service in this booking
+    const details = booking.booking_detail ?? [];
+    if (details.length > 0) {
+        const latestEnd = details.reduce((latest, d) => {
+            const end = new Date(d.massage_end_dateTime);
+            return end > latest ? end : latest;
+        }, new Date(0));
+
+        return latestEnd > now ? "upcoming" : "completed";
+    }
+
+    // Fallback: use booking start time if no details
+    const bookingDate = new Date(booking.booking_dateTime);
+    return bookingDate > now ? "upcoming" : "completed";
 }
 
 const STATUS_CONFIG = {
@@ -150,10 +162,12 @@ function BookingCard({ booking, onClick }: { booking: Booking; onClick: () => vo
                             ? services.map(d => d.massage?.massage_name ?? "นวด").join(", ")
                             : "รายการจอง"}
                     </span>
-                    <span className={cn("inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium", cfg.color)}>
-                        <Icon className="h-3 w-3" />
-                        {cfg.label}
-                    </span>
+                    {status !== "completed" && (
+                        <span className={cn("inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium", cfg.color)}>
+                            <Icon className="h-3 w-3" />
+                            {cfg.label}
+                        </span>
+                    )}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-1">
@@ -198,10 +212,12 @@ function BookingDetailModal({ booking, open, onClose }: { booking: Booking | nul
                 <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/30">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                         <DialogTitle className="font-mitr text-lg">รายละเอียดการจอง</DialogTitle>
-                        <span className={cn("inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border font-medium", cfg.color)}>
-                            <Icon className="h-3.5 w-3.5" />
-                            {cfg.label}
-                        </span>
+                        {status !== "completed" && (
+                            <span className={cn("inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border font-medium", cfg.color)}>
+                                <Icon className="h-3.5 w-3.5" />
+                                {cfg.label}
+                            </span>
+                        )}
                     </div>
                     <p className="text-xs text-muted-foreground font-sans mt-1">เลขที่จอง: <span className="font-mono text-foreground">#{booking.booking_id}</span></p>
                 </DialogHeader>

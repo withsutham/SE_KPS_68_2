@@ -46,6 +46,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
       const bookingDateTime = `${datePart}T${timePart}:00+07:00`;
 
       const payload = {
+        customer_id: data.customerId ?? null,
         customer_name: `${data.firstName} ${data.lastName}`,
         customer_phone: data.phone,
         customer_email: data.email,
