@@ -214,12 +214,10 @@ function BookingDetailModal({ booking, open, onClose }: { booking: Booking | nul
                         <div>
                             <DialogTitle className="font-mitr text-lg leading-snug">
                                 รายละเอียดการจอง
-                                {status !== "completed" && (
-                                    <span className={cn("inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium ml-2 align-middle", cfg.color)}>
-                                        <Icon className="h-3 w-3" />
-                                        {cfg.label}
-                                    </span>
-                                )}
+                                <span className={cn("inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium ml-2 align-middle", cfg.color)}>
+                                    <Icon className="h-3 w-3" />
+                                    {cfg.label}
+                                </span>
                             </DialogTitle>
                             <p className="text-xs text-muted-foreground font-sans mt-1">เลขที่จอง: <span className="font-mono text-foreground">#{booking.booking_id}</span></p>
                         </div>
