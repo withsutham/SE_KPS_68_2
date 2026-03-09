@@ -25,6 +25,7 @@ export interface BookingData {
   paymentMethod: "cash" | "qr" | "credit" | null;
   // Step 5
   bookingId: string | null;
+  bookingDetails: any[] | null;
 }
 
 export const INITIAL_BOOKING_DATA: BookingData = {
@@ -37,6 +38,7 @@ export const INITIAL_BOOKING_DATA: BookingData = {
   email: "",
   paymentMethod: null,
   bookingId: null,
+  bookingDetails: null,
 };
 
 export interface StepProps {

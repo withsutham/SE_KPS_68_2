@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
         const bookingId = bookingData.booking_id;
 
         // 2. Create booking details
+        let detailsPayload: any[] = [];
         if (body.services && Array.isArray(body.services)) {
             const startDateTime = new Date(body.booking_datetime);
             const dateStr = startDateTime.toLocaleDateString('en-CA'); // 'YYYY-MM-DD'
@@ -59,7 +60,6 @@ export async function POST(request: NextRequest) {
             ]);
 
             let currentStartTime = new Date(startDateTime);
-            const detailsPayload = [];
             const localBookings = existingBookings ? [...existingBookings] : [];
 
             for (const service of body.services) {
@@ -143,7 +143,34 @@ export async function POST(request: NextRequest) {
             console.error("booking POST error (payment table):", paymentError.message);
         }
 
-        return NextResponse.json({ success: true, data: { id: bookingId } }, { status: 201 });
+        // fetch names for details
+        const employeeIds = [...new Set(detailsPayload.map(d => d.employee_id).filter(id => id))];
+        const roomIds = [...new Set(detailsPayload.map(d => d.room_id).filter(id => id))];
+
+        let employees: any[] = [];
+        let roomsData: any[] = [];
+
+        if (employeeIds.length > 0) {
+            const { data } = await supabase.from("employee").select("employee_id, first_name, last_name").in("employee_id", employeeIds);
+            employees = data || [];
+        }
+
+        if (roomIds.length > 0) {
+            const { data } = await supabase.from("room").select("room_id, room_name").in("room_id", roomIds);
+            roomsData = data || [];
+        }
+
+        const enrichedDetails = detailsPayload.map(d => {
+            const emp = employees.find(e => e.employee_id === d.employee_id);
+            const rm = roomsData.find(r => r.room_id === d.room_id);
+            return {
+                ...d,
+                employee_name: emp ? `${emp.first_name} ${emp.last_name || ''}`.trim() : null,
+                room_name: rm ? rm.room_name : null,
+            };
+        });
+
+        return NextResponse.json({ success: true, data: { id: bookingId, details: enrichedDetails } }, { status: 201 });
     } catch (err: any) {
         console.error("booking POST exception:", err.message);
         return NextResponse.json({ success: false, error: "Invalid JSON body or internal error" }, { status: 400 });

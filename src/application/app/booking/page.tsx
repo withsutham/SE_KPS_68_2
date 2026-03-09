@@ -71,7 +71,7 @@ function BookingPageInner() {
 
       <div className="w-full max-w-5xl mx-auto px-4 md:px-8 pt-8 pb-24">
         {/* Page header */}
-        <div className="text-center mb-2">
+        <div className="text-center mb-2 print:hidden">
           <p className="text-xs font-medium tracking-widest text-primary/60 uppercase font-sans mb-3">
             ฟื้นใจ · Massage & Spa
           </p>
@@ -81,10 +81,12 @@ function BookingPageInner() {
         </div>
 
         {/* Step progress */}
-        <BookingProgress currentStep={currentStep} />
+        <div className="print:hidden">
+          <BookingProgress currentStep={currentStep} />
+        </div>
 
         {/* Divider */}
-        <div className="h-px bg-border/40 mb-8" />
+        <div className="h-px bg-border/40 mb-8 print:hidden" />
 
         {/* Step content */}
         <div className="min-h-[420px]">

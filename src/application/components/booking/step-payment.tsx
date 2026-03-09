@@ -60,6 +60,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
       };
 
       let bookingId: string | null = null;
+      let bookingDetails: any[] | null = null;
       try {
         const res = await fetch("/api/booking", {
           method: "POST",
@@ -69,6 +70,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
         if (res.ok) {
           const json = await res.json();
           bookingId = json.data?.id ?? null;
+          bookingDetails = json.data?.details ?? null;
         }
       } catch (err) {
         console.error("Booking submission error:", err);
@@ -76,6 +78,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
 
       onUpdate({
         bookingId: bookingId ?? `FJ-${Date.now().toString(36).toUpperCase().slice(-6)}`,
+        bookingDetails,
       });
 
       // Simulate processing delay
