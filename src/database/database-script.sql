@@ -174,8 +174,8 @@ CREATE TABLE member_package (
 
 CREATE TABLE booking_detail (
     booking_detail_id SERIAL PRIMARY KEY,
-    massage_start_datetime TIMESTAMPTZ NOT NULL,
-    massage_end_datetime TIMESTAMPTZ NOT NULL,
+    massage_start_dateTime TIMESTAMPTZ NOT NULL,
+    massage_end_dateTime TIMESTAMPTZ NOT NULL,
     price NUMERIC(10, 2) NOT NULL,
     employee_id INT REFERENCES employee(employee_id) ON DELETE SET NULL,
     booking_id INT REFERENCES booking(booking_id) ON DELETE CASCADE,
