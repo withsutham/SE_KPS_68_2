@@ -55,7 +55,6 @@
     "react-day-picker": "^9.13.2",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.71.2",
-    "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
