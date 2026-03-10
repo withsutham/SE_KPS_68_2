@@ -167,7 +167,7 @@ export default function PackagePage() {
                 <Tabs defaultValue="my-packages" className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
                         <TabsTrigger value="my-packages" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
-                            <Package className="h-4 w-4" /> แพคเกจส่วนตัว
+                            <Package className="h-4 w-4" /> แพคเกจของฉัน
                             {activePackages.length > 0 && (
                                 <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
                                     {activePackages.length}
