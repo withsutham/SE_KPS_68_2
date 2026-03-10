@@ -107,28 +107,49 @@ async function NavLinkGroup() {
   }
 
   // manager, shop_owner — can manage employees
+  // manager, shop_owner — can manage employees, packages, coupons and see dashboard
   if (role === "manager" || role === "shop_owner") {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
-            <span className="text-sm">พนักงาน</span>
-            <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
-          <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-            <Link href="/service-ip/manager/employee/timetable" className="w-full cursor-pointer py-2.5 px-3 text-base">
-              ตารางทำงานเทอราปิส
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-            <Link href="/service-ip/manager/employee/management" className="w-full cursor-pointer py-2.5 px-3 text-base">
-              จัดการข้อมูลพนักงาน
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
+              <span className="text-sm">พนักงาน</span>
+              <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/service-ip/manager/employee/timetable" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                ตารางทำงานเทอราปิส
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/service-ip/manager/employee/management" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                จัดการข้อมูลพนักงาน
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/package" className="text-sm">
+            จัดการแพคเกจ
+          </Link>
+        </Button>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/coupon" className="text-sm">
+            จัดการคูปอง
+          </Link>
+        </Button>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/dashboard" className="text-sm">
+            แอดมิน แดชบอร์ด
+          </Link>
+        </Button>
+      </>
     );
   }
 
