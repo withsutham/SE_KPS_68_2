@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink, AlertCircle, Package, PlusCircle, History } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ export default function PackagePage() {
         message: string;
         type: "success" | "error";
     } | null>(null);
+    const [activeTab, setActiveTab] = useState("my-packages");
 
     const showAlert = (message: string, type: "success" | "error") => {
         setAlertMessage({ message, type });
@@ -129,6 +131,12 @@ export default function PackagePage() {
 
     const activePackages = Object.values(groupedMyPackages).filter(v => v.details.some(d => !d.is_used));
     const historyPackages = Object.values(groupedMyPackages).filter(v => v.details.every(d => d.is_used));
+    const filteredAvailable = availablePackages.filter(pkg => {
+        const now = new Date();
+        const start = pkg.campaign_start_datetime ? new Date(pkg.campaign_start_datetime) : null;
+        const end = pkg.campaign_end_datetime ? new Date(pkg.campaign_end_datetime) : null;
+        return (!start || start <= now) && (!end || end >= now);
+    });
 
     return (
         <main className="min-h-screen bg-background font-mitr relative overflow-hidden">
@@ -164,21 +172,34 @@ export default function PackagePage() {
                 </div>
 
                 {/* Tabs Section */}
-                <Tabs defaultValue="my-packages" className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
                         <TabsTrigger value="my-packages" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <Package className="h-4 w-4" /> แพคเกจของฉัน
-                            {activePackages.length > 0 && (
-                                <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
-                                    {activePackages.length}
-                                </span>
-                            )}
+                            <span className={cn(
+                                "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                                activeTab === "my-packages" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            )}>
+                                {activePackages.length}
+                            </span>
                         </TabsTrigger>
                         <TabsTrigger value="discover" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <PlusCircle className="h-4 w-4" /> ซื้อแพคเกจ
+                            <span className={cn(
+                                "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                                activeTab === "discover" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            )}>
+                                {filteredAvailable.length}
+                            </span>
                         </TabsTrigger>
                         <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
-                            <History className="h-4 w-4" /> ประวัติการใช้
+                            <History className="h-4 w-4" /> ประวัติ
+                            <span className={cn(
+                                "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                                activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            )}>
+                                {historyPackages.length}
+                            </span>
                         </TabsTrigger>
                     </TabsList>
 

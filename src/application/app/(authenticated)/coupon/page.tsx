@@ -11,6 +11,7 @@ import {
   History,
   PlusCircle,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyCouponState } from "@/components/coupon/empty-coupon-state";
 import { ActiveCouponCard } from "@/components/coupon/active-coupon-card";
@@ -22,6 +23,7 @@ export default function CouponPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [myCoupons, setMyCoupons] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState("my-coupons");
   const [isClaiming, setIsClaiming] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<{
     message: string;
@@ -202,7 +204,7 @@ export default function CouponPage() {
             </p>
           </div>
 
-          <Tabs defaultValue="my-coupons" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
               <TabsTrigger
                 value="my-coupons"
@@ -210,11 +212,12 @@ export default function CouponPage() {
               >
                 <Ticket className="h-4 w-4" />
                 คูปองของฉัน
-                {activeCoupons.length > 0 && (
-                  <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
-                    {activeCoupons.length}
-                  </span>
-                )}
+                <span className={cn(
+                  "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                  activeTab === "my-coupons" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  {activeCoupons.length}
+                </span>
               </TabsTrigger>
               <TabsTrigger
                 value="discover"
@@ -222,13 +225,25 @@ export default function CouponPage() {
               >
                 <PlusCircle className="h-4 w-4" />
                 เก็บเพิ่ม
+                <span className={cn(
+                  "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                  activeTab === "discover" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  {coupons.length}
+                </span>
               </TabsTrigger>
               <TabsTrigger
                 value="history"
                 className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
               >
                 <History className="h-4 w-4" />
-                ประวัติการใช้
+                ประวัติ
+                <span className={cn(
+                  "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                  activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  {historyCoupons.length}
+                </span>
               </TabsTrigger>
             </TabsList>
 
@@ -301,7 +316,8 @@ export default function CouponPage() {
             </TabsContent>
           </Tabs>
         </div>
-      )}
-    </main>
+      )
+      }
+    </main >
   );
 }
