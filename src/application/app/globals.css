@@ -65,3 +65,11 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  com-1password,
+  #bitwarden-extension-content,
+  [id^=lastpass] {
+    display: none !important;
+  }
+}
