@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import Link from "next/link";
 
 interface Package {
     package_id: string;
@@ -24,14 +23,6 @@ interface Package {
 export default function PackagePage() {
     const [packages, setPackages] = useState<Package[]>([]);
     const [loading, setLoading] = useState(false);
-
-    // Form states
-    const [isEditing, setIsEditing] = useState(false);
-    const [editId, setEditId] = useState<string | null>(null);
-    const [packageName, setPackageName] = useState("");
-    const [packagePrice, setPackagePrice] = useState("");
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
 
     useEffect(() => {
         fetchPackages();
@@ -54,51 +45,6 @@ export default function PackagePage() {
         }
     }
 
-    async function handleSavePackage(e: React.FormEvent) {
-        e.preventDefault();
-        
-        const payload = {
-            package_name: packageName,
-            package_price: Number(packagePrice),
-            campaign_start_datetime: startDate || null,
-            campaign_end_datetime: endDate || null,
-        };
-
-        try {
-            if (isEditing && editId) {
-                // Update
-                const res = await fetch(`/api/package/${editId}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
-                if (res.ok) {
-                    resetForm();
-                    fetchPackages();
-                } else {
-                    const errorJson = await res.json();
-                    alert("Error updating package: " + errorJson.error);
-                }
-            } else {
-                // Create
-                const res = await fetch("/api/package", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
-                if (res.ok) {
-                    resetForm();
-                    fetchPackages();
-                } else {
-                    const errorJson = await res.json();
-                    alert("Error adding package: " + errorJson.error);
-                }
-            }
-        } catch (error) {
-            console.error("Error saving package:", error);
-        }
-    }
-
     async function deletePackage(id: string) {
         if (!confirm("Are you sure you want to delete this package?")) return;
 
@@ -117,89 +63,13 @@ export default function PackagePage() {
         }
     }
 
-    function editPackage(pkg: Package) {
-        setIsEditing(true);
-        setEditId(pkg.package_id);
-        setPackageName(pkg.package_name);
-        setPackagePrice(pkg.package_price.toString());
-        setStartDate(pkg.campaign_start_datetime ? pkg.campaign_start_datetime.split("T")[0] : ""); // basic format
-        setEndDate(pkg.campaign_end_datetime ? pkg.campaign_end_datetime.split("T")[0] : "");
-    }
-
-    function resetForm() {
-        setIsEditing(false);
-        setEditId(null);
-        setPackageName("");
-        setPackagePrice("");
-        setStartDate("");
-        setEndDate("");
-    }
-
     return (
         <div className="p-8 max-w-5xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8">Package Management</h1>
-
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-100">
-                <h3 className="text-xl font-semibold mb-4">
-                    {isEditing ? "Edit Package" : "Add New Package"}
-                </h3>
-                
-                <form onSubmit={handleSavePackage} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="packageName">Package Name</Label>
-                        <Input
-                            id="packageName"
-                            placeholder="e.g. Premium Spa"
-                            value={packageName}
-                            onChange={(e) => setPackageName(e.target.value)}
-                            required
-                        />
-                    </div>
-                    
-                    <div className="space-y-2">
-                        <Label htmlFor="packagePrice">Price (THB)</Label>
-                        <Input
-                            id="packagePrice"
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            value={packagePrice}
-                            onChange={(e) => setPackagePrice(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="startDate">Campaign Start Date</Label>
-                        <Input
-                            id="startDate"
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="endDate">Campaign End Date</Label>
-                        <Input
-                            id="endDate"
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="md:col-span-2 flex justify-end gap-3 mt-4">
-                        {isEditing && (
-                            <Button type="button" variant="outline" onClick={resetForm}>
-                                Cancel
-                            </Button>
-                        )}
-                        <Button type="submit">
-                            {isEditing ? "Update Package" : "Add Package"}
-                        </Button>
-                    </div>
-                </form>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">Package Management</h1>
+                <Link href="/manager/package/create">
+                    <Button>+ Create New Package</Button>
+                </Link>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
@@ -257,13 +127,11 @@ export default function PackagePage() {
                                         </td>
                                         <td className="py-3 px-4 text-right">
                                             <div className="flex justify-end gap-2">
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="sm"
-                                                    onClick={() => editPackage(pkg)}
-                                                >
-                                                    Edit
-                                                </Button>
+                                                <Link href={`/manager/package/edit/${pkg.package_id}`}>
+                                                    <Button variant="outline" size="sm">
+                                                        Edit
+                                                    </Button>
+                                                </Link>
                                                 <Button 
                                                     variant="destructive" 
                                                     size="sm"

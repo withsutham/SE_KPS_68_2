@@ -123,7 +123,7 @@ export default function CreatePackagePage() {
             }
 
             // Success, back to list
-            router.push("/manager/packages");
+            router.push("/manager/package");
 
         } catch (error) {
             console.error("Error saving package:", error);
@@ -137,7 +137,7 @@ export default function CreatePackagePage() {
         <div className="p-8 max-w-6xl mx-auto flex flex-col gap-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold">Create New Package</h1>
-                <Button variant="outline" onClick={() => router.push("/manager/packages")}>
+                <Button variant="outline" onClick={() => router.push("/manager/package")}>
                     Back to List
                 </Button>
             </div>
@@ -198,7 +198,7 @@ export default function CreatePackagePage() {
                         </div>
 
                         <div className="flex justify-start gap-4 pt-4">
-                            <Button type="button" variant="outline" onClick={() => router.push("/manager/packages")} disabled={submitting}>
+                            <Button type="button" variant="outline" onClick={() => router.push("/manager/package")} disabled={submitting}>
                                 Cancel
                             </Button>
                             <Button
