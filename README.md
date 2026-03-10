@@ -20,7 +20,7 @@ Inside the `src/application` directory, you will find a `.env.example` file.
 # src/application/.env.local
 
 NEXT_PUBLIC_SUPABASE_URL=https://kuopbajnxyxpzzgrkzcn.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_Nbj5PIhiuzhtaDVmBpNsZg_m5jI_7xq
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_WTqfKWPQygDYSx8L7UnT7Q_XaE900Hi
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SECRET_API_KEY
 ```
 
