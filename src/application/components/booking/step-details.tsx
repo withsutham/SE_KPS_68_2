@@ -58,6 +58,7 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
                 placeholder="ชื่อ"
                 value={data.firstName}
                 disabled
+                data-1p-ignore="true"
                 className={fieldClass(errors.firstName)}
               />
               {errors.firstName && <p className="text-destructive text-xs font-sans">{errors.firstName}</p>}
@@ -72,6 +73,7 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
                 placeholder="นามสกุล"
                 value={data.lastName}
                 disabled
+                data-1p-ignore="true"
                 className={fieldClass(errors.lastName)}
               />
               {errors.lastName && <p className="text-destructive text-xs font-sans">{errors.lastName}</p>}
@@ -90,6 +92,7 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
                 placeholder="08X-XXX-XXXX"
                 type="tel"
                 value={data.phone}
+                data-1p-ignore="true"
                 onChange={e => { onUpdate({ phone: e.target.value }); setErrors(p => ({ ...p, phone: "" })); }}
                 className={fieldClass(errors.phone)}
               />
@@ -106,6 +109,7 @@ export function StepDetails({ data, onUpdate, onNext, onBack }: StepProps) {
                 type="email"
                 value={data.email}
                 disabled
+                data-1p-ignore="true"
                 className={fieldClass(errors.email)}
               />
               {errors.email && <p className="text-destructive text-xs font-sans">{errors.email}</p>}
