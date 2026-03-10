@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm({
@@ -25,6 +25,9 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo") || "/";
+  const message = searchParams.get("message");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +41,8 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push("/protected");
+      // Redirect to the intended page, or home by default
+      window.location.href = returnTo;
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -49,18 +52,28 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+      <Card className="font-mitr">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">เข้าสู่ระบบ</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            ใส่อีเมลของคุณด้านล่างเพื่อเข้าสู่ระบบ
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {message === "booking" && (
+            <div className="bg-amber-100 text-amber-900 text-sm p-3 mb-6 rounded-md font-mitr border border-amber-200">
+              กรุณาเข้าสู่ระบบก่อนทำการจองบริการ
+            </div>
+          )}
+          {message === "auth_required" && (
+            <div className="bg-amber-100 text-amber-900 text-sm p-3 mb-6 rounded-md font-mitr border border-amber-200">
+              กรุณาเข้าสู่ระบบก่อนเข้าใช้งานหน้านี้
+            </div>
+          )}
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">อีเมล</Label>
                 <Input
                   id="email"
                   type="email"
@@ -68,16 +81,17 @@ export function LoginForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">รหัสผ่าน</Label>
                   <Link
                     href="/auth/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
-                    Forgot your password?
+                    ลืมรหัสผ่านใช่ไหม?
                   </Link>
                 </div>
                 <Input
@@ -86,20 +100,21 @@ export function LoginForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+              <Button type="submit" className="w-full font-mitr" disabled={isLoading}>
+                {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
+              ยังไม่มีบัญชีใช่หรือไม่?{" "}
               <Link
-                href="/auth/sign-up"
+                href={`/auth/sign-up${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
                 className="underline underline-offset-4"
               >
-                Sign up
+                สมัครสมาชิก
               </Link>
             </div>
           </form>

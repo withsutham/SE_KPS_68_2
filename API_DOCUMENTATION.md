@@ -15,6 +15,7 @@ The following 18 entities have standard API endpoints available:
 - `employee`
 - `leave_record`
 - `massage`
+- `operate_time`
 - `member_coupon`
 - `member_package`
 - `package`
@@ -157,3 +158,68 @@ All standard endpoints return robust error objects when something goes wrong (e.
     "error": "Error message details here"
 }
 ```
+
+---
+
+## Table Schemas
+
+### `massage`
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `massage_id` | `int` | Auto | Primary key (auto-increment) |
+| `massage_name` | `text` | ✅ | Name of the massage service |
+| `massage_price` | `numeric` | ✅ | Price in Thai Baht |
+| `massage_time` | `int` | ❌ | Duration in minutes (e.g. `60`, `90`, `120`) |
+| `image_src` | `text` | ❌ | Public URL to the massage image (e.g. from Supabase Storage) |
+
+**Example POST body:**
+```json
+{
+    "massage_name": "นวดน้ำมันหอมระเหย (Aromatherapy Oil Massage)",
+    "massage_price": 850.00,
+    "massage_time": 90,
+    "image_src": "https://<project>.supabase.co/storage/v1/object/public/massage-images/aromatherapy.jpg"
+}
+```
+
+### `operate_time`
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `operate_time_id` | `int` | Auto | Primary key (auto-increment) |
+| `open_time` | `time` | ✅ | Shop opening time (e.g. "09:00:00") |
+| `close_time` | `time` | ✅ | Shop closing time (e.g. "21:00:00") |
+| `create_date` | `timestamptz` | Auto | Timestamp of record creation |
+
+**Example POST body:**
+```json
+{
+    "open_time": "10:00:00",
+    "close_time": "22:00:00"
+}
+```
+
+### `package`
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `package_id` | `int` | Auto | Primary key (auto-increment) |
+| `package_name` | `text` | ✅ | Name of the package |
+| `package_price` | `numeric` | ✅ | Total price of the package |
+| `campaign_start_dateTime` | `timestamptz` | ❌ | Start of the promotion |
+| `campaign_end_dateTime` | `timestamptz` | ❌ | End of the promotion |
+| `image_src` | `text` | ❌ | URL to the package image |
+
+### `coupon`
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `coupon_id` | `int` | Auto | Primary key (auto-increment) |
+| `coupon_name` | `text` | ✅ | Name of the coupon |
+| `discount_percent` | `numeric` | ✅ | Discount percentage (e.g. `10.00`) |
+| `description` | `text` | ❌ | Description of the coupon |
+| `collect_deadline` | `timestamptz` | ❌ | Last day the coupon can be collected |
+
+> **Note on `/api/coupon` GET requests:**
+> By default, `GET /api/coupon` only returns coupons where `collect_deadline` is null or in the future. To retrieve all coupons (including expired ones, e.g., for manager views), append the `show_all` parameter: `GET /api/coupon?show_all=true`.

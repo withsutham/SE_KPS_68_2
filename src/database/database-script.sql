@@ -3,6 +3,7 @@
 -- ==========================================
 
 -- Drop tables with CASCADE to handle foreign key dependencies automatically
+DROP TABLE IF EXISTS operate_time CASCADE;
 DROP TABLE IF EXISTS booking_detail CASCADE;
 DROP TABLE IF EXISTS member_package CASCADE;
 DROP TABLE IF EXISTS member_coupon CASCADE;
@@ -71,7 +72,16 @@ CREATE TABLE room (
 CREATE TABLE massage (
     massage_id SERIAL PRIMARY KEY,
     massage_name TEXT NOT NULL,
-    massage_price NUMERIC(10, 2) NOT NULL
+    massage_price NUMERIC(10, 2) NOT NULL,
+    massage_time INT,     -- Duration in minutes (e.g. 60, 90, 120)
+    image_src TEXT        -- URL to the massage image
+);
+
+CREATE TABLE operate_time (
+    operate_time_id SERIAL PRIMARY KEY,
+    open_time TIME NOT NULL,
+    close_time TIME NOT NULL,
+    create_date TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE room_massage (
@@ -109,7 +119,8 @@ CREATE TABLE coupon (
     coupon_id SERIAL PRIMARY KEY,
     coupon_name TEXT NOT NULL,
     discount_percent NUMERIC(5, 2) NOT NULL,
-    description TEXT
+    description TEXT,
+    collect_deadline TIMESTAMPTZ -- Last day the coupon can be collected
 );
 
 CREATE TABLE package (
@@ -117,7 +128,8 @@ CREATE TABLE package (
     package_name TEXT NOT NULL,
     package_price NUMERIC(10, 2) NOT NULL,
     campaign_start_dateTime TIMESTAMPTZ,
-    campaign_end_dateTime TIMESTAMPTZ
+    campaign_end_dateTime TIMESTAMPTZ,
+    image_src TEXT        -- URL to the package image
 );
 
 CREATE TABLE package_detail (

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ยืนยันอีเมล — ฟื้นใจ Massage & Spa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* ── Reset ─────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #f7f4ef;
+      font-family: 'Sarabun', Arial, sans-serif;
+      color: #2a3728;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Design tokens (mirrors globals.css :root) ── */
+    /* primary  : hsl(142 15% 45%) -> #627a62  */
+    /* secondary: hsl(35 30% 90%)  -> #ede5d5  */
+    /* muted-fg : hsl(142 10% 40%) -> #5b6e5b  */
+    /* border   : hsl(142 10% 88%) -> #dde5dd  */
+
+    /* ── Wrapper ────────────────────────────── */
+    .email-wrapper {
+      width: 100%;
+      background-color: #f7f4ef;
+      padding: 48px 16px;
+    }
+
+    /* ── Card ───────────────────────────────── */
+    .email-card {
+      max-width: 520px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #dde5dd;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    /* ── Header band ────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, #627a62 0%, #4e6351 100%);
+      padding: 36px 40px;
+      text-align: center;
+    }
+    .header-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .header-logo-icon {
+      width: 36px;
+      height: 36px;
+      fill: #f7f4ef;
+    }
+    .header-logo-name {
+      font-family: 'Mitr', Arial, sans-serif;
+      font-weight: 600;
+      font-size: 22px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #f7f4ef;
+    }
+    .header-tagline {
+      margin-top: 6px;
+      font-family: 'Sarabun', Arial, sans-serif;
+      font-size: 12px;
+      color: rgba(247, 244, 239, 0.75);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* ── Body ───────────────────────────────── */
+    .body {
+      padding: 40px 40px 32px;
+      text-align: center;
+    }
+
+    /* Confirmation Badge */
+    .badge {
+      display: inline-block;
+      background-color: #ede5d5;
+      color: #4e6351;
+      font-size: 11px;
+      font-family: 'Sarabun', Arial, sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 99px;
+      margin-bottom: 20px;
+    }
+
+    .heading {
+      font-family: 'Mitr', Arial, sans-serif;
+      font-weight: 500;
+      font-size: 26px;
+      color: #2a3728;
+      margin-bottom: 14px;
+      line-height: 1.35;
+    }
+
+    .subtext {
+      font-family: 'Sarabun', Arial, sans-serif;
+      font-size: 15px;
+      color: #5b6e5b;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    /* CTA Button */
+    .cta-wrapper {
+      margin-bottom: 32px;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #627a62 0%, #4e6351 100%);
+      color: #f7f4ef !important;
+      text-decoration: none;
+      font-family: 'Mitr', Arial, sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      letter-spacing: 0.06em;
+      padding: 14px 40px;
+      border-radius: 99px;
+      transition: opacity 0.2s;
+    }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid #dde5dd;
+      margin: 0 0 24px;
+    }
+
+    /* Link fallback */
+    .link-fallback {
+      font-size: 12px;
+      color: #5b6e5b;
+      line-height: 1.7;
+      margin-bottom: 0;
+    }
+    .link-fallback a {
+      color: #627a62;
+      word-break: break-all;
+    }
+
+    /* ── Footer ─────────────────────────────── */
+    .footer {
+      background-color: #f2ede4;
+      border-top: 1px solid #dde5dd;
+      padding: 24px 40px;
+      text-align: center;
+    }
+    .footer-text {
+      font-size: 12px;
+      color: #7a8e7a;
+      line-height: 1.8;
+    }
+    .footer-text a {
+      color: #627a62;
+      text-decoration: none;
+    }
+
+    /* ── Responsive ─────────────────────────── */
+    @media (max-width: 560px) {
+      .body, .footer { padding-left: 24px; padding-right: 24px; }
+      .header { padding: 28px 24px; }
+      .heading { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-card">
+
+      <!-- ── Header ─────────────────────────── -->
+      <div class="header">
+        <!-- Flower2 icon (inline SVG, mirrors Lucide Flower2) -->
+        <div class="header-logo">
+          <svg class="header-logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+               fill="none" stroke="#f7f4ef" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m-4.5 3a4.5 4.5 0 1 0 4.5 4.5M7.5 12H9m7.5 0a4.5 4.5 0 1 1-4.5 4.5m4.5-4.5H15m-3 4.5V15"/>
+            <circle cx="12" cy="12" r="3"/>
+            <path d="m8 16 1.5-1.5M15.5 8.5 17 7M7 17l1-1M16 8l1-1"/>
+          </svg>
+          <span class="header-logo-name">ฟื้นใจ</span>
+        </div>
+        <div class="header-tagline">Massage &amp; Spa · ยืนยันอีเมล</div>
+      </div>
+
+      <!-- ── Body ──────────────────────────── -->
+      <div class="body">
+        <span class="badge">✉&nbsp; ยืนยันบัญชีผู้ใช้</span>
+
+        <h1 class="heading">ยินดีต้อนรับสู่ฟื้นใจ 🌿</h1>
+
+        <p class="subtext">
+          ขอบคุณที่สมัครสมาชิกกับเรา!<br />
+          กรุณากดปุ่มด้านล่างเพื่อยืนยันที่อยู่อีเมลของคุณ<br />
+          และเริ่มต้นการจองนวดแผนไทยกับเราได้เลย
+        </p>
+
+        <div class="cta-wrapper">
+          <a href="{{ .ConfirmationURL }}" class="cta-btn">
+            ยืนยันอีเมลของฉัน
+          </a>
+        </div>
+
+        <hr class="divider" />
+
+        <p class="link-fallback">
+          หากปุ่มด้านบนไม่ทำงาน ให้คัดลอกลิงก์นี้ไปวางในเบราว์เซอร์:<br />
+          <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+        </p>
+      </div>
+
+      <!-- ── Footer ────────────────────────── -->
+      <div class="footer">
+        <p class="footer-text">
+          อีเมลนี้ถูกส่งมาจากระบบอัตโนมัติของ <strong>ฟื้นใจ Massage &amp; Spa</strong><br />
+          หากคุณไม่ได้สมัครสมาชิก กรุณาเพิกเฉยต่ออีเมลฉบับนี้<br /><br />
+          &copy; 2025 ฟื้นใจ Massage &amp; Spa · All rights reserved.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
