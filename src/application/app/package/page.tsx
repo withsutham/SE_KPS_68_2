@@ -131,45 +131,45 @@ export default function PackagePage() {
     const historyPackages = Object.values(groupedMyPackages).filter(v => v.details.every(d => d.is_used));
 
     return (
-        <main className="flex-1 w-full">
-            {/* Background motif */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
-                <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
-                <div className="absolute top-1/2 -right-60 h-[400px] w-[400px] rounded-full bg-secondary/30 blur-3xl" />
-            </div>
+        <main className="min-h-screen bg-background font-mitr relative overflow-hidden">
+            {alertMessage && (
+                <div
+                    className={`fixed bottom-8 right-8 z-50 p-4 px-6 rounded-2xl shadow-xl border flex items-center gap-3 transition-all duration-300 animate-in slide-in-from-bottom-5 fade-in ${alertMessage.type === "success" ? "bg-[#f0fdf4] border-[#bbf7d0] text-[#166534]" : "bg-[#fef2f2] border-[#fecaca] text-[#991b1b]"}`}
+                >
+                    {alertMessage.type === "success" ? (
+                        <CheckCircle2 className="h-5 w-5 relative top-[1px]" />
+                    ) : (
+                        <AlertCircle className="h-5 w-5 relative top-[1px]" />
+                    )}
+                    <p className="font-medium font-sans">{alertMessage.message}</p>
+                </div>
+            )}
 
-            <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pt-8 pb-24 font-mitr">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
+            <div className="absolute top-[40%] right-[-10%] w-[30%] h-[50%] rounded-full bg-secondary/5 blur-[100px] pointer-events-none" />
+
+            <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 relative z-10 space-y-8">
                 {/* Header */}
-                <div className="mb-10 text-center">
-                    <p className="text-xs font-medium tracking-widest text-primary/60 uppercase font-sans mb-3">
-                        Massage & Spa
-                    </p>
-                    <h1 className="text-3xl md:text-4xl font-medium text-foreground">
-                        บริการแพคเกจ
+                <div className="flex flex-col items-center text-center mb-8 border-b border-border/50 pb-8">
+                    <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-foreground mb-3">
+                        แพคเกจและบริการ
                     </h1>
-                    <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-                        เลือกซื้อแพคเกจการนวดและสปาที่คุ้มค่ากว่า เพื่อความผ่อนคลายอย่างเหนือระดับ
+                    <p className="text-muted-foreground font-sans max-w-lg">
+                        จัดการแพคเกจของคุณ
+                        หรือซื้อแพคเกจใหม่การนวดและสปาเพื่อความผ่อนคลายอย่างเหนือระดับ
                     </p>
                 </div>
-
-                {alertMessage && (
-                    <div
-                        className={`fixed bottom-8 right-8 z-50 p-4 px-6 rounded-2xl shadow-xl border flex items-center gap-3 transition-all duration-300 animate-in slide-in-from-bottom-5 fade-in ${alertMessage.type === "success" ? "bg-[#f0fdf4] border-[#bbf7d0] text-[#166534]" : "bg-[#fef2f2] border-[#fecaca] text-[#991b1b]"}`}
-                    >
-                        {alertMessage.type === "success" ? (
-                            <CheckCircle2 className="h-5 w-5 relative top-[1px]" />
-                        ) : (
-                            <AlertCircle className="h-5 w-5 relative top-[1px]" />
-                        )}
-                        <p className="font-medium font-sans">{alertMessage.message}</p>
-                    </div>
-                )}
 
                 {/* Tabs Section */}
                 <Tabs defaultValue="my-packages" className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
                         <TabsTrigger value="my-packages" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <Ticket className="h-4 w-4" /> แพคเกจส่วนตัว
+                            {activePackages.length > 0 && (
+                                <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
+                                    {activePackages.length}
+                                </span>
+                            )}
                         </TabsTrigger>
                         <TabsTrigger value="discover" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <PlusCircle className="h-4 w-4" /> ซื้อแพคเกจ
@@ -180,7 +180,7 @@ export default function PackagePage() {
                     </TabsList>
 
                     {/* Active Packages Tab */}
-                    <TabsContent value="my-packages" className="mt-0">
+                    <TabsContent value="my-packages" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                         {activePackages.length === 0 ? (
                             <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-4">
                                 <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-2">
@@ -300,7 +300,7 @@ export default function PackagePage() {
                     </TabsContent>
 
                     {/* Discover Packages Tab */}
-                    <TabsContent value="discover" className="mt-0">
+                    <TabsContent value="discover" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                         {availablePackages.length === 0 ? (
                             <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-4">
                                 <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-2">
@@ -366,7 +366,7 @@ export default function PackagePage() {
                     </TabsContent>
 
                     {/* History Tab */}
-                    <TabsContent value="history" className="mt-0">
+                    <TabsContent value="history" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                         {historyPackages.length === 0 ? (
                             <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-4">
                                 <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-2">
