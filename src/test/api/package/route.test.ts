@@ -74,6 +74,8 @@ describe('package API', () => {
 
     expect(response.status).toBe(200);
     expect(json.success).toBe(true);
+    expect(mockSupabase.select).toHaveBeenCalledWith(expect.stringContaining('package_detail'));
+    expect(mockSupabase.select).not.toHaveBeenCalledWith(expect.stringContaining('quantity'));
   });
 
   it('PUT /api/package/[id] should update record', async () => {

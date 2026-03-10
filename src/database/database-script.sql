@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS member_package CASCADE;
 DROP TABLE IF EXISTS member_coupon CASCADE;
 DROP TABLE IF EXISTS payment CASCADE;
 DROP TABLE IF EXISTS booking CASCADE;
+DROP TABLE IF EXISTS package_order CASCADE;
 DROP TABLE IF EXISTS package_detail CASCADE;
 DROP TABLE IF EXISTS package CASCADE;
 DROP TABLE IF EXISTS coupon CASCADE;
@@ -138,6 +139,15 @@ CREATE TABLE package_detail (
     massage_id INT REFERENCES massage(massage_id) ON DELETE CASCADE
 );
 
+CREATE TABLE package_order (
+    package_order_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    package_id INT REFERENCES package(package_id) ON DELETE CASCADE,
+    order_dateTime TIMESTAMPTZ DEFAULT NOW(),
+    total_price NUMERIC(10, 2) NOT NULL,
+    payment_status TEXT DEFAULT 'pending'
+);
+
 CREATE TABLE booking (
     booking_id SERIAL PRIMARY KEY,
     customer_name TEXT NOT NULL,
@@ -145,6 +155,8 @@ CREATE TABLE booking (
     customer_email TEXT,
     booking_dateTime TIMESTAMPTZ NOT NULL,
     is_coupon_use BOOLEAN DEFAULT FALSE,
+    total_price NUMERIC(10, 2) DEFAULT 0,
+    payment_status TEXT DEFAULT 'pending',
     customer_id INT REFERENCES customer(customer_id) ON DELETE SET NULL
 );
 
@@ -154,7 +166,10 @@ CREATE TABLE payment (
     payment_method TEXT NOT NULL,
     payment_status TEXT DEFAULT 'pending',
     amount NUMERIC(10, 2) NOT NULL,
-    booking_id INT REFERENCES booking(booking_id) ON DELETE CASCADE
+    payment_slip_url TEXT,
+    payment_type TEXT DEFAULT 'full',
+    booking_id INT REFERENCES booking(booking_id) ON DELETE CASCADE,
+    package_order_id INT REFERENCES package_order(package_order_id) ON DELETE CASCADE
 );
 
 CREATE TABLE member_coupon (
@@ -170,8 +185,9 @@ CREATE TABLE member_package (
     member_package_id SERIAL PRIMARY KEY,
     is_used BOOLEAN DEFAULT FALSE,
     expire_dateTime TIMESTAMPTZ,
-    member_id INT REFERENCES customer(customer_id) ON DELETE CASCADE, 
-    package_detail_id INT REFERENCES package_detail(package_detail_id) ON DELETE CASCADE
+    member_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    package_detail_id INT REFERENCES package_detail(package_detail_id) ON DELETE CASCADE,
+    package_order_id INT REFERENCES package_order(package_order_id) ON DELETE CASCADE
 );
 
 CREATE TABLE booking_detail (

@@ -34,6 +34,7 @@ html {
     --chart-5: 27 30% 70%;
     --radius: 0.75rem;
   }
+
   .dark {
     --background: 142 15% 10%;
     --foreground: 40 10% 90%;
@@ -61,7 +62,23 @@ html {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@media print {
+
+  /* Hide password managers, grammar checkers, and other extensions injected into the body */
+  body>*:not(#app-root):not(script):not(style):not(noscript) {
+    display: none !important;
+  }
+
+  /* Fallback for extension portals that inject inside the #app-root but skip normal class names */
+  com-1password,
+  #bitwarden-extension-content,
+  [id^=lastpass] {
+    display: none !important;
   }
 }

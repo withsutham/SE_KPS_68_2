@@ -26,6 +26,7 @@ export interface BookingData {
   paymentMethod: "cash" | "qr" | "credit" | null;
   selectedCouponId?: number | null;
   discountAmount?: number;
+  paymentSlipFile?: File | null;
   // Step 5
   bookingId: string | null;
   bookingDetails: any[] | null;
@@ -42,6 +43,7 @@ export const INITIAL_BOOKING_DATA: BookingData = {
   paymentMethod: null,
   selectedCouponId: null,
   discountAmount: 0,
+  paymentSlipFile: null,
   bookingId: null,
   bookingDetails: null,
 };
