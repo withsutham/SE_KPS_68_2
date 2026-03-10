@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface Massage {
     massage_id: string;
@@ -19,6 +19,7 @@ interface SelectedMassage extends Massage {
 
 export default function CreatePackagePage() {
     const router = useRouter();
+    const pathname = usePathname();
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
@@ -37,6 +38,10 @@ export default function CreatePackagePage() {
         setSubmitting(false);
         fetchMassages();
     }, []);
+
+    useEffect(() => {
+        setMassageSearchTerm("");
+    }, [pathname]);
 
     async function fetchMassages() {
         setLoading(true);

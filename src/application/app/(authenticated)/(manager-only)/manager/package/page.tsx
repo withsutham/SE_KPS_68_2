@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface Package {
     package_id: string;
@@ -22,6 +23,7 @@ interface Package {
 }
 
 export default function PackagePage() {
+    const pathname = usePathname();
     const [packages, setPackages] = useState<Package[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -29,6 +31,10 @@ export default function PackagePage() {
     useEffect(() => {
         fetchPackages();
     }, []);
+
+    useEffect(() => {
+        setSearchTerm("");
+    }, [pathname]);
 
     async function fetchPackages() {
         setLoading(true);

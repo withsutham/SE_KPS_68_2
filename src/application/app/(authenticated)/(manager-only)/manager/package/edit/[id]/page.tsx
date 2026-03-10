@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,7 @@ function createUniqueId() {
 
 export default function EditPackagePage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
+    const pathname = usePathname();
     const resolvedParams = use(params);
     const packageId = resolvedParams.id;
 
@@ -54,6 +55,10 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
             void fetchInitialData();
         }
     }, [packageId]);
+
+    useEffect(() => {
+        setMassageSearchTerm("");
+    }, [pathname]);
 
     async function fetchInitialData() {
         setLoading(true);
