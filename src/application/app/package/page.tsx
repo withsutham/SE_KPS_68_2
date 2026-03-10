@@ -151,6 +151,9 @@ export default function PackagePage() {
             <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 relative z-10 space-y-8">
                 {/* Header */}
                 <div className="flex flex-col items-center text-center mb-8 border-b border-border/50 pb-8">
+                    <p className="text-xs font-medium tracking-widest text-primary/60 uppercase font-sans mb-3">
+                        ฟื้นใจ · Massage & Spa
+                    </p>
                     <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-foreground mb-3">
                         แพคเกจและบริการ
                     </h1>
