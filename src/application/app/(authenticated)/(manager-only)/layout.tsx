@@ -2,11 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 
-export default async function ManagerOnlyLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+import { Suspense } from "react";
+
+async function ManagerGuard({ children }: { children: React.ReactNode }) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -27,4 +25,16 @@ export default async function ManagerOnlyLayout({
     }
 
     return <>{children}</>;
+}
+
+export default function ManagerOnlyLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <Suspense>
+            <ManagerGuard>{children}</ManagerGuard>
+        </Suspense>
+    );
 }
