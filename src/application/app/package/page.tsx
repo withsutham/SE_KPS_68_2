@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink, AlertCircle, Ticket, PlusCircle, History } from "lucide-react";
+import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink, AlertCircle, Package, PlusCircle, History } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -164,7 +164,7 @@ export default function PackagePage() {
                 <Tabs defaultValue="my-packages" className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
                         <TabsTrigger value="my-packages" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
-                            <Ticket className="h-4 w-4" /> แพคเกจส่วนตัว
+                            <Package className="h-4 w-4" /> แพคเกจส่วนตัว
                             {activePackages.length > 0 && (
                                 <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
                                     {activePackages.length}
@@ -182,11 +182,11 @@ export default function PackagePage() {
                     {/* Active Packages Tab */}
                     <TabsContent value="my-packages" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                         {activePackages.length === 0 ? (
-                            <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-4">
-                                <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-2">
-                                    <Ticket className="h-10 w-10 text-muted-foreground/50" />
+                            <div className="bg-muted/30 border border-border/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+                                <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
+                                    <Package className="h-12 w-12" />
                                 </div>
-                                <p className="text-muted-foreground">คุณยังไม่มีแพคเกจที่พร้อมใช้งานในขณะนี้</p>
+                                <p className="text-lg text-muted-foreground">คุณยังไม่มีแพคเกจที่พร้อมใช้งานในขณะนี้</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -302,11 +302,11 @@ export default function PackagePage() {
                     {/* Discover Packages Tab */}
                     <TabsContent value="discover" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                         {availablePackages.length === 0 ? (
-                            <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-4">
-                                <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-2">
-                                    <PlusCircle className="h-10 w-10 text-muted-foreground/50" />
+                            <div className="bg-muted/30 border border-border/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+                                <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
+                                    <PlusCircle className="h-12 w-12" />
                                 </div>
-                                <p className="text-muted-foreground">ไม่มีแพคเกจที่เปิดขายในขณะนี้</p>
+                                <p className="text-lg text-muted-foreground">ไม่มีแพคเกจที่เปิดขายในขณะนี้</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -322,9 +322,6 @@ export default function PackagePage() {
                                     return (
                                         <Card key={pkg.package_id} className="flex flex-col group overflow-hidden border-border/60 hover:border-primary/40 transition-all hover:shadow-lg dark:hover:shadow-primary/5 bg-background">
                                             <CardHeader className="pb-4 relative pt-7">
-                                                <div className="absolute top-4 right-4 h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                                    <ShoppingCart className="h-5 w-5 text-primary" />
-                                                </div>
                                                 <CardTitle className="text-xl font-medium leading-tight">
                                                     {pkg.package_name}
                                                 </CardTitle>
@@ -368,11 +365,11 @@ export default function PackagePage() {
                     {/* History Tab */}
                     <TabsContent value="history" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                         {historyPackages.length === 0 ? (
-                            <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-4">
-                                <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-2">
-                                    <History className="h-10 w-10 text-muted-foreground/50" />
+                            <div className="bg-muted/30 border border-border/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+                                <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
+                                    <History className="h-12 w-12" />
                                 </div>
-                                <p className="text-muted-foreground">คุณยังไม่มีประวัติการใช้แพคเกจ</p>
+                                <p className="text-lg text-muted-foreground">คุณยังไม่มีประวัติการใช้แพคเกจ</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
