@@ -127,12 +127,12 @@ async function NavLinkGroup() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
             <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-              <Link href="/service-ip/manager/employee/timetable" className="w-full cursor-pointer py-2.5 px-3 text-base">
+              <Link href="/manager/employee/timetable" className="w-full cursor-pointer py-2.5 px-3 text-base">
                 ตารางทำงานพนักงาน
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-              <Link href="/service-ip/manager/employee/management" className="w-full cursor-pointer py-2.5 px-3 text-base">
+              <Link href="/manager/employee/management" className="w-full cursor-pointer py-2.5 px-3 text-base">
                 จัดการข้อมูลพนักงาน
               </Link>
             </DropdownMenuItem>
@@ -140,25 +140,25 @@ async function NavLinkGroup() {
         </DropdownMenu>
 
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/service-ip/manager/booking" className="text-sm">
+          <Link href="/manager/booking" className="text-sm">
             จัดการการจอง
           </Link>
         </Button>
 
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/service-ip/manager/package" className="text-sm">
+          <Link href="/manager/package" className="text-sm">
             จัดการแพคเกจ
           </Link>
         </Button>
 
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/service-ip/manager/coupon" className="text-sm">
+          <Link href="/manager/coupon" className="text-sm">
             จัดการคูปอง
           </Link>
         </Button>
 
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/service-ip/manager/dashboard" className="text-sm">
+          <Link href="/manager/dashboard" className="text-sm">
             แดชบอร์ด
           </Link>
         </Button>
@@ -177,7 +177,7 @@ async function NavLinkGroup() {
           ดูบริการนวด
         </NavScrollLink>
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/service-ip/manager/employee/timetable" className="text-sm">
+          <Link href="/manager/employee/timetable" className="text-sm">
             ตารางทำงาน
           </Link>
         </Button>
