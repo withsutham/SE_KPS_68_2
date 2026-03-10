@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   Banknote,
   QrCode,
-  CreditCard,
   Lock,
   Loader2,
   Ticket,
@@ -24,12 +23,6 @@ const PAYMENT_METHODS = [
     icon: QrCode,
     label: "QR PromptPay",
     sublabel: "โอนผ่าน QR Code",
-  },
-  {
-    id: "credit" as const,
-    icon: CreditCard,
-    label: "บัตรเครดิต/เดบิต",
-    sublabel: "Visa, Mastercard",
   },
 ];
 
@@ -327,7 +320,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
           <h3 className="font-medium font-mitr mb-4 text-foreground">
             วิธีชำระเงินมัดจำ
           </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             {PAYMENT_METHODS.map((method) => {
               const Icon = method.icon;
               const selected = data.paymentMethod === method.id;
