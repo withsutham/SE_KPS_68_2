@@ -177,7 +177,7 @@ export default function PackagePage() {
                         <TabsTrigger value="my-packages" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <Package className="h-4 w-4" /> แพคเกจของฉัน
                             <span className={cn(
-                                "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                                "ml-1.5 text-[10px] h-5 min-w-[20px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
                                 activeTab === "my-packages" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                             )}>
                                 {activePackages.length}
@@ -189,7 +189,7 @@ export default function PackagePage() {
                         <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <History className="h-4 w-4" /> ประวัติ
                             <span className={cn(
-                                "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                                "ml-1.5 text-[10px] h-5 min-w-[20px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
                                 activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                             )}>
                                 {historyPackages.length}

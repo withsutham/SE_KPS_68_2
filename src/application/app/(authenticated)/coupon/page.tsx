@@ -216,7 +216,7 @@ export default function CouponPage() {
                 <Ticket className="h-4 w-4" />
                 คูปองของฉัน
                 <span className={cn(
-                  "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                  "ml-1.5 text-[10px] h-5 min-w-[20px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
                   activeTab === "my-coupons" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                 )}>
                   {activeCoupons.length}
@@ -242,7 +242,7 @@ export default function CouponPage() {
                 <History className="h-4 w-4" />
                 ประวัติ
                 <span className={cn(
-                  "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                  "ml-1.5 text-[10px] h-5 min-w-[20px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
                   activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                 )}>
                   {historyCoupons.length}
