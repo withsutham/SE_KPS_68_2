@@ -84,7 +84,6 @@ export function PaymentDialog({ open, onClose, pkg, customerId, onSuccess }: Pay
             });
 
             if (res.ok) {
-                alert("ดำเนินการสั่งซื้อแพคเกจสำเร็จ รอการตรวจสอบจากผู้ดูแล");
                 onSuccess();
                 onClose();
             } else {
