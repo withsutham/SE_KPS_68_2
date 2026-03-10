@@ -182,7 +182,10 @@ export default function PackagePage() {
                     {/* Active Packages Tab */}
                     <TabsContent value="my-packages" className="mt-0">
                         {activePackages.length === 0 ? (
-                            <div className="text-center py-10 bg-muted/20 rounded-xl border border-dashed border-border">
+                            <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-4">
+                                <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-2">
+                                    <Ticket className="h-10 w-10 text-muted-foreground/50" />
+                                </div>
                                 <p className="text-muted-foreground">คุณยังไม่มีแพคเกจที่พร้อมใช้งานในขณะนี้</p>
                             </div>
                         ) : (
@@ -299,7 +302,10 @@ export default function PackagePage() {
                     {/* Discover Packages Tab */}
                     <TabsContent value="discover" className="mt-0">
                         {availablePackages.length === 0 ? (
-                            <div className="text-center py-10 bg-muted/20 rounded-xl border border-dashed border-border">
+                            <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-4">
+                                <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-2">
+                                    <PlusCircle className="h-10 w-10 text-muted-foreground/50" />
+                                </div>
                                 <p className="text-muted-foreground">ไม่มีแพคเกจที่เปิดขายในขณะนี้</p>
                             </div>
                         ) : (
@@ -362,7 +368,10 @@ export default function PackagePage() {
                     {/* History Tab */}
                     <TabsContent value="history" className="mt-0">
                         {historyPackages.length === 0 ? (
-                            <div className="text-center py-10 bg-muted/20 rounded-xl border border-dashed border-border">
+                            <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-4">
+                                <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-2">
+                                    <History className="h-10 w-10 text-muted-foreground/50" />
+                                </div>
                                 <p className="text-muted-foreground">คุณยังไม่มีประวัติการใช้แพคเกจ</p>
                             </div>
                         ) : (
