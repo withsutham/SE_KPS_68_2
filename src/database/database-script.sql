@@ -145,6 +145,8 @@ CREATE TABLE booking (
     customer_email TEXT,
     booking_dateTime TIMESTAMPTZ NOT NULL,
     is_coupon_use BOOLEAN DEFAULT FALSE,
+    total_price NUMERIC(10, 2) DEFAULT 0,
+    payment_status TEXT DEFAULT 'pending',
     customer_id INT REFERENCES customer(customer_id) ON DELETE SET NULL
 );
 
@@ -155,6 +157,7 @@ CREATE TABLE payment (
     payment_status TEXT DEFAULT 'pending',
     amount NUMERIC(10, 2) NOT NULL,
     payment_slip_url TEXT,
+    payment_type TEXT DEFAULT 'full',
     booking_id INT REFERENCES booking(booking_id) ON DELETE CASCADE
 );
 
