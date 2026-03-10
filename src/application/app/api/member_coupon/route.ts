@@ -2,8 +2,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
+    const { searchParams } = new URL(request.url);
+    const customer_id = searchParams.get("customer_id");
+
     const supabase = await createAdminClient();
-    const { data, error } = await supabase.from("member_coupon").select("*");
+    let query = supabase.from("member_coupon").select("*, coupon(*)");
+
+    if (customer_id && customer_id !== "undefined") {
+        query = query.eq("customer_id", customer_id);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         console.error("member_coupon GET error:", error.message);
