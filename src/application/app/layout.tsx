@@ -49,7 +49,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div id="app-root" className="min-h-screen flex flex-col bg-background text-foreground font-sans selection:bg-primary/30">
+          <div id="app-root" className="min-h-screen print:min-h-0 flex flex-col bg-background text-foreground font-sans selection:bg-primary/30">
             <Nav />
             {children}
             <Footer />
