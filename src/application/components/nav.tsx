@@ -26,13 +26,6 @@ export function Nav() {
           </Link>
 
           <div className="hidden md:flex items-center gap-2">
-            <NavScrollLink
-              href="/#services"
-              className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
-            >
-              ดูบริการนวด
-            </NavScrollLink>
-
             <Suspense fallback={null}>
               <NavLinkGroup />
             </Suspense>
@@ -54,7 +47,16 @@ async function NavLinkGroup() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <NavScrollLink
+        href="/#services"
+        className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
+      >
+        ดูบริการนวด
+      </NavScrollLink>
+    );
+  }
 
   // Use admin client to read the profile — user identity already verified above via getUser()
   const adminSupabase = await createAdminClient();
@@ -70,6 +72,12 @@ async function NavLinkGroup() {
   if (role === "customer") {
     return (
       <>
+        <NavScrollLink
+          href="/#services"
+          className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
+        >
+          ดูบริการนวด
+        </NavScrollLink>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
@@ -161,13 +169,29 @@ async function NavLinkGroup() {
   // therapist — can view their own timetable
   if (role === "therapist") {
     return (
-      <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-        <Link href="/service-ip/manager/employee/timetable" className="text-sm">
-          ตารางทำงาน
-        </Link>
-      </Button>
+      <>
+        <NavScrollLink
+          href="/#services"
+          className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
+        >
+          ดูบริการนวด
+        </NavScrollLink>
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/employee/timetable" className="text-sm">
+            ตารางทำงาน
+          </Link>
+        </Button>
+      </>
     );
   }
 
-  return null;
+  // for any other authenticated role (just in case)
+  return (
+    <NavScrollLink
+      href="/#services"
+      className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
+    >
+      ดูบริการนวด
+    </NavScrollLink>
+  );
 }
