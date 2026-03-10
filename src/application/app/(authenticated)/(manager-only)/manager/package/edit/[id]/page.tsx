@@ -93,7 +93,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
             setSelectedMassages(loadedMassages);
         } catch (error) {
             console.error("Error fetching initial data:", error);
-            alert("Failed to load package data");
+            alert("โหลดข้อมูลแพคเกจล้มเหลว");
         } finally {
             setLoading(false);
         }
@@ -138,7 +138,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
 
             if (!packageRes.ok) {
                 const err = await packageRes.json();
-                alert("Error updating package: " + err.error);
+                alert("เกิดข้อผิดพลาดในการอัปเดตแพคเกจ: " + err.error);
                 setSubmitting(false);
                 return;
             }
@@ -149,7 +149,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
 
             if (!deleteDetailsRes.ok) {
                 const err = await deleteDetailsRes.json();
-                alert("Error clearing package massages: " + (err.error || "Unknown error"));
+                alert("เกิดข้อผิดพลาดในการล้างบริการนวดของแพคเกจ: " + (err.error || "ข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
                 setSubmitting(false);
                 return;
             }
@@ -168,7 +168,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
 
                 if (!detailsRes.ok) {
                     const err = await detailsRes.json();
-                    alert("Error updating package massages: " + (err.error || "Unknown error"));
+                    alert("เกิดข้อผิดพลาดในการอัปเดตบริการนวดของแพคเกจ: " + (err.error || "ข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
                     setSubmitting(false);
                     return;
                 }
@@ -177,35 +177,35 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
             router.push("/manager/package");
         } catch (error) {
             console.error("Error updating package:", error);
-            alert("Unexpected error occurred.");
+            alert("เกิดข้อผิดพลาดที่ไม่คาดคิด");
         } finally {
             setSubmitting(false);
         }
     }
 
     if (loading) {
-        return <div className="p-8 text-center">Loading...</div>;
+        return <div className="p-8 text-center font-mitr">กำลังโหลด...</div>;
     }
 
     return (
-        <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 p-8">
+        <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 p-8 font-mitr">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">Edit Package</h1>
+                <h1 className="text-3xl font-bold">แก้ไขแพคเกจ</h1>
                 <Button variant="outline" onClick={() => router.push("/manager/package")}>
-                    Back to List
+                    กลับไปหน้ารายการ
                 </Button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 h-fit min-w-0">
-                    <h3 className="text-xl font-semibold mb-6">Package Details</h3>
+                    <h3 className="text-xl font-semibold mb-6">รายละเอียดแพคเกจ</h3>
 
                     <form id="edit-package-form" onSubmit={handleSavePackage} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="packageName">Package Name</Label>
+                            <Label htmlFor="packageName">ชื่อแพคเกจ</Label>
                             <Input
                                 id="packageName"
-                                placeholder="e.g. Premium Spa 2 Hours"
+                                placeholder="เช่น พรีเมียมสปา 2 ชั่วโมง"
                                 value={packageName}
                                 onChange={(e) => setPackageName(e.target.value)}
                                 required
@@ -213,7 +213,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="packagePrice">Package Selling Price (THB)</Label>
+                            <Label htmlFor="packagePrice">ราคาขายแพคเกจ (บาท)</Label>
                             <Input
                                 id="packagePrice"
                                 type="number"
@@ -224,13 +224,13 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                                 required
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                                Recommendation: Total price of individual massages is THB {totalPriceOfMassages.toLocaleString()}
+                                คำแนะนำ: ราคารวมของบริการนวดแบบเดี่ยวคือ ฿{totalPriceOfMassages.toLocaleString()}
                             </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="startDate">Campaign Start Date</Label>
+                                <Label htmlFor="startDate">วันที่เริ่มต้นแคมเปญ</Label>
                                 <Input
                                     id="startDate"
                                     type="date"
@@ -240,7 +240,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="endDate">Campaign End Date</Label>
+                                <Label htmlFor="endDate">วันที่สิ้นสุดแคมเปญ</Label>
                                 <Input
                                     id="endDate"
                                     type="date"
@@ -252,7 +252,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
 
                         <div className="flex justify-start gap-4 pt-4">
                             <Button type="button" variant="outline" onClick={() => router.push("/manager/package")} disabled={submitting}>
-                                Cancel
+                                ยกเลิก
                             </Button>
                             <Button
                                 type="submit"
@@ -260,7 +260,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                                 className="min-w-[150px]"
                                 disabled={submitting}
                             >
-                                {submitting ? "Saving..." : "Save Changes"}
+                                {submitting ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
                             </Button>
                         </div>
                     </form>
@@ -268,11 +268,11 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
 
                 <div className="flex min-w-0 flex-col gap-6">
                     <div className="bg-emerald-50 p-6 rounded-lg shadow-sm border border-emerald-100 min-w-0">
-                        <h3 className="text-lg font-semibold text-emerald-800 mb-4">Included Massages in Package</h3>
+                        <h3 className="text-lg font-semibold text-emerald-800 mb-4">บริการนวดที่รวมอยู่ในแพคเกจ</h3>
 
                         {selectedMassages.length === 0 ? (
                             <p className="text-emerald-600/60 italic text-sm text-center py-4 bg-white/50 rounded-md">
-                                No massages added yet. Select from the list below.
+                                ยังไม่ได้เพิ่มบริการนวด กรุณาเลือกจากรายการด้านล่าง
                             </p>
                         ) : (
                             <>
@@ -285,7 +285,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                                                 </span>
                                                 <div>
                                                     <p className="font-medium text-emerald-950">{massage.massage_name}</p>
-                                                    <p className="text-xs text-emerald-600">{massage.massage_time} mins | THB {massage.massage_price}</p>
+                                                    <p className="text-xs text-emerald-600">{massage.massage_time} นาที | ฿{massage.massage_price}</p>
                                                 </div>
                                             </div>
                                             <Button
@@ -302,12 +302,12 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
 
                                 <div className="border-t border-emerald-200 pt-4 flex justify-between items-end">
                                     <div className="text-emerald-800">
-                                        <p className="text-sm">Total Duration:</p>
-                                        <p className="text-2xl font-bold">{totalTime} <span className="text-base font-normal">mins</span></p>
+                                        <p className="text-sm">ระยะเวลารวม:</p>
+                                        <p className="text-2xl font-bold">{totalTime} <span className="text-base font-normal">นาที</span></p>
                                     </div>
                                     <div className="text-emerald-800 text-right">
-                                        <p className="text-sm">Individual Total Value:</p>
-                                        <p className="text-2xl font-bold">THB {totalPriceOfMassages.toLocaleString()}</p>
+                                        <p className="text-sm">มูลค่ารวมแบบเดี่ยว:</p>
+                                        <p className="text-2xl font-bold">฿{totalPriceOfMassages.toLocaleString()}</p>
                                     </div>
                                 </div>
                             </>
@@ -316,33 +316,34 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
 
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 min-w-0">
                         <div className="flex min-w-0 flex-col gap-4 mb-4">
-                            <h3 className="text-xl font-semibold">Available Massages</h3>
+                            <h3 className="text-xl font-semibold">บริการนวดที่มีอยู่</h3>
                             <Input
                                 value={massageSearchTerm}
                                 onChange={(e) => setMassageSearchTerm(e.target.value)}
-                                placeholder="Search massage name"
-                                className="w-full min-w-0"
+                                placeholder="ค้นหาชื่อบริการนวด"
+                                className="w-full min-w-0 font-mitr"
                             />
                         </div>
                         {filteredAvailableMassages.length === 0 ? (
-                            <p className="text-gray-500 text-center py-4">No massages match your search.</p>
+                            <p className="text-gray-500 text-center py-4 font-mitr">ไม่พบบริการนวดที่ตรงกับการค้นหา</p>
                         ) : (
                             <div className="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
-                            {filteredAvailableMassages.map((massage) => (
-                                <div key={massage.massage_id} className="flex min-w-0 justify-between items-center p-3 border rounded-lg hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors">
-                                    <div className="min-w-0">
-                                        <p className="font-medium text-sm">{massage.massage_name}</p>
-                                        <p className="text-xs text-gray-500">{massage.massage_time} min | THB {massage.massage_price}</p>
+                                {filteredAvailableMassages.map((massage) => (
+                                    <div key={massage.massage_id} className="flex min-w-0 justify-between items-center p-3 border rounded-lg hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors">
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-sm">{massage.massage_name}</p>
+                                            <p className="text-xs text-gray-500">{massage.massage_time} นาที | ฿{massage.massage_price}</p>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            variant="secondary"
+                                            onClick={() => addMassageToPackage(massage)}
+                                            className="font-mitr"
+                                        >
+                                            + เพิ่ม
+                                        </Button>
                                     </div>
-                                    <Button
-                                        size="sm"
-                                        variant="secondary"
-                                        onClick={() => addMassageToPackage(massage)}
-                                    >
-                                        + Add
-                                    </Button>
-                                </div>
-                            ))}
+                                ))}
                             </div>
                         )}
                     </div>
