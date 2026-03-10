@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
 interface Package {
@@ -23,6 +24,7 @@ interface Package {
 export default function PackagePage() {
     const [packages, setPackages] = useState<Package[]>([]);
     const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         fetchPackages();
@@ -63,8 +65,20 @@ export default function PackagePage() {
         }
     }
 
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+    const filteredPackages = packages.filter((pkg) => {
+        if (!normalizedSearchTerm) return true;
+
+        const matchesPackageName = pkg.package_name.toLowerCase().includes(normalizedSearchTerm);
+        const matchesMassageName = (pkg.package_detail || []).some((detail) =>
+            detail.massage?.massage_name?.toLowerCase().includes(normalizedSearchTerm),
+        );
+
+        return matchesPackageName || matchesMassageName;
+    });
+
     return (
-        <div className="p-8 max-w-5xl mx-auto">
+        <div className="w-full min-w-0 max-w-5xl mx-auto p-8">
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold">Package Management</h1>
                 <Link href="/manager/package/create">
@@ -72,15 +86,25 @@ export default function PackagePage() {
                 </Link>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                <h3 className="text-xl font-semibold mb-4">Packages List</h3>
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 w-full min-w-0">
+                <div className="flex min-w-0 flex-col gap-4 mb-4">
+                    <h3 className="text-xl font-semibold">Packages List</h3>
+                    <Input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search by package name or massage name"
+                        className="w-full min-w-0 max-w-md"
+                    />
+                </div>
                 
                 {loading ? (
                     <p className="text-gray-500 text-center py-8">Loading packages...</p>
                 ) : packages.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">No packages found.</p>
+                ) : filteredPackages.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">No packages match your search.</p>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className="w-full min-w-0 overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b text-gray-600 bg-gray-50">
@@ -92,7 +116,7 @@ export default function PackagePage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {packages.map((pkg) => (
+                                {filteredPackages.map((pkg) => (
                                     <tr key={pkg.package_id} className="border-b hover:bg-gray-50 transition-colors">
                                         <td className="py-3 px-4 font-medium">{pkg.package_name}</td>
                                         <td className="py-3 px-4 text-emerald-600 font-semibold">

@@ -31,6 +31,7 @@ export default function CreatePackagePage() {
     // Massages
     const [availableMassages, setAvailableMassages] = useState<Massage[]>([]);
     const [selectedMassages, setSelectedMassages] = useState<SelectedMassage[]>([]);
+    const [massageSearchTerm, setMassageSearchTerm] = useState("");
 
     useEffect(() => {
         setSubmitting(false);
@@ -69,6 +70,10 @@ export default function CreatePackagePage() {
     // Calculations
     const totalTime = selectedMassages.reduce((sum, m) => sum + m.massage_time, 0);
     const totalPriceOfMassages = selectedMassages.reduce((sum, m) => sum + m.massage_price, 0);
+    const normalizedMassageSearchTerm = massageSearchTerm.trim().toLowerCase();
+    const filteredAvailableMassages = availableMassages.filter((massage) =>
+        massage.massage_name.toLowerCase().includes(normalizedMassageSearchTerm),
+    );
 
     async function handleSavePackage(e: React.FormEvent) {
         e.preventDefault();
@@ -134,7 +139,7 @@ export default function CreatePackagePage() {
     }
 
     return (
-        <div className="p-8 max-w-6xl mx-auto flex flex-col gap-6">
+        <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 p-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold">Create New Package</h1>
                 <Button variant="outline" onClick={() => router.push("/manager/package")}>
@@ -144,7 +149,7 @@ export default function CreatePackagePage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Left Column: Form Info */}
-                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 h-fit">
+                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 h-fit min-w-0">
                     <h3 className="text-xl font-semibold mb-6">Package Details</h3>
                     
                     <form id="create-package-form" onSubmit={handleSavePackage} className="space-y-4">
@@ -214,9 +219,9 @@ export default function CreatePackagePage() {
                 </div>
 
                 {/* Right Column: Massage Selection */}
-                <div className="flex flex-col gap-6">
+                <div className="flex min-w-0 flex-col gap-6">
                     {/* Selected Massages Summary */}
-                    <div className="bg-emerald-50 p-6 rounded-lg shadow-sm border border-emerald-100">
+                    <div className="bg-emerald-50 p-6 rounded-lg shadow-sm border border-emerald-100 min-w-0">
                         <h3 className="text-lg font-semibold text-emerald-800 mb-4">Included Massages in Package</h3>
                         
                         {selectedMassages.length === 0 ? (
@@ -264,15 +269,25 @@ export default function CreatePackagePage() {
                     </div>
 
                     {/* Available Massages to Pick */}
-                    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                        <h3 className="text-xl font-semibold mb-4">Available Massages</h3>
+                    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 min-w-0">
+                        <div className="flex min-w-0 flex-col gap-4 mb-4">
+                            <h3 className="text-xl font-semibold">Available Massages</h3>
+                            <Input
+                                value={massageSearchTerm}
+                                onChange={(e) => setMassageSearchTerm(e.target.value)}
+                                placeholder="Search massage name"
+                                className="w-full min-w-0"
+                            />
+                        </div>
                         {loading ? (
                             <p className="text-gray-500 text-center py-4">Loading...</p>
+                        ) : filteredAvailableMassages.length === 0 ? (
+                            <p className="text-gray-500 text-center py-4">No massages match your search.</p>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
-                                {availableMassages.map((massage) => (
-                                    <div key={massage.massage_id} className="flex justify-between items-center p-3 border rounded-lg hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors">
-                                        <div>
+                            <div className="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
+                                {filteredAvailableMassages.map((massage) => (
+                                    <div key={massage.massage_id} className="flex min-w-0 justify-between items-center p-3 border rounded-lg hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors">
+                                        <div className="min-w-0">
                                             <p className="font-medium text-sm">{massage.massage_name}</p>
                                             <p className="text-xs text-gray-500">{massage.massage_time} min | ฿{massage.massage_price}</p>
                                         </div>
