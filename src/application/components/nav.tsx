@@ -26,13 +26,6 @@ export function Nav() {
           </Link>
 
           <div className="hidden md:flex items-center gap-2">
-            <NavScrollLink
-              href="/#services"
-              className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
-            >
-              ดูบริการนวด
-            </NavScrollLink>
-
             <Suspense fallback={null}>
               <NavLinkGroup />
             </Suspense>
@@ -54,7 +47,16 @@ async function NavLinkGroup() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <NavScrollLink
+        href="/#services"
+        className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
+      >
+        ดูบริการนวด
+      </NavScrollLink>
+    );
+  }
 
   // Use admin client to read the profile — user identity already verified above via getUser()
   const adminSupabase = await createAdminClient();
@@ -70,6 +72,12 @@ async function NavLinkGroup() {
   if (role === "customer") {
     return (
       <>
+        <NavScrollLink
+          href="/#services"
+          className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
+        >
+          ดูบริการนวด
+        </NavScrollLink>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
@@ -106,42 +114,84 @@ async function NavLinkGroup() {
     );
   }
 
-  // manager, shop_owner — can manage employees
+  // manager, shop_owner — can manage employees, bookings, packages, coupons and see dashboard
   if (role === "manager" || role === "shop_owner") {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
-            <span className="text-sm">พนักงาน</span>
-            <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
-          <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-            <Link href="/service-ip/manager/employee/timetable" className="w-full cursor-pointer py-2.5 px-3 text-base">
-              ตารางทำงานเทอราปิส
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-            <Link href="/service-ip/manager/employee/management" className="w-full cursor-pointer py-2.5 px-3 text-base">
-              จัดการข้อมูลพนักงาน
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
+              <span className="text-sm">พนักงาน</span>
+              <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/service-ip/manager/employee/timetable" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                ตารางทำงานพนักงาน
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/service-ip/manager/employee/management" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                จัดการข้อมูลพนักงาน
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/booking" className="text-sm">
+            จัดการการจอง
+          </Link>
+        </Button>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/package" className="text-sm">
+            จัดการแพคเกจ
+          </Link>
+        </Button>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/coupon" className="text-sm">
+            จัดการคูปอง
+          </Link>
+        </Button>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/dashboard" className="text-sm">
+            แดชบอร์ด
+          </Link>
+        </Button>
+      </>
     );
   }
 
   // therapist — can view their own timetable
   if (role === "therapist") {
     return (
-      <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-        <Link href="/service-ip/manager/employee/timetable" className="text-sm">
-          ตารางทำงาน
-        </Link>
-      </Button>
+      <>
+        <NavScrollLink
+          href="/#services"
+          className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
+        >
+          ดูบริการนวด
+        </NavScrollLink>
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/employee/timetable" className="text-sm">
+            ตารางทำงาน
+          </Link>
+        </Button>
+      </>
     );
   }
 
-  return null;
+  // for any other authenticated role (just in case)
+  return (
+    <NavScrollLink
+      href="/#services"
+      className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
+    >
+      ดูบริการนวด
+    </NavScrollLink>
+  );
 }
