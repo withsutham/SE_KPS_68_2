@@ -9,7 +9,7 @@ async function ManagerGuard({ children }: { children: React.ReactNode }) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        redirect("/auth/login");
+        redirect("/auth/login?message=auth_required");
     }
 
     const adminSupabase = await createAdminClient();

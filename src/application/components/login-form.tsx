@@ -65,6 +65,11 @@ export function LoginForm({
               กรุณาเข้าสู่ระบบก่อนทำการจองบริการ
             </div>
           )}
+          {message === "auth_required" && (
+            <div className="bg-amber-100 text-amber-900 text-sm p-3 mb-6 rounded-md font-mitr border border-amber-200">
+              กรุณาเข้าสู่ระบบก่อนเข้าใช้งานหน้านี้
+            </div>
+          )}
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
