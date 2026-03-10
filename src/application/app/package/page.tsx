@@ -14,6 +14,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { PaymentDialog } from "@/components/package/payment-dialog";
 
 export default function PackagePage() {
     const router = useRouter();
@@ -23,7 +24,7 @@ export default function PackagePage() {
     const [availablePackages, setAvailablePackages] = useState<any[]>([]);
     const [myPackages, setMyPackages] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [buyingPackageId, setBuyingPackageId] = useState<number | null>(null);
+    const [selectedPackageToBuy, setSelectedPackageToBuy] = useState<any>(null);
 
     // Check auth and fetch user ID
     useEffect(() => {
@@ -88,43 +89,7 @@ export default function PackagePage() {
         }
     };
 
-    const handleBuyPackage = async (pkg: any) => {
-        if (!customerId) return;
-        setBuyingPackageId(pkg.package_id);
-
-        try {
-            // For each package_detail, create a member_package
-            const details = pkg.package_detail;
-
-            const insertPromises = details.map((d: any) => fetch('/api/member_package', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    member_id: customerId,
-                    package_detail_id: d.package_detail_id,
-                    is_used: false,
-                    expire_datetime: null
-                })
-            }));
-
-            const results = await Promise.all(insertPromises);
-            const hasError = results.some(r => !r.ok);
-
-            if (!hasError) {
-                // Refresh packages
-                await fetchPackages();
-                // Give time for user to see they bought it
-                alert("Package purchased successfully!");
-            } else {
-                alert("Failed to purchase package");
-            }
-        } catch (e) {
-            console.error(e);
-            alert("Failed to purchase package");
-        } finally {
-            setBuyingPackageId(null);
-        }
-    };
+    // Using PaymentDialog instead of handleBuyPackage
 
     if (isAuthenticating || isLoading) {
         return (
@@ -307,7 +272,6 @@ export default function PackagePage() {
                                 const end = pkg.campaign_end_datetime ? new Date(pkg.campaign_end_datetime) : null;
                                 return (!start || start <= now) && (!end || end >= now);
                             }).map((pkg) => {
-                                const isBuying = buyingPackageId === pkg.package_id;
                                 const endStr = pkg.campaign_end_datetime
                                     ? new Date(pkg.campaign_end_datetime).toLocaleDateString("th-TH") : "";
 
@@ -345,17 +309,9 @@ export default function PackagePage() {
                                             <Button
                                                 className="w-full gap-2 transition-all shadow-md group-hover:shadow-lg"
                                                 size="lg"
-                                                onClick={() => handleBuyPackage(pkg)}
-                                                disabled={isBuying || !!buyingPackageId}
+                                                onClick={() => setSelectedPackageToBuy(pkg)}
                                             >
-                                                {isBuying ? (
-                                                    <>
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                        กำลังดำเนินการ...
-                                                    </>
-                                                ) : (
-                                                    "ซื้อแพคเกจนี้"
-                                                )}
+                                                ซื้อแพคเกจนี้
                                             </Button>
                                         </CardFooter>
                                     </Card>
@@ -364,6 +320,18 @@ export default function PackagePage() {
                         </div>
                     )}
                 </section>
+
+                {/* Include Payment Dialog */}
+                <PaymentDialog
+                    open={!!selectedPackageToBuy}
+                    onClose={() => setSelectedPackageToBuy(null)}
+                    pkg={selectedPackageToBuy}
+                    customerId={customerId}
+                    onSuccess={() => {
+                        setSelectedPackageToBuy(null);
+                        fetchPackages();
+                    }}
+                />
 
             </div>
         </main>
