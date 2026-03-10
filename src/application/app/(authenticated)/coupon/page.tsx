@@ -208,7 +208,7 @@ export default function CouponPage() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
+            <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans overflow-visible">
               <TabsTrigger
                 value="my-coupons"
                 className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
@@ -224,10 +224,16 @@ export default function CouponPage() {
               </TabsTrigger>
               <TabsTrigger
                 value="discover"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full relative overflow-visible"
               >
                 <PlusCircle className="h-4 w-4" />
-                มี {collectableCoupons.length} คูปองสามารถเก็บได้
+                เก็บเพิ่ม
+                {collectableCoupons.length > 0 && (
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-primary text-primary-foreground text-[10px] rounded-xl shadow-lg whitespace-nowrap animate-in fade-in zoom-in duration-300 font-bold">
+                    มี {collectableCoupons.length} คูปองสามารถเก็บได้
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45" />
+                  </div>
+                )}
               </TabsTrigger>
               <TabsTrigger
                 value="history"
