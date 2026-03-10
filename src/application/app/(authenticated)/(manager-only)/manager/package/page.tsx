@@ -1,0 +1,183 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+interface Package {
+    package_id: string;
+    package_name: string;
+    package_price: number;
+    campaign_start_datetime: string | null;
+    campaign_end_datetime: string | null;
+    package_detail?: {
+        massage: {
+            massage_name: string;
+            massage_id: string;
+            massage_price: number;
+            massage_time: number;
+        };
+    }[];
+}
+
+export default function PackagePage() {
+    const pathname = usePathname();
+    const [packages, setPackages] = useState<Package[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    useEffect(() => {
+        fetchPackages();
+    }, []);
+
+    useEffect(() => {
+        setSearchTerm("");
+    }, [pathname]);
+
+    async function fetchPackages() {
+        setLoading(true);
+        try {
+            const res = await fetch("/api/package");
+            const json = await res.json();
+            if (json.success) {
+                setPackages(json.data || []);
+            } else {
+                console.error("Failed to fetch packages:", json.error);
+            }
+        } catch (error) {
+            console.error("Error fetching packages:", error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function deletePackage(id: string) {
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบแพคเกจนี้?")) return;
+
+        try {
+            const res = await fetch(`/api/package/${id}`, {
+                method: "DELETE",
+            });
+            if (res.ok) {
+                fetchPackages();
+            } else {
+                const errorJson = await res.json();
+                alert("เกิดข้อผิดพลาดในการลบแพคเกจ: " + errorJson.error);
+            }
+        } catch (error) {
+            console.error("Error deleting package:", error);
+        }
+    }
+
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+    const filteredPackages = packages.filter((pkg) => {
+        if (!normalizedSearchTerm) return true;
+
+        const matchesPackageName = pkg.package_name.toLowerCase().includes(normalizedSearchTerm);
+        const matchesMassageName = (pkg.package_detail || []).some((detail) =>
+            detail.massage?.massage_name?.toLowerCase().includes(normalizedSearchTerm),
+        );
+
+        return matchesPackageName || matchesMassageName;
+    });
+
+    return (
+        <div className="w-full min-w-0 max-w-5xl mx-auto p-8 font-mitr">
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">จัดการแพคเกจ</h1>
+                <Link href="/manager/package/create">
+                    <Button>+ สร้างแพคเกจใหม่</Button>
+                </Link>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 w-full min-w-0">
+                <div className="flex min-w-0 flex-col gap-4 mb-4">
+                    <h3 className="text-xl font-semibold">รายการแพคเกจ</h3>
+                    <Input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="ค้นหาด้วยชื่อแพคเกจหรือชื่อบริการนวด"
+                        className="w-full min-w-0 max-w-md font-mitr"
+                    />
+                </div>
+
+                {loading ? (
+                    <p className="text-gray-500 text-center py-8">กำลังโหลดแพคเกจ...</p>
+                ) : packages.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">ไม่พบแพคเกจ</p>
+                ) : filteredPackages.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">ไม่พบแพคเกจที่ตรงกับการค้นหา</p>
+                ) : (
+                    <div className="w-full min-w-0 overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b text-gray-600 bg-gray-50">
+                                    <th className="py-3 px-4 rounded-tl-lg">ชื่อแพคเกจ</th>
+                                    <th className="py-3 px-4">ราคา</th>
+                                    <th className="py-3 px-4">บริการนวดที่รวมอยู่</th>
+                                    <th className="py-3 px-4">ระยะเวลาแคมเปญ</th>
+                                    <th className="py-3 px-4 text-right rounded-tr-lg">การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredPackages.map((pkg) => (
+                                    <tr key={pkg.package_id} className="border-b hover:bg-gray-50 transition-colors">
+                                        <td className="py-3 px-4 font-medium">{pkg.package_name}</td>
+                                        <td className="py-3 px-4 text-emerald-600 font-semibold">
+                                            ฿{pkg.package_price.toLocaleString()}
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            {pkg.package_detail && pkg.package_detail.length > 0 ? (
+                                                <ul className="list-disc list-inside text-sm text-gray-600">
+                                                    {pkg.package_detail.map((detail, idx) => (
+                                                        <li key={idx}>
+                                                            {detail.massage?.massage_name || "ไม่ทราบชื่อบริการนวด"}
+                                                            <span className="text-gray-400 text-xs ml-1">
+                                                                ({detail.massage?.massage_time || 0} นาที)
+                                                            </span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <span className="text-gray-400 text-sm italic">ยังไม่ได้เพิ่มบริการนวด</span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4 text-sm text-gray-600">
+                                            {pkg.campaign_start_datetime || pkg.campaign_end_datetime ? (
+                                                <>
+                                                    {pkg.campaign_start_datetime ? new Date(pkg.campaign_start_datetime).toLocaleDateString("th-TH") : 'ปัจจุบัน'}
+                                                    {" - "}
+                                                    {pkg.campaign_end_datetime ? new Date(pkg.campaign_end_datetime).toLocaleDateString("th-TH") : 'ตลอดไป'}
+                                                </>
+                                            ) : (
+                                                <span className="text-gray-400 italic">ไม่มีระยะเวลา</span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4 text-right">
+                                            <div className="flex justify-end gap-2 font-mitr">
+                                                <Link href={`/manager/package/edit/${pkg.package_id}`}>
+                                                    <Button variant="outline" size="sm">
+                                                        แก้ไข
+                                                    </Button>
+                                                </Link>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => deletePackage(pkg.package_id)}
+                                                >
+                                                    ลบ
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
