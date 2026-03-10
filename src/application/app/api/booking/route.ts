@@ -157,12 +157,16 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Create payment
-    const paymentPayload = {
+    const paymentPayload: any = {
       booking_id: bookingId,
       payment_method: body.payment_method,
       amount: body.total_price,
       payment_status: "pending",
     };
+
+    if (body.payment_slip_url) {
+      paymentPayload.payment_slip_url = body.payment_slip_url;
+    }
 
     const { error: paymentError } = await supabase
       .from("payment")

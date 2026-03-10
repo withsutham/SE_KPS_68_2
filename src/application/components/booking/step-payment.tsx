@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -11,8 +11,12 @@ import {
   Lock,
   Loader2,
   Ticket,
+  Upload,
 } from "lucide-react";
 import { StepProps } from "./types";
+import generatePayload from "promptpay-qr";
+import { QRCodeSVG } from "qrcode.react";
+import { createClient } from "@/lib/supabase/client";
 
 const PAYMENT_METHODS = [
   {
@@ -94,11 +98,44 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
 
   const total = Math.max(0, subtotal - discount);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const targetPromptPay = "0999999999"; // Replace with your actual shop phone/ID
+  const qrPayload = generatePayload(targetPromptPay, { amount: total });
+
   const handleConfirm = async () => {
     if (!data.paymentMethod) return;
+    if (data.paymentMethod === "qr" && !data.paymentSlipFile) {
+      alert("กรุณาอัปโหลดสลิปการโอนเงิน (Please upload payment slip)");
+      return;
+    }
+
     setLoading(true);
 
     try {
+      let slipUrl = null;
+      if (data.paymentMethod === "qr" && data.paymentSlipFile) {
+        const supabase = createClient();
+        const fileExt = data.paymentSlipFile.name.split(".").pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("payment_slips")
+          .upload(`public/${fileName}`, data.paymentSlipFile);
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          alert("เกิดข้อผิดพลาดในการอัปโหลดสลิป");
+          setLoading(false);
+          return;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("payment_slips")
+          .getPublicUrl(`public/${fileName}`);
+
+        slipUrl = publicUrlData.publicUrl;
+      }
+
       // Build date string from local date parts to avoid UTC shift (toISOString shifts to UTC, causing wrong date for UTC+7)
       const d = data.selectedDate!;
       const datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -119,6 +156,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
         payment_method: data.paymentMethod,
         total_price: total,
         member_coupon_id: data.selectedCouponId,
+        payment_slip_url: slipUrl,
       };
 
       let bookingId: string | null = null;
@@ -309,6 +347,49 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
               );
             })}
           </div>
+
+          {data.paymentMethod === "qr" && (
+            <div className="mt-6 flex flex-col items-center gap-4 p-4 border border-primary/20 bg-primary/5 rounded-xl animate-in fade-in slide-in-from-top-4">
+              <p className="text-sm font-medium text-foreground">
+                สแกน QR Code เพื่อชำระเงิน
+              </p>
+              <div className="bg-white p-3 rounded-xl shadow-sm">
+                <QRCodeSVG value={qrPayload} size={200} />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                ยอดชำระ: ฿{total.toLocaleString()}
+              </p>
+
+              <div className="w-full mt-2">
+                <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  อัปโหลดสลิปการโอนเงิน
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      onUpdate({ paymentSlipFile: file });
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-dashed"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {data.paymentSlipFile
+                    ? data.paymentSlipFile.name
+                    : "เลือกรูปภาพสลิป"}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Security note */}
