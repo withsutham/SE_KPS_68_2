@@ -119,7 +119,8 @@ CREATE TABLE coupon (
     coupon_id SERIAL PRIMARY KEY,
     coupon_name TEXT NOT NULL,
     discount_percent NUMERIC(5, 2) NOT NULL,
-    description TEXT
+    description TEXT,
+    collect_deadline TIMESTAMPTZ -- Last day the coupon can be collected
 );
 
 CREATE TABLE package (
