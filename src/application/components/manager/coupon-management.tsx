@@ -183,10 +183,6 @@ export function CouponManagement() {
             <div className="max-w-2xl space-y-3">
               <p className="text-sm font-medium uppercase tracking-[0.3em] text-primary/70">Manager Console</p>
               <h1 className="font-mitr text-3xl text-foreground md:text-4xl">Coupon Management</h1>
-              <p className="text-sm text-muted-foreground md:text-base">
-                Create and maintain promotional coupons for spa campaigns. Changes are written directly through the
-                existing Supabase-backed API routes.
-              </p>
             </div>
 
             <Dialog
@@ -275,7 +271,7 @@ export function CouponManagement() {
           <Card className="border-border/60 bg-card/70 backdrop-blur-sm">
             <CardHeader className="pb-2">
               <CardDescription>Total Coupons</CardDescription>
-              <CardTitle className="flex items-center gap-2 font-mitr text-3xl">
+              <CardTitle className="flex items-center gap-2 font-medium text-3xl">
                 <Tag className="h-5 w-5 text-primary" />
                 {coupons.length}
               </CardTitle>
@@ -284,7 +280,7 @@ export function CouponManagement() {
           <Card className="border-border/60 bg-card/70 backdrop-blur-sm">
             <CardHeader className="pb-2">
               <CardDescription>Average Discount</CardDescription>
-              <CardTitle className="flex items-center gap-2 font-mitr text-3xl">
+              <CardTitle className="flex items-center gap-2 font-medium text-3xl">
                 <Percent className="h-5 w-5 text-primary" />
                 {averageDiscount.toFixed(2)}%
               </CardTitle>
