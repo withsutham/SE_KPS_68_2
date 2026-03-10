@@ -26,9 +26,10 @@ export async function GET(
         }
 
         return NextResponse.json({ success: true, data }, { status: 200 });
-    } catch (err: any) {
-        console.error("coupon GET by ID exception:", err.message);
-        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Internal server error";
+        console.error("coupon GET by ID exception:", message);
+        return NextResponse.json({ success: false, error: message }, { status: 500 });
     }
 }
 
@@ -59,8 +60,9 @@ export async function PUT(
         }
 
         return NextResponse.json({ success: true, data }, { status: 200 });
-    } catch (err: any) {
-        console.error("coupon PUT exception:", err.message);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Invalid JSON body or internal error";
+        console.error("coupon PUT exception:", message);
         return NextResponse.json({ success: false, error: "Invalid JSON body or internal error" }, { status: 500 });
     }
 }
@@ -89,8 +91,9 @@ export async function DELETE(
         }
 
         return NextResponse.json({ success: true, message: "coupon deleted successfully" }, { status: 200 });
-    } catch (err: any) {
-        console.error("coupon DELETE exception:", err.message);
-        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Internal server error";
+        console.error("coupon DELETE exception:", message);
+        return NextResponse.json({ success: false, error: message }, { status: 500 });
     }
 }

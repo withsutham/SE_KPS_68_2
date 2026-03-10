@@ -1,7 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
-
-export async function GET(request: NextRequest) {
+export async function GET() {
     const supabase = await createAdminClient();
     const { data, error } = await supabase.from("coupon").select("*");
 
@@ -29,8 +28,9 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ success: true, data }, { status: 201 });
-    } catch (err: any) {
-        console.error("coupon POST exception:", err.message);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Invalid JSON body or internal error";
+        console.error("coupon POST exception:", message);
         return NextResponse.json({ success: false, error: "Invalid JSON body or internal error" }, { status: 400 });
     }
 }
