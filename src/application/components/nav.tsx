@@ -106,8 +106,7 @@ async function NavLinkGroup() {
     );
   }
 
-  // manager, shop_owner — can manage employees
-  // manager, shop_owner — can manage employees, packages, coupons and see dashboard
+  // manager, shop_owner — can manage employees, bookings, packages, coupons and see dashboard
   if (role === "manager" || role === "shop_owner") {
     return (
       <>
@@ -133,6 +132,12 @@ async function NavLinkGroup() {
         </DropdownMenu>
 
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/service-ip/manager/booking" className="text-sm">
+            จัดการการจอง
+          </Link>
+        </Button>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
           <Link href="/service-ip/manager/package" className="text-sm">
             จัดการแพคเกจ
           </Link>
@@ -146,7 +151,7 @@ async function NavLinkGroup() {
 
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
           <Link href="/service-ip/manager/dashboard" className="text-sm">
-            แอดมิน แดชบอร์ด
+            แดชบอร์ด
           </Link>
         </Button>
       </>
