@@ -27,6 +27,8 @@ export async function POST(request: NextRequest) {
       customer_phone: body.customer_phone,
       customer_email: body.customer_email || null,
       booking_dateTime: body.booking_datetime,
+      total_price: body.total_price || 0,
+      payment_status: "pending", // Waiting for manager to verify deposit slip
     };
 
     // Link to customer record if provided (enables booking history per user)
@@ -157,12 +159,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Create payment
-    const paymentPayload = {
+    const paymentPayload: any = {
       booking_id: bookingId,
       payment_method: body.payment_method,
-      amount: body.total_price,
+      amount: body.deposit_amount || body.total_price, // Fallback if deposit_amount not provided
       payment_status: "pending",
+      payment_type: "deposit",
     };
+
+    if (body.payment_slip_url) {
+      paymentPayload.payment_slip_url = body.payment_slip_url;
+    }
 
     const { error: paymentError } = await supabase
       .from("payment")
