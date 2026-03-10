@@ -321,6 +321,7 @@ export default function PackagePage() {
                                 }).map((pkg) => {
                                     const endStr = pkg.campaign_end_datetime
                                         ? new Date(pkg.campaign_end_datetime).toLocaleDateString("th-TH") : "";
+                                    const originalPrice = pkg.package_detail?.reduce((sum: number, detail: any) => sum + (Number(detail.massage?.massage_price) || 0), 0) || 0;
 
                                     return (
                                         <Card key={pkg.package_id} className="flex flex-col group overflow-hidden border-border/60 hover:border-primary/40 transition-all hover:shadow-lg dark:hover:shadow-primary/5 bg-background">
@@ -335,8 +336,13 @@ export default function PackagePage() {
                                                 )}
                                             </CardHeader>
                                             <CardContent className="flex-1 pb-6">
-                                                <div className="mb-4">
+                                                <div className="mb-4 flex items-end gap-2">
                                                     <span className="text-3xl font-bold font-sans tracking-tight text-primary">฿{Number(pkg.package_price).toLocaleString()}</span>
+                                                    {originalPrice > Number(pkg.package_price) && (
+                                                        <span className="text-sm font-sans text-muted-foreground line-through mb-1">
+                                                            ฿{originalPrice.toLocaleString()}
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 <p className="font-medium text-sm mb-3 text-foreground/80">รับสิทธิบริการ:</p>
