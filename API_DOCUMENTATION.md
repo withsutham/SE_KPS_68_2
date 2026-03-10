@@ -199,3 +199,27 @@ All standard endpoints return robust error objects when something goes wrong (e.
     "close_time": "22:00:00"
 }
 ```
+
+### `package`
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `package_id` | `int` | Auto | Primary key (auto-increment) |
+| `package_name` | `text` | ✅ | Name of the package |
+| `package_price` | `numeric` | ✅ | Total price of the package |
+| `campaign_start_dateTime` | `timestamptz` | ❌ | Start of the promotion |
+| `campaign_end_dateTime` | `timestamptz` | ❌ | End of the promotion |
+| `image_src` | `text` | ❌ | URL to the package image |
+
+### `coupon`
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `coupon_id` | `int` | Auto | Primary key (auto-increment) |
+| `coupon_name` | `text` | ✅ | Name of the coupon |
+| `discount_percent` | `numeric` | ✅ | Discount percentage (e.g. `10.00`) |
+| `description` | `text` | ❌ | Description of the coupon |
+| `collect_deadline` | `timestamptz` | ❌ | Last day the coupon can be collected |
+
+> **Note on `/api/coupon` GET requests:**
+> By default, `GET /api/coupon` only returns coupons where `collect_deadline` is null or in the future. To retrieve all coupons (including expired ones, e.g., for manager views), append the `show_all` parameter: `GET /api/coupon?show_all=true`.
