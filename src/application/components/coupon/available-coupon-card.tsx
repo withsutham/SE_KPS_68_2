@@ -1,6 +1,8 @@
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TicketPercent, CheckCircle2, Loader2 } from "lucide-react";
+import { TicketPercent, CheckCircle2, Loader2, Clock } from "lucide-react";
+import { format } from "date-fns";
+import { th } from "date-fns/locale";
 
 interface AvailableCouponCardProps {
   coupon: {
@@ -8,6 +10,7 @@ interface AvailableCouponCardProps {
     coupon_name: string;
     discount_percent: number;
     description: string;
+    collect_deadline?: string | null;
   };
   isClaimed: boolean;
   isUsed: boolean;
@@ -34,6 +37,12 @@ export function AvailableCouponCard({ coupon, isClaimed, isUsed, isClaiming, onC
         <CardDescription className="line-clamp-2 min-h-[40px] mt-2">
           {coupon.description || "ใช้เป็นส่วนลดในการจองบริการ"}
         </CardDescription>
+        {coupon.collect_deadline && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-3 bg-muted/50 p-1.5 px-2.5 rounded-md w-fit">
+            <Clock className="w-3.5 h-3.5" />
+            <span>เก็บได้ถึง: {format(new Date(coupon.collect_deadline), "d MMM yyyy", { locale: th })}</span>
+          </div>
+        )}
       </CardHeader>
       <CardFooter className="pt-2 pb-6 mt-auto">
         <Button
