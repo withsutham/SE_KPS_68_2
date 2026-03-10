@@ -134,15 +134,21 @@ export default function PackagePage() {
         );
     }
 
-    // Group member packages by their actual package to display beautifully
-    const groupedMyPackages: Record<number, { pkgInfo: any, details: any[] }> = {};
+    // Group member packages by their actual package and order to display beautifully
+    const groupedMyPackages: Record<string, { pkgInfo: any, details: any[] }> = {};
     myPackages.forEach(mp => {
         const pInfo = mp.package_detail?.package;
         if (pInfo) {
-            if (!groupedMyPackages[pInfo.package_id]) {
-                groupedMyPackages[pInfo.package_id] = { pkgInfo: pInfo, details: [] };
+            // Use package_order_id if available to separate distinct purchases, otherwise fallback to package_id 
+            // (Note: for old data without package_order_id from before the DB change, we fallback to grouping by package_id)
+            const groupKey = mp.package_order_id
+                ? `order_${mp.package_order_id}_pkg_${pInfo.package_id}`
+                : `pkg_${pInfo.package_id}`;
+
+            if (!groupedMyPackages[groupKey]) {
+                groupedMyPackages[groupKey] = { pkgInfo: pInfo, details: [] };
             }
-            groupedMyPackages[pInfo.package_id].details.push(mp);
+            groupedMyPackages[groupKey].details.push(mp);
         }
     });
 
