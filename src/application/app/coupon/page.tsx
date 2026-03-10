@@ -1,0 +1,304 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import {
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Ticket,
+  History,
+  PlusCircle,
+} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyCouponState } from "@/components/coupon/empty-coupon-state";
+import { ActiveCouponCard } from "@/components/coupon/active-coupon-card";
+import { AvailableCouponCard } from "@/components/coupon/available-coupon-card";
+import { HistoryCouponList } from "@/components/coupon/history-coupon-list";
+
+export default function CouponPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [myCoupons, setMyCoupons] = useState<any[]>([]);
+  const [isClaiming, setIsClaiming] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  const showAlert = (message: string, type: "success" | "error") => {
+    setAlertMessage({ message, type });
+    setTimeout(() => setAlertMessage(null), 3000);
+  };
+
+  useEffect(() => {
+    const checkUserAndFetchCoupons = async () => {
+      const supabase = createClient();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        router.push("/auth/login");
+        return;
+      }
+
+      try {
+        // Fetch customer ID
+        const customerRes = await fetch(
+          `/api/customer?profile_id=${session.user.id}`,
+        );
+        const customerData = await customerRes.json();
+
+        if (!customerData.success || !customerData.data) {
+          throw new Error("Could not fetch customer info");
+        }
+
+        const customer_id = Array.isArray(customerData.data)
+          ? customerData.data[0]?.customer_id
+          : customerData.data?.customer_id;
+
+        if (!customer_id) {
+          throw new Error("Customer ID not found");
+        }
+
+        await fetchCoupons(customer_id);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkUserAndFetchCoupons();
+  }, [router]);
+
+  const fetchCoupons = async (customer_id: number) => {
+    try {
+      const [availableRes, myRes] = await Promise.all([
+        fetch("/api/coupon"),
+        fetch(`/api/member_coupon?customer_id=${customer_id}`),
+      ]);
+
+      const availableData = await availableRes.json();
+      const myData = await myRes.json();
+
+      if (availableData.success) {
+        setCoupons(availableData.data || []);
+      }
+      if (myData.success) {
+        setMyCoupons(myData.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching coupons:", error);
+    }
+  };
+
+  const handleClaimCoupon = async (coupon_id: number) => {
+    setIsClaiming(coupon_id.toString());
+    try {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        showAlert("Please sign in first", "error");
+        return;
+      }
+
+      const customerRes = await fetch(
+        `/api/customer?profile_id=${session.user.id}`,
+      );
+      const customerData = await customerRes.json();
+      const customer_id = Array.isArray(customerData.data)
+        ? customerData.data[0]?.customer_id
+        : customerData.data?.customer_id;
+
+      if (!customer_id) {
+        showAlert("Customer record not found", "error");
+        return;
+      }
+
+      // check if already claimed
+      const alreadyClaimed = myCoupons.find((mc) => mc.coupon_id === coupon_id);
+      if (alreadyClaimed) {
+        showAlert(
+          alreadyClaimed.is_used
+            ? "คุณเคยเก็บและใช้คูปองนี้แล้ว"
+            : "คุณมีคูปองนี้แล้ว",
+          "error",
+        );
+        setIsClaiming(null);
+        return;
+      }
+
+      const res = await fetch("/api/member_coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_id: customer_id,
+          coupon_id: coupon_id,
+          is_used: false,
+          expire_dateTime: null,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showAlert("เก็บคูปองสำเร็จแล้ว!", "success");
+        // Refresh list
+        await fetchCoupons(customer_id);
+      } else {
+        showAlert(data.error || "Failed to claim coupon", "error");
+      }
+    } catch (error) {
+      console.error(error);
+      showAlert("An error occurred while claiming", "error");
+    } finally {
+      setIsClaiming(null);
+    }
+  };
+
+  const activeCoupons = myCoupons.filter((mc) => !mc.is_used);
+  const historyCoupons = myCoupons.filter((mc) => mc.is_used);
+
+  return (
+    <main className="min-h-screen bg-background font-mitr relative overflow-hidden">
+      {alertMessage && (
+        <div
+          className={`fixed bottom-8 right-8 z-50 p-4 px-6 rounded-2xl shadow-xl border flex items-center gap-3 transition-all duration-300 animate-in slide-in-from-bottom-5 fade-in ${alertMessage.type === "success" ? "bg-[#f0fdf4] border-[#bbf7d0] text-[#166534]" : "bg-[#fef2f2] border-[#fecaca] text-[#991b1b]"}`}
+        >
+          {alertMessage.type === "success" ? (
+            <CheckCircle2 className="h-5 w-5" />
+          ) : (
+            <AlertCircle className="h-5 w-5" />
+          )}
+          <p className="font-medium font-sans">{alertMessage.message}</p>
+        </div>
+      )}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
+      <div className="absolute top-[40%] right-[-10%] w-[30%] h-[50%] rounded-full bg-secondary/5 blur-[100px] pointer-events-none" />
+
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20 min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 relative z-10 space-y-8">
+          <div className="flex flex-col items-center text-center mb-8 border-b border-border/50 pb-8">
+            <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-foreground mb-3">
+              คูปองส่วนลด
+            </h1>
+            <p className="text-muted-foreground font-sans max-w-lg">
+              จัดการคูปองของคุณ
+              หรือเก็บคูปองใหม่เพื่อใช้เป็นส่วนลดในการจองบริการ
+            </p>
+          </div>
+
+          <Tabs defaultValue="my-coupons" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
+              <TabsTrigger
+                value="my-coupons"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
+              >
+                <Ticket className="h-4 w-4" />
+                คูปองของฉัน
+                {activeCoupons.length > 0 && (
+                  <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
+                    {activeCoupons.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="discover"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
+              >
+                <PlusCircle className="h-4 w-4" />
+                เก็บเพิ่ม
+              </TabsTrigger>
+              <TabsTrigger
+                value="history"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
+              >
+                <History className="h-4 w-4" />
+                ประวัติการใช้
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent
+              value="my-coupons"
+              className="mt-0 focus-visible:outline-none focus-visible:ring-0"
+            >
+              {activeCoupons.length === 0 ? (
+                <EmptyCouponState
+                  icon={<Ticket className="h-12 w-12" />}
+                  message="คุณยังไม่มีคูปองที่พร้อมใช้งานในขณะนี้"
+                />
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {activeCoupons.map(
+                    (mc, index) =>
+                      mc.coupon && (
+                        <ActiveCouponCard
+                          key={`active-${mc.member_coupon_id}-${index}`}
+                          coupon={mc.coupon}
+                        />
+                      ),
+                  )}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent
+              value="discover"
+              className="mt-0 focus-visible:outline-none focus-visible:ring-0"
+            >
+              {coupons.length === 0 ? (
+                <EmptyCouponState
+                  icon={<PlusCircle className="h-12 w-12" />}
+                  message="ไม่มีคูปองใหม่ที่สามารถเก็บได้ในขณะนี้"
+                />
+              ) : (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {coupons.map((coupon, index) => {
+                    const claimedRecord = myCoupons.find(
+                      (mc) => mc.coupon_id === coupon.coupon_id,
+                    );
+                    return (
+                      <AvailableCouponCard
+                        key={`avail-${coupon.coupon_id}-${index}`}
+                        coupon={coupon}
+                        isClaimed={!!claimedRecord}
+                        isUsed={!!claimedRecord?.is_used}
+                        isClaiming={isClaiming === coupon.coupon_id.toString()}
+                        onClaim={handleClaimCoupon}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent
+              value="history"
+              className="mt-0 focus-visible:outline-none focus-visible:ring-0"
+            >
+              {historyCoupons.length === 0 ? (
+                <EmptyCouponState
+                  icon={<History className="h-12 w-12" />}
+                  message="คุณยังไม่มีประวัติการใช้คูปอง"
+                />
+              ) : (
+                <HistoryCouponList coupons={historyCoupons} />
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
+    </main>
+  );
+}

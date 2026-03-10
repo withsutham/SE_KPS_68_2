@@ -119,7 +119,8 @@ CREATE TABLE coupon (
     coupon_id SERIAL PRIMARY KEY,
     coupon_name TEXT NOT NULL,
     discount_percent NUMERIC(5, 2) NOT NULL,
-    description TEXT
+    description TEXT,
+    collect_deadline TIMESTAMPTZ -- Last day the coupon can be collected
 );
 
 CREATE TABLE package (
@@ -127,7 +128,8 @@ CREATE TABLE package (
     package_name TEXT NOT NULL,
     package_price NUMERIC(10, 2) NOT NULL,
     campaign_start_dateTime TIMESTAMPTZ,
-    campaign_end_dateTime TIMESTAMPTZ
+    campaign_end_dateTime TIMESTAMPTZ,
+    image_src TEXT        -- URL to the package image
 );
 
 CREATE TABLE package_detail (

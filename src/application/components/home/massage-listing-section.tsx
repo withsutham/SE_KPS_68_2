@@ -156,7 +156,7 @@ export function MassageListingSection() {
     };
 
     return (
-        <section className="w-full max-w-7xl px-8 py-8 mx-auto flex flex-col gap-10">
+        <section id="services" className="w-full max-w-7xl px-8 py-8 mx-auto flex flex-col gap-10 scroll-mt-24">
 
             {/* ── Header ── */}
             <div className="flex flex-col gap-5 text-center md:text-left items-center md:items-start">

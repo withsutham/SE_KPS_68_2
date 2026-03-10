@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, Banknote, QrCode, CreditCard, Lock, Loader2 } from "lucide-react";
+import {
+  ChevronLeft,
+  Banknote,
+  QrCode,
+  CreditCard,
+  Lock,
+  Loader2,
+  Ticket,
+} from "lucide-react";
 import { StepProps } from "./types";
 
 const PAYMENT_METHODS = [
@@ -28,35 +36,89 @@ const PAYMENT_METHODS = [
 ];
 
 const MONTHS_TH = [
-  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
+  "มกราคม",
+  "กุมภาพันธ์",
+  "มีนาคม",
+  "เมษายน",
+  "พฤษภาคม",
+  "มิถุนายน",
+  "กรกฎาคม",
+  "สิงหาคม",
+  "กันยายน",
+  "ตุลาคม",
+  "พฤศจิกายน",
+  "ธันวาคม",
 ];
 
 export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
   const [loading, setLoading] = useState(false);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
+
+  useEffect(() => {
+    if (data.customerId) {
+      setLoadingCoupons(true);
+      fetch(`/api/member_coupon?customer_id=${data.customerId}`)
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && json.data) {
+            const available = json.data.filter(
+              (c: any) =>
+                !c.is_used &&
+                (!c.expire_dateTime ||
+                  new Date(c.expire_dateTime) > new Date()),
+            );
+            setCoupons(available);
+          }
+        })
+        .catch((err) => console.error("Failed to fetch coupons", err))
+        .finally(() => setLoadingCoupons(false));
+    }
+  }, [data.customerId]);
+
+  const subtotal = data.selectedServices.reduce(
+    (sum, s) => sum + Number(s.massage_price),
+    0,
+  );
+  let discount = 0;
+
+  if (data.selectedCouponId) {
+    const selectedCoupon = coupons.find(
+      (c) => c.member_coupon_id === data.selectedCouponId,
+    );
+    if (selectedCoupon && selectedCoupon.coupon) {
+      discount =
+        subtotal * (Number(selectedCoupon.coupon.discount_percent) / 100);
+    }
+  }
+
+  const total = Math.max(0, subtotal - discount);
 
   const handleConfirm = async () => {
     if (!data.paymentMethod) return;
     setLoading(true);
 
     try {
-      // Date and Time properly formatted
-      const datePart = data.selectedDate?.toISOString().split("T")[0];
+      // Build date string from local date parts to avoid UTC shift (toISOString shifts to UTC, causing wrong date for UTC+7)
+      const d = data.selectedDate!;
+      const datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       const timePart = data.selectedTime;
       const bookingDateTime = `${datePart}T${timePart}:00+07:00`;
 
       const payload = {
+        customer_id: data.customerId ?? null,
         customer_name: `${data.firstName} ${data.lastName}`,
         customer_phone: data.phone,
         customer_email: data.email,
         booking_datetime: bookingDateTime,
-        services: data.selectedServices.map(s => ({
+        services: data.selectedServices.map((s) => ({
           massage_id: s.massage_id,
           price: s.massage_price,
           duration: s.duration || 60,
         })),
         payment_method: data.paymentMethod,
-        total_price: data.selectedServices.reduce((sum, s) => sum + Number(s.massage_price), 0),
+        total_price: total,
+        member_coupon_id: data.selectedCouponId,
       };
 
       let bookingId: string | null = null;
@@ -77,12 +139,14 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
       }
 
       onUpdate({
-        bookingId: bookingId ?? `FJ-${Date.now().toString(36).toUpperCase().slice(-6)}`,
+        bookingId:
+          bookingId ?? `FJ-${Date.now().toString(36).toUpperCase().slice(-6)}`,
         bookingDetails,
+        discountAmount: discount,
       });
 
       // Simulate processing delay
-      await new Promise(r => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 800));
       onNext();
     } finally {
       setLoading(false);
@@ -107,17 +171,30 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
       <div className="max-w-xl mx-auto w-full flex flex-col gap-4">
         {/* Order summary card */}
         <div className="bg-card/40 backdrop-blur-sm border border-border/40 rounded-2xl p-6">
-          <h3 className="font-medium font-mitr mb-4 text-foreground">สรุปรายการ</h3>
+          <h3 className="font-medium font-mitr mb-4 text-foreground">
+            สรุปรายการ
+          </h3>
           <div className="space-y-3 text-sm font-sans">
             <div className="flex justify-between">
               <span className="text-muted-foreground">บริการ</span>
-              <span className="font-medium max-w-[200px] text-right truncate" title={data.selectedServices.map(s => s.massage_name).join(', ')}>
-                {data.selectedServices.map(s => s.massage_name).join(', ')}
+              <span
+                className="font-medium max-w-[200px] text-right truncate"
+                title={data.selectedServices
+                  .map((s) => s.massage_name)
+                  .join(", ")}
+              >
+                {data.selectedServices.map((s) => s.massage_name).join(", ")}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">ระยะเวลา</span>
-              <span>{data.selectedServices.reduce((sum, s) => sum + (s.duration ?? 60), 0)} นาที</span>
+              <span>
+                {data.selectedServices.reduce(
+                  (sum, s) => sum + (s.duration ?? 60),
+                  0,
+                )}{" "}
+                นาที
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">วันที่</span>
@@ -129,7 +206,9 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">ผู้จอง</span>
-              <span>{data.firstName} {data.lastName}</span>
+              <span>
+                {data.firstName} {data.lastName}
+              </span>
             </div>
             {data.email && (
               <div className="flex justify-between">
@@ -137,19 +216,75 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
                 <span>{data.email}</span>
               </div>
             )}
+
             <div className="h-px bg-border/60 my-2" />
-            <div className="flex justify-between text-base font-semibold">
-              <span>ยอดชำระ</span>
-              <span className="text-primary">฿{data.selectedServices.reduce((sum, s) => sum + Number(s.massage_price), 0).toLocaleString()}</span>
+
+            <div className="flex justify-between text-muted-foreground">
+              <span>ยอดรวม</span>
+              <span>฿{subtotal.toLocaleString()}</span>
+            </div>
+
+            {/* Coupon selection */}
+            {data.customerId && coupons.length > 0 && (
+              <div className="py-2">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-2">
+                  <Ticket className="h-3.5 w-3.5" /> ส่วนลด / คูปอง
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {coupons.map((c) => (
+                    <button
+                      key={c.member_coupon_id}
+                      onClick={() =>
+                        onUpdate({
+                          selectedCouponId:
+                            data.selectedCouponId === c.member_coupon_id
+                              ? null
+                              : c.member_coupon_id,
+                        })
+                      }
+                      className={cn(
+                        "text-xs px-3 py-1.5 rounded-full border transition-all",
+                        data.selectedCouponId === c.member_coupon_id
+                          ? "bg-primary/10 border-primary text-primary font-medium"
+                          : "bg-background border-border/60 hover:border-primary/40 text-muted-foreground",
+                      )}
+                    >
+                      {c.coupon?.coupon_name} (-
+                      {Number(c.coupon?.discount_percent)}%)
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {discount > 0 && (
+              <div className="flex justify-between text-green-600 font-medium">
+                <span>ส่วนลดคูปอง</span>
+                <span>
+                  -฿
+                  {discount.toLocaleString(undefined, {
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between text-base font-semibold pt-1">
+              <span>ยอดชำระสุทธิ</span>
+              <span className="text-primary">
+                ฿{total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Payment method */}
         <div className="bg-card/40 backdrop-blur-sm border border-border/40 rounded-2xl p-6">
-          <h3 className="font-medium font-mitr mb-4 text-foreground">วิธีชำระเงิน</h3>
+          <h3 className="font-medium font-mitr mb-4 text-foreground">
+            วิธีชำระเงิน
+          </h3>
           <div className="grid grid-cols-3 gap-3">
-            {PAYMENT_METHODS.map(method => {
+            {PAYMENT_METHODS.map((method) => {
               const Icon = method.icon;
               const selected = data.paymentMethod === method.id;
               return (
@@ -160,12 +295,16 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
                     "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 text-center",
                     selected
                       ? "border-primary bg-primary/5 text-primary shadow-md shadow-primary/10"
-                      : "border-border/40 bg-background/30 text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                      : "border-border/40 bg-background/30 text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
                   )}
                 >
                   <Icon className="h-5 w-5" />
-                  <span className="text-xs font-medium font-sans leading-tight">{method.label}</span>
-                  <span className="text-[10px] text-muted-foreground font-sans">{method.sublabel}</span>
+                  <span className="text-xs font-medium font-sans leading-tight">
+                    {method.label}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-sans">
+                    {method.sublabel}
+                  </span>
                 </button>
               );
             })}
@@ -180,7 +319,13 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
       </div>
 
       <div className="flex justify-between pt-2 max-w-xl mx-auto w-full">
-        <Button variant="outline" onClick={onBack} disabled={loading} className="gap-2 font-sans" size="lg">
+        <Button
+          variant="outline"
+          onClick={onBack}
+          disabled={loading}
+          className="gap-2 font-sans"
+          size="lg"
+        >
           <ChevronLeft className="h-4 w-4" />
           ย้อนกลับ
         </Button>

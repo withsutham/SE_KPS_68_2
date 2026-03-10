@@ -6,9 +6,15 @@ import { STEPS, BookingStep } from "./types";
 
 interface BookingProgressProps {
   currentStep: BookingStep;
+  onStepClick?: (step: BookingStep) => void;
+  canGoToStep?: (step: BookingStep) => boolean;
 }
 
-export function BookingProgress({ currentStep }: BookingProgressProps) {
+export function BookingProgress({
+  currentStep,
+  onStepClick,
+  canGoToStep,
+}: BookingProgressProps) {
   return (
     <div className="w-full max-w-3xl mx-auto px-4 py-8">
       <div className="relative flex items-start justify-between">
@@ -17,7 +23,7 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
           className="absolute top-5 h-[2px] bg-border -translate-y-1/2 z-0"
           style={{
             left: `${100 / (2 * STEPS.length)}%`,
-            right: `${100 / (2 * STEPS.length)}%`
+            right: `${100 / (2 * STEPS.length)}%`,
           }}
         />
         {/* Progress fill line */}
@@ -25,7 +31,7 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
           className="absolute top-5 h-[2px] bg-primary transition-all duration-700 ease-out -translate-y-1/2 z-0"
           style={{
             left: `${100 / (2 * STEPS.length)}%`,
-            width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% - ${((currentStep - 1) / (STEPS.length - 1)) * (100 / STEPS.length)}%)`
+            width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% - ${((currentStep - 1) / (STEPS.length - 1)) * (100 / STEPS.length)}%)`,
           }}
         />
 
@@ -42,15 +48,40 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
               style={{ width: `${100 / STEPS.length}%` }}
             >
               {/* Circle */}
-              <div
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    onStepClick &&
+                    canGoToStep &&
+                    canGoToStep(step.id as BookingStep) &&
+                    !isActive
+                  ) {
+                    onStepClick(step.id as BookingStep);
+                  }
+                }}
+                disabled={
+                  !(
+                    onStepClick &&
+                    canGoToStep &&
+                    canGoToStep(step.id as BookingStep) &&
+                    !isActive
+                  )
+                }
                 className={cn(
-                  "h-10 w-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-500 border-2 font-mitr",
-                  isCompleted && 
+                  "h-10 w-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-500 border-2 font-mitr outline-none",
+                  isCompleted &&
                     "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/20",
-                  isActive && 
+                  isActive &&
                     "bg-background border-primary text-primary scale-110 shadow-lg shadow-primary/20 ring-4 ring-primary/10",
-                  isUpcoming && 
-                    "bg-background border-border text-muted-foreground"
+                  isUpcoming &&
+                    "bg-background border-border text-muted-foreground",
+                  onStepClick &&
+                    canGoToStep &&
+                    canGoToStep(step.id as BookingStep) &&
+                    !isActive
+                    ? "cursor-pointer hover:scale-110 hover:shadow-md active:scale-95"
+                    : "cursor-default",
                 )}
               >
                 {isCompleted ? (
@@ -58,7 +89,7 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
                 ) : (
                   <span>{step.id}</span>
                 )}
-              </div>
+              </button>
 
               {/* Label */}
               <span
@@ -66,7 +97,7 @@ export function BookingProgress({ currentStep }: BookingProgressProps) {
                   "text-xs font-medium text-center leading-tight transition-colors duration-300 font-sans",
                   isActive && "text-primary font-semibold",
                   isCompleted && "text-primary/70",
-                  isUpcoming && "text-muted-foreground"
+                  isUpcoming && "text-muted-foreground",
                 )}
               >
                 {step.label}
