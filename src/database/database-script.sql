@@ -127,7 +127,8 @@ CREATE TABLE package (
     package_name TEXT NOT NULL,
     package_price NUMERIC(10, 2) NOT NULL,
     campaign_start_dateTime TIMESTAMPTZ,
-    campaign_end_dateTime TIMESTAMPTZ
+    campaign_end_dateTime TIMESTAMPTZ,
+    image_src TEXT        -- URL to the package image
 );
 
 CREATE TABLE package_detail (
