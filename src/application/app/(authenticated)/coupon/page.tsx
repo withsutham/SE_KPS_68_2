@@ -167,6 +167,9 @@ export default function CouponPage() {
 
   const activeCoupons = myCoupons.filter((mc) => !mc.is_used);
   const historyCoupons = myCoupons.filter((mc) => mc.is_used);
+  const collectableCoupons = coupons.filter(
+    (c) => !myCoupons.some((mc) => mc.coupon_id === c.coupon_id),
+  );
 
   return (
     <main className="min-h-screen bg-background font-mitr relative overflow-hidden">
@@ -224,13 +227,7 @@ export default function CouponPage() {
                 className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
               >
                 <PlusCircle className="h-4 w-4" />
-                เก็บเพิ่ม
-                <span className={cn(
-                  "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
-                  activeTab === "discover" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                )}>
-                  {coupons.length}
-                </span>
+                มี {collectableCoupons.length} คูปองสามารถเก็บได้
               </TabsTrigger>
               <TabsTrigger
                 value="history"

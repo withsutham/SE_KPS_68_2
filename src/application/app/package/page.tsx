@@ -185,12 +185,6 @@ export default function PackagePage() {
                         </TabsTrigger>
                         <TabsTrigger value="discover" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <PlusCircle className="h-4 w-4" /> ซื้อแพคเกจ
-                            <span className={cn(
-                                "ml-1 text-[10px] h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
-                                activeTab === "discover" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                            )}>
-                                {filteredAvailable.length}
-                            </span>
                         </TabsTrigger>
                         <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <History className="h-4 w-4" /> ประวัติ
