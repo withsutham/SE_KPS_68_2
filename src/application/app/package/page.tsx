@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink } from "lucide-react";
+import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,15 @@ export default function PackagePage() {
     const [myPackages, setMyPackages] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedPackageToBuy, setSelectedPackageToBuy] = useState<any>(null);
+    const [alertMessage, setAlertMessage] = useState<{
+        message: string;
+        type: "success" | "error";
+    } | null>(null);
+
+    const showAlert = (message: string, type: "success" | "error") => {
+        setAlertMessage({ message, type });
+        setTimeout(() => setAlertMessage(null), 3000);
+    };
 
     // Check auth and fetch user ID
     useEffect(() => {
@@ -138,6 +147,19 @@ export default function PackagePage() {
                         เลือกซื้อแพคเกจการนวดและสปาที่คุ้มค่ากว่า เพื่อความผ่อนคลายอย่างเหนือระดับ
                     </p>
                 </div>
+
+                {alertMessage && (
+                    <div
+                        className={`fixed bottom-8 right-8 z-50 p-4 px-6 rounded-2xl shadow-xl border flex items-center gap-3 transition-all duration-300 animate-in slide-in-from-bottom-5 fade-in ${alertMessage.type === "success" ? "bg-[#f0fdf4] border-[#bbf7d0] text-[#166534]" : "bg-[#fef2f2] border-[#fecaca] text-[#991b1b]"}`}
+                    >
+                        {alertMessage.type === "success" ? (
+                            <CheckCircle2 className="h-5 w-5 relative top-[1px]" />
+                        ) : (
+                            <AlertCircle className="h-5 w-5 relative top-[1px]" />
+                        )}
+                        <p className="font-medium font-sans">{alertMessage.message}</p>
+                    </div>
+                )}
 
                 {/* My Packages Section */}
                 {Object.keys(groupedMyPackages).length > 0 && (
@@ -330,6 +352,7 @@ export default function PackagePage() {
                     onSuccess={() => {
                         setSelectedPackageToBuy(null);
                         fetchPackages();
+                        showAlert('ซื้อแพคเกจสำเร็จ', 'success');
                     }}
                 />
 
