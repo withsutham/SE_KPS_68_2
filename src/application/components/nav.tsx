@@ -106,6 +106,42 @@ async function NavLinkGroup() {
     );
   }
 
-  // manager, therapist, shop_owner — their nav links will be added later
+  // manager, shop_owner — can manage employees
+  if (role === "manager" || role === "shop_owner") {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
+            <span className="text-sm">พนักงาน</span>
+            <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
+          <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+            <Link href="/service-ip/manager/employee/timetable" className="w-full cursor-pointer py-2.5 px-3 text-base">
+              ตารางทำงานเทอราปิส
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+            <Link href="/service-ip/manager/employee/management" className="w-full cursor-pointer py-2.5 px-3 text-base">
+              จัดการข้อมูลพนักงาน
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  // therapist — can view their own timetable
+  if (role === "therapist") {
+    return (
+      <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+        <Link href="/service-ip/manager/employee/timetable" className="text-sm">
+          ตารางทำงาน
+        </Link>
+      </Button>
+    );
+  }
+
   return null;
 }
