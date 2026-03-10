@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
-  Banknote,
   QrCode,
   Lock,
   Loader2,
@@ -44,11 +43,9 @@ const MONTHS_TH = [
 export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
   const [loading, setLoading] = useState(false);
   const [coupons, setCoupons] = useState<any[]>([]);
-  const [loadingCoupons, setLoadingCoupons] = useState(false);
 
   useEffect(() => {
     if (data.customerId) {
-      setLoadingCoupons(true);
       fetch(`/api/member_coupon?customer_id=${data.customerId}`)
         .then((res) => res.json())
         .then((json) => {
@@ -62,8 +59,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
             setCoupons(available);
           }
         })
-        .catch((err) => console.error("Failed to fetch coupons", err))
-        .finally(() => setLoadingCoupons(false));
+        .catch((err) => console.error("Failed to fetch coupons", err));
     }
   }, [data.customerId]);
 
@@ -106,7 +102,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
         const fileExt = data.paymentSlipFile.name.split(".").pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from("payment_slips")
           .upload(`public/${fileName}`, data.paymentSlipFile);
 
