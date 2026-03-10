@@ -316,7 +316,7 @@ export function CouponManagement() {
 
         <Card className="overflow-hidden border-border/60 bg-card/80 shadow-lg shadow-primary/5 backdrop-blur-sm">
           <CardHeader className="border-b border-border/60 bg-muted/30">
-            <CardTitle className="font-mitr text-2xl">Coupon List</CardTitle>
+            <CardTitle className="font-medium text-2xl">Coupon List</CardTitle>
             <CardDescription>Manage all available discounts for manager-facing campaigns.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -340,7 +340,7 @@ export function CouponManagement() {
                 <table className="min-w-full divide-y divide-border/60 text-sm">
                   <thead className="bg-muted/20 text-left text-muted-foreground">
                     <tr>
-                      <th className="px-6 py-4 font-medium">ID</th>
+              
                       <th className="px-6 py-4 font-medium">Coupon Name</th>
                       <th className="px-6 py-4 font-medium">Discount</th>
                       <th className="px-6 py-4 font-medium">Description</th>
@@ -350,7 +350,7 @@ export function CouponManagement() {
                   <tbody className="divide-y divide-border/60">
                     {coupons.map((coupon) => (
                       <tr key={coupon.coupon_id} className="bg-background/60">
-                        <td className="px-6 py-4 font-medium text-muted-foreground">#{coupon.coupon_id}</td>
+        
                         <td className="px-6 py-4 font-medium">{coupon.coupon_name}</td>
                         <td className="px-6 py-4">{Number(coupon.discount_percent).toFixed(2)}%</td>
                         <td className="px-6 py-4 text-muted-foreground">
