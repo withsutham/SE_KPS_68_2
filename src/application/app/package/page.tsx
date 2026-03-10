@@ -207,7 +207,7 @@ export default function PackagePage() {
                                 <p className="text-lg text-muted-foreground">คุณยังไม่มีแพคเกจที่พร้อมใช้งานในขณะนี้</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {activePackages.map(({ pkgInfo, details }, index) => {
                                     const totalUsed = details.filter(d => d.is_used).length;
                                     const totalServices = details.length;
@@ -215,7 +215,7 @@ export default function PackagePage() {
                                     return (
                                         <Dialog key={`${pkgInfo.package_id}-${index}`}>
                                             <DialogTrigger asChild>
-                                                <Card className="group/card relative border-border/50 bg-background hover:border-primary/50 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col h-full shadow-sm hover:shadow-md active:scale-[0.98]">
+                                                <Card className="group/card relative border-border/50 bg-background hover:border-primary/50 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col shadow-sm hover:shadow-md active:scale-[0.98]">
                                                     {/* Top highlight bar */}
                                                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/80 to-secondary/80" />
 
@@ -225,7 +225,7 @@ export default function PackagePage() {
                                                                 <Package className="h-5 w-5" />
                                                             </div>
                                                         </div>
-                                                        <CardTitle className="text-xl font-medium mt-4 line-clamp-1 group-hover/card:text-primary transition-colors">
+                                                        <CardTitle className="text-xl font-medium mt-4 group-hover/card:text-primary transition-colors leading-relaxed">
                                                             {pkgInfo.package_name}
                                                         </CardTitle>
                                                     </CardHeader>
@@ -403,7 +403,7 @@ export default function PackagePage() {
                                 <p className="text-lg text-muted-foreground">คุณยังไม่มีประวัติการใช้แพคเกจ</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {historyPackages.map(({ pkgInfo, details }, index) => {
                                     const totalUsed = details.length;
                                     const totalServices = details.length;
@@ -411,7 +411,7 @@ export default function PackagePage() {
                                     return (
                                         <Dialog key={`history-${pkgInfo.package_id}-${index}`}>
                                             <DialogTrigger asChild>
-                                                <Card className="group/card relative border-border/50 bg-muted/20 opacity-80 hover:opacity-100 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col h-full shadow-sm active:scale-[0.98]">
+                                                <Card className="group/card relative border-border/50 bg-muted/20 opacity-80 hover:opacity-100 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col shadow-sm active:scale-[0.98]">
                                                     <div className="absolute top-0 left-0 w-full h-1.5 bg-muted-foreground/30" />
 
                                                     <CardHeader className="pt-6 pb-2">
@@ -420,7 +420,7 @@ export default function PackagePage() {
                                                                 <History className="h-5 w-5" />
                                                             </div>
                                                         </div>
-                                                        <CardTitle className="text-xl font-medium mt-4 line-clamp-1 text-muted-foreground line-through">
+                                                        <CardTitle className="text-xl font-medium mt-4 text-muted-foreground line-through leading-relaxed">
                                                             {pkgInfo.package_name}
                                                         </CardTitle>
                                                     </CardHeader>
