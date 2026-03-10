@@ -215,41 +215,48 @@ export default function PackagePage() {
                                     return (
                                         <Dialog key={`${pkgInfo.package_id}-${index}`}>
                                             <DialogTrigger asChild>
-                                                <Card className="border-primary/20 bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col transition-all hover:shadow-md cursor-pointer group/card">
-                                                    <div className="h-1 w-full bg-gradient-to-r from-primary to-secondary" />
-                                                    <CardHeader className="pb-3">
-                                                        <div className="flex justify-between items-start">
-                                                            <CardTitle className="text-lg font-medium group-hover/card:text-primary transition-colors flex items-center gap-2">
-                                                                {pkgInfo.package_name}
-                                                                <ExternalLink className="h-3 w-3 opacity-0 group-hover/card:opacity-50 transition-opacity" />
-                                                            </CardTitle>
+                                                <Card className="group/card relative border-border/50 bg-background hover:border-primary/50 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col h-full shadow-sm hover:shadow-md active:scale-[0.98]">
+                                                    {/* Top highlight bar */}
+                                                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/80 to-secondary/80" />
+
+                                                    <CardHeader className="pt-6 pb-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 bg-primary/5 rounded-lg text-primary group-hover/card:bg-primary group-hover/card:text-white transition-colors">
+                                                                <Package className="h-5 w-5" />
+                                                            </div>
                                                         </div>
+                                                        <CardTitle className="text-xl font-medium mt-4 line-clamp-1 group-hover/card:text-primary transition-colors">
+                                                            {pkgInfo.package_name}
+                                                        </CardTitle>
                                                     </CardHeader>
-                                                    <CardContent className="flex-1 pb-4">
-                                                        <p className="font-semibold text-sm mb-3">บริการในแพคเกจ:</p>
-                                                        <ul className="space-y-2">
-                                                            {details.map((mp, i) => {
-                                                                const massage = mp.package_detail?.massage;
-                                                                return (
-                                                                    <li key={mp.member_package_id || i} className="flex justify-between items-center text-sm border-b border-border/40 pb-2 last:border-0">
-                                                                        <span className="flex items-center gap-2">
-                                                                            <span className={`h-1.5 w-1.5 rounded-full ${mp.is_used ? 'bg-muted-foreground' : 'bg-primary'}`}></span>
-                                                                            <span className={mp.is_used ? 'text-muted-foreground line-through' : ''}>
-                                                                                {massage?.massage_name || "บริการ"}
-                                                                            </span>
-                                                                        </span>
-                                                                        {mp.is_used ? (
-                                                                            <Badge variant="secondary" className="text-[10px] h-5">ใช้แล้ว</Badge>
-                                                                        ) : (
-                                                                            <Badge variant="default" className="text-[10px] h-5 px-1.5 bg-primary/10 text-primary border-0">พร้อมใช้</Badge>
-                                                                        )}
-                                                                    </li>
-                                                                );
-                                                            })}
-                                                        </ul>
+
+                                                    <CardContent className="flex-1 pb-6 pt-2">
+                                                        <div className="mb-4">
+                                                            <div className="flex justify-between items-end mb-1.5">
+                                                                <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">การใช้งาน</span>
+                                                                <span className="text-sm font-bold text-primary">{totalUsed}/{totalServices} <span className="text-[10px] text-muted-foreground font-normal">บริการ</span></span>
+                                                            </div>
+                                                            <div className="w-full h-2 bg-muted/50 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-primary transition-all duration-1000 ease-out rounded-full"
+                                                                    style={{ width: `${(totalUsed / totalServices) * 100}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border/40">
+                                                                <Clock className="h-3.5 w-3.5 text-primary/70" />
+                                                                <span>คงเหลือ {totalServices - totalUsed} บริการที่พร้อมให้คุณใช้งาน</span>
+                                                            </div>
+                                                        </div>
                                                     </CardContent>
-                                                    <CardFooter className="pt-0 justify-between text-xs text-muted-foreground">
-                                                        <span>ใช้ไปแล้ว {totalUsed}/{totalServices} บริการ</span>
+
+                                                    <CardFooter className="pt-0 pb-6">
+                                                        <div className="w-full flex items-center justify-center gap-2 text-xs font-semibold py-2.5 bg-primary/5 text-primary rounded-xl group-hover/card:bg-primary group-hover/card:text-white transition-all">
+                                                            <span>ดูรายละเอียดและจองบริการ</span>
+                                                            <ExternalLink className="h-3 w-3" />
+                                                        </div>
                                                     </CardFooter>
                                                 </Card>
                                             </DialogTrigger>
@@ -404,34 +411,47 @@ export default function PackagePage() {
                                     return (
                                         <Dialog key={`history-${pkgInfo.package_id}-${index}`}>
                                             <DialogTrigger asChild>
-                                                <Card className="border-border opacity-70 bg-muted/30 overflow-hidden flex flex-col transition-all hover:opacity-100 cursor-pointer group/card">
-                                                    <CardHeader className="pb-3">
-                                                        <div className="flex justify-between items-start">
-                                                            <CardTitle className="text-lg font-medium flex items-center gap-2">
-                                                                {pkgInfo.package_name}
-                                                            </CardTitle>
+                                                <Card className="group/card relative border-border/50 bg-muted/20 opacity-80 hover:opacity-100 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col h-full shadow-sm active:scale-[0.98]">
+                                                    <div className="absolute top-0 left-0 w-full h-1.5 bg-muted-foreground/30" />
+
+                                                    <CardHeader className="pt-6 pb-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 bg-muted/50 rounded-lg text-muted-foreground">
+                                                                <History className="h-5 w-5" />
+                                                            </div>
                                                         </div>
+                                                        <CardTitle className="text-xl font-medium mt-4 line-clamp-1 text-muted-foreground line-through">
+                                                            {pkgInfo.package_name}
+                                                        </CardTitle>
                                                     </CardHeader>
-                                                    <CardContent className="flex-1 pb-4">
-                                                        <p className="font-semibold text-sm mb-3 text-muted-foreground">แพคเกจนี้ถูกใช้ไปหมดแล้ว:</p>
-                                                        <ul className="space-y-2">
-                                                            {details.map((mp, i) => {
-                                                                const massage = mp.package_detail?.massage;
-                                                                return (
-                                                                    <li key={mp.member_package_id || i} className="flex justify-between items-center text-sm border-b border-border/40 pb-2 last:border-0 opacity-60">
-                                                                        <span className="flex items-center gap-2">
-                                                                            <span className={`h-1.5 w-1.5 rounded-full bg-muted-foreground`}></span>
-                                                                            <span className={'text-muted-foreground line-through'}>
-                                                                                {massage?.massage_name || "บริการ"}
-                                                                            </span>
-                                                                        </span>
-                                                                    </li>
-                                                                );
-                                                            })}
-                                                        </ul>
+
+                                                    <CardContent className="flex-1 pb-6 pt-2">
+                                                        <div className="mb-4">
+                                                            <div className="flex justify-between items-end mb-1.5">
+                                                                <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">การใช้งานครบแล้ว</span>
+                                                                <span className="text-sm font-bold text-muted-foreground">{totalUsed}/{totalServices} <span className="text-[10px] font-normal">บริการ</span></span>
+                                                            </div>
+                                                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-muted-foreground/40 rounded-full"
+                                                                    style={{ width: `100%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 p-2.5 rounded-lg border border-border/40">
+                                                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                                                <span>คุณได้ใช้บริการในแพคเกจนี้จนครบถ้วนแล้ว</span>
+                                                            </div>
+                                                        </div>
                                                     </CardContent>
-                                                    <CardFooter className="pt-0 justify-between text-xs text-muted-foreground">
-                                                        <span>ใช้ไปครบ {totalUsed}/{totalServices} บริการแล้ว</span>
+
+                                                    <CardFooter className="pt-0 pb-6">
+                                                        <div className="w-full flex items-center justify-center gap-2 text-xs font-semibold py-2.5 bg-muted/30 text-muted-foreground rounded-xl transition-all">
+                                                            <span>ตรวจสอบประวัติการใช้งาน</span>
+                                                            <ExternalLink className="h-3 w-3" />
+                                                        </div>
                                                     </CardFooter>
                                                 </Card>
                                             </DialogTrigger>
