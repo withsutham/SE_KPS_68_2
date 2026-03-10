@@ -128,7 +128,7 @@ async function NavLinkGroup() {
           <DropdownMenuContent align="start" className="w-56 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
             <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
               <Link href="/service-ip/manager/employee/timetable" className="w-full cursor-pointer py-2.5 px-3 text-base">
-                ตารางทำงานเทอราปิส
+                ตารางทำงานพนักงาน
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
