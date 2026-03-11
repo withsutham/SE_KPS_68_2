@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
             serviceEndTime: currentBooking?.massage_end_dateTime ?? null,
         };
     }).sort((a: any, b: any) => {
-        const order = { in_service: 0, available: 1, on_leave: 2, off_duty: 3 };
+        const order: Record<string, number> = { in_service: 0, available: 1, on_leave: 2, off_duty: 3 };
         return (order[a.status] ?? 4) - (order[b.status] ?? 4);
     });
 

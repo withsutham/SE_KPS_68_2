@@ -6,6 +6,8 @@ import { ServicesSection } from "@/components/home/services-section";
 import { FeaturesSection } from "@/components/home/features-section";
 import { MassageListingSection } from "@/components/home/massage-listing-section";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   // Redirect managers and shop owners to the monitor page
   const supabase = await createClient();
