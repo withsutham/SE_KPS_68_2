@@ -11,6 +11,7 @@ import {
   History,
   PlusCircle,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyCouponState } from "@/components/coupon/empty-coupon-state";
 import { ActiveCouponCard } from "@/components/coupon/active-coupon-card";
@@ -22,6 +23,7 @@ export default function CouponPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [myCoupons, setMyCoupons] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState("my-coupons");
   const [isClaiming, setIsClaiming] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<{
     message: string;
@@ -165,6 +167,9 @@ export default function CouponPage() {
 
   const activeCoupons = myCoupons.filter((mc) => !mc.is_used);
   const historyCoupons = myCoupons.filter((mc) => mc.is_used);
+  const collectableCoupons = coupons.filter(
+    (c) => !myCoupons.some((mc) => mc.coupon_id === c.coupon_id),
+  );
 
   return (
     <main className="min-h-screen bg-background font-mitr relative overflow-hidden">
@@ -190,6 +195,9 @@ export default function CouponPage() {
       ) : (
         <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 relative z-10 space-y-8">
           <div className="flex flex-col items-center text-center mb-8 border-b border-border/50 pb-8">
+            <p className="text-xs font-medium tracking-widest text-primary/60 uppercase font-sans mb-3">
+              ฟื้นใจ · Massage & Spa
+            </p>
             <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-foreground mb-3">
               คูปองส่วนลด
             </h1>
@@ -199,33 +207,46 @@ export default function CouponPage() {
             </p>
           </div>
 
-          <Tabs defaultValue="my-coupons" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans overflow-visible">
               <TabsTrigger
                 value="my-coupons"
                 className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
               >
                 <Ticket className="h-4 w-4" />
                 คูปองของฉัน
-                {activeCoupons.length > 0 && (
-                  <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
-                    {activeCoupons.length}
-                  </span>
-                )}
+                <span className={cn(
+                  "ml-1.5 text-[10px] h-5 min-w-[20px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                  activeTab === "my-coupons" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  {activeCoupons.length}
+                </span>
               </TabsTrigger>
               <TabsTrigger
                 value="discover"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full relative overflow-visible"
               >
                 <PlusCircle className="h-4 w-4" />
                 เก็บเพิ่ม
+                {collectableCoupons.length > 0 && (
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-primary text-primary-foreground text-[10px] rounded-xl shadow-lg whitespace-nowrap animate-in fade-in zoom-in duration-300 font-bold">
+                    มี {collectableCoupons.length} คูปองสามารถเก็บได้
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45" />
+                  </div>
+                )}
               </TabsTrigger>
               <TabsTrigger
                 value="history"
                 className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full"
               >
                 <History className="h-4 w-4" />
-                ประวัติการใช้
+                ประวัติ
+                <span className={cn(
+                  "ml-1.5 text-[10px] h-5 min-w-[20px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
+                  activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  {historyCoupons.length}
+                </span>
               </TabsTrigger>
             </TabsList>
 
@@ -298,7 +319,8 @@ export default function CouponPage() {
             </TabsContent>
           </Tabs>
         </div>
-      )}
-    </main>
+      )
+      }
+    </main >
   );
 }

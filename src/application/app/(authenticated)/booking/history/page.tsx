@@ -384,9 +384,9 @@ export default function BookingHistoryPage() {
             <div className="w-full max-w-3xl mx-auto px-4 md:px-8 pt-8 pb-24">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
-                        <Flower2 className="h-7 w-7 text-primary" />
-                    </div>
+                    <p className="text-xs font-medium tracking-widest text-primary/60 uppercase font-sans mb-3">
+                        ฟื้นใจ · Massage & Spa
+                    </p>
                     <h1 className="text-3xl md:text-4xl font-medium font-mitr text-foreground">ประวัติการจอง</h1>
                     <p className="text-muted-foreground mt-2 font-sans text-sm">รายการจองบริการทั้งหมดของคุณ</p>
                 </div>

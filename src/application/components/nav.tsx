@@ -17,7 +17,7 @@ import { NavScrollLink } from "@/components/nav-scroll-link";
 
 export function Nav() {
   return (
-    <nav className="w-full flex justify-center border-b border-border/40 backdrop-blur-md sticky top-0 z-50">
+    <nav className="print:hidden w-full flex justify-center border-b border-border/40 backdrop-blur-md sticky top-0 z-50">
       <div className="w-full max-w-7xl flex justify-between items-center p-6 px-10">
         <div className="flex gap-12 items-center">
           <Link href="/" className="flex items-center gap-2 group">
