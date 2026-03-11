@@ -3,19 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
     const supabase = await createAdminClient();
-    const { data, error } = await supabase
-        .from("package")
-        .select(`
-            *,
-            package_detail(
-                massage(
-                    massage_name,
-                    massage_id,
-                    massage_price,
-                    massage_time
-                )
-            )
-        `);
+    const { data, error } = await supabase.from("package").select("*, package_detail(*, massage(*))");
 
     if (error) {
         console.error("package GET error:", error.message);
