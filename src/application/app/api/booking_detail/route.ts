@@ -4,11 +4,18 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
     const supabase = await createAdminClient();
     const url = new URL(request.url);
-    const dateStr = url.searchParams.get("date"); // Expects YYYY-MM-DD
+    const dateStr = url.searchParams.get("date");
+    const weekStart = url.searchParams.get("week_start");
 
-    let query = supabase.from("booking_detail").select("massage_start_dateTime, massage_end_dateTime");
+    let query = supabase.from("booking_detail").select("*");
 
-    if (dateStr) {
+    if (weekStart) {
+        const start = `${weekStart}T00:00:00+07:00`;
+        const endDate = new Date(weekStart);
+        endDate.setDate(endDate.getDate() + 7);
+        const end = `${endDate.toISOString().split("T")[0]}T00:00:00+07:00`;
+        query = query.gte("massage_start_dateTime", start).lt("massage_start_dateTime", end);
+    } else if (dateStr) {
         const startOfDay = `${dateStr}T00:00:00+07:00`;
         const endOfDay = `${dateStr}T23:59:59+07:00`;
         query = query.gte("massage_start_dateTime", startOfDay).lt("massage_start_dateTime", endOfDay);

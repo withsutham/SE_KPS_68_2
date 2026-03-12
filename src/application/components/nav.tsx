@@ -127,8 +127,8 @@ async function NavLinkGroup() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
             <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-              <Link href="/manager/employee/timetable" className="w-full cursor-pointer py-2.5 px-3 text-base">
-                ตารางทำงานพนักงาน
+              <Link href="/manager/employee/schedule" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                จัดตารางงานรายสัปดาห์
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
@@ -177,7 +177,7 @@ async function NavLinkGroup() {
           ดูบริการนวด
         </NavScrollLink>
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/manager/employee/timetable" className="text-sm">
+          <Link href="/manager/employee/schedule" className="text-sm">
             ตารางทำงาน
           </Link>
         </Button>
