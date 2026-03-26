@@ -21,12 +21,17 @@ type ApiResponse = {
   error?: string;
 };
 
+type SortField = "massage_price" | "massage_time";
+type SortDirection = "asc" | "desc";
+
 export default function ListMassage() {
   const [massages, setMassages] = useState<Massage[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [previewImage, setPreviewImage] = useState<{ src: string; name: string } | null>(null);
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const fetchMassages = async () => {
     setLoading(true);
@@ -54,6 +59,28 @@ export default function ListMassage() {
     if (!normalized) return massages;
     return massages.filter((massage) => massage.massage_name.toLowerCase().includes(normalized));
   }, [massages, searchTerm]);
+
+  const sortedMassages = useMemo(() => {
+    if (!sortField) return filteredMassages;
+    return [...filteredMassages].sort((a, b) => {
+      const diff = Number(a[sortField]) - Number(b[sortField]);
+      return sortDirection === "asc" ? diff : -diff;
+    });
+  }, [filteredMassages, sortDirection, sortField]);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField !== field) {
+      setSortField(field);
+      setSortDirection("asc");
+      return;
+    }
+    setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+  };
+
+  const sortIndicator = (field: SortField) => {
+    if (sortField !== field) return "";
+    return sortDirection === "asc" ? " ↑" : " ↓";
+  };
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this massage item?")) return;
@@ -111,13 +138,29 @@ export default function ListMassage() {
               <tr className="border-b border-border bg-muted/40 text-muted-foreground">
                 <th className="rounded-tl-lg px-4 py-3">ภาพ</th>
                 <th className="px-4 py-3">ชื่อบริการ</th>
-                <th className="px-4 py-3">ราคา</th>
-                <th className="px-4 py-3">ระยะเวลา (นาที)</th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("massage_price")}
+                    className="inline-flex items-center font-semibold hover:text-foreground"
+                  >
+                    ราคา{sortIndicator("massage_price")}
+                  </button>
+                </th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("massage_time")}
+                    className="inline-flex items-center font-semibold hover:text-foreground"
+                  >
+                    ระยะเวลา{sortIndicator("massage_time")}
+                  </button>
+                </th>
                 <th className="rounded-tr-lg px-4 py-3 text-right">การแก้ไข</th>
               </tr>
             </thead>
             <tbody>
-              {filteredMassages.map((massage) => (
+              {sortedMassages.map((massage) => (
                 <tr
                   key={massage.massage_id}
                   className="border-b border-border transition-colors hover:bg-muted/30"
@@ -152,7 +195,7 @@ export default function ListMassage() {
                   <td className="px-4 py-3 font-semibold text-primary">
                     ฿{Number(massage.massage_price).toLocaleString("en-US")}
                   </td>
-                  <td className="px-4 py-3">{Number(massage.massage_time)}</td>
+                  <td className="px-4 py-3">{Number(massage.massage_time)} นาที</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
                       <Link href={`/manager/massage/edit/${massage.massage_id}`}>
