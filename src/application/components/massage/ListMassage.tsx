@@ -76,11 +76,11 @@ export default function ListMassage() {
   return (
     <div className="w-full min-w-0 rounded-lg border border-border bg-card p-6 shadow-md">
       <div className="mb-4 flex min-w-0 flex-col gap-4">
-        <h3 className="text-xl font-semibold">Massage List</h3>
+        <h3 className="text-xl font-semibold">รายการบริการนวด</h3>
         <Input
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by massage name"
+          placeholder="ค้นหาบริการนวด..."
           className="w-full min-w-0 max-w-md font-mitr"
         />
       </div>
@@ -96,11 +96,11 @@ export default function ListMassage() {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-muted-foreground">
-                <th className="rounded-tl-lg px-4 py-3">Image</th>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Price</th>
-                <th className="px-4 py-3">Duration (min)</th>
-                <th className="rounded-tr-lg px-4 py-3 text-right">Actions</th>
+                <th className="rounded-tl-lg px-4 py-3">ภาพ</th>
+                <th className="px-4 py-3">ชื่อบริการ</th>
+                <th className="px-4 py-3">ราคา</th>
+                <th className="px-4 py-3">ระยะเวลา (นาที)</th>
+                <th className="rounded-tr-lg px-4 py-3 text-right">การแก้ไข</th>
               </tr>
             </thead>
             <tbody>
@@ -137,14 +137,14 @@ export default function ListMassage() {
                   </td>
                   <td className="px-4 py-3 font-medium">{massage.massage_name}</td>
                   <td className="px-4 py-3 font-semibold text-primary">
-                    THB {Number(massage.massage_price).toLocaleString("en-US")}
+                    ฿ {Number(massage.massage_price).toLocaleString("en-US")}
                   </td>
                   <td className="px-4 py-3">{Number(massage.massage_time)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
                       <Link href={`/manager/massage/edit/${massage.massage_id}`}>
                         <Button variant="outline" size="sm">
-                          Edit
+                          แก้ไข
                         </Button>
                       </Link>
                       <Button
@@ -153,7 +153,7 @@ export default function ListMassage() {
                         disabled={deletingId === massage.massage_id}
                         onClick={() => handleDelete(massage.massage_id)}
                       >
-                        {deletingId === massage.massage_id ? "Deleting..." : "Delete"}
+                        {deletingId === massage.massage_id ? "Deleting..." : "ลบ"}
                       </Button>
                     </div>
                   </td>
