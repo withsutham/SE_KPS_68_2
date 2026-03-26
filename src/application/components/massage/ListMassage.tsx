@@ -150,7 +150,7 @@ export default function ListMassage() {
                   </td>
                   <td className="px-4 py-3 font-medium">{massage.massage_name}</td>
                   <td className="px-4 py-3 font-semibold text-primary">
-                    ฿ {Number(massage.massage_price).toLocaleString("en-US")}
+                    ฿{Number(massage.massage_price).toLocaleString("en-US")}
                   </td>
                   <td className="px-4 py-3">{Number(massage.massage_time)}</td>
                   <td className="px-4 py-3 text-right">
