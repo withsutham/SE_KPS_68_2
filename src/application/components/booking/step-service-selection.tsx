@@ -55,6 +55,8 @@ import {
   CheckCircle2,
   ImageOff,
   GripVertical,
+  Gift,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -348,10 +350,19 @@ function SortableServiceItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center justify-between p-4 px-5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl group transition-all duration-200",
+        "relative flex items-center justify-between p-4 px-5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl group transition-all duration-200",
         isDragging && "opacity-90 shadow-xl border-primary scale-[1.02]"
       )}
     >
+      {/* Package Badge */}
+      {service.fromPackage && (
+        <div className="absolute -top-2 -right-2">
+          <Badge className="bg-secondary text-secondary-foreground text-[9px] px-1.5 py-0.5">
+            แพ็กเกจ
+          </Badge>
+        </div>
+      )}
+
       <div className="flex items-center gap-4 cursor-default">
         <div
           {...attributes}
@@ -362,7 +373,11 @@ function SortableServiceItem({
         </div>
         <span className="font-mitr font-medium text-lg text-primary min-w-[1.2rem] text-center">{index + 1}.</span>
         <div className="h-10 w-10 shrink-0 rounded-[14px] bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20">
-          <Icon className="h-5 w-5" />
+          {service.fromPackage ? (
+            <Gift className="h-5 w-5" />
+          ) : (
+            <Icon className="h-5 w-5" />
+          )}
         </div>
         <div>
           <p className="font-medium font-mitr text-foreground">{service.massage_name}</p>
@@ -373,7 +388,13 @@ function SortableServiceItem({
         </div>
       </div>
       <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4">
-        <span className="text-sm font-semibold text-primary pt-1 sm:pt-0">฿{Number(service.massage_price).toLocaleString()}</span>
+        <span className="text-sm font-semibold text-primary pt-1 sm:pt-0">
+          {service.fromPackage ? (
+            <span className="text-green-600">ฟรี</span>
+          ) : (
+            `฿${Number(service.massage_price).toLocaleString()}`
+          )}
+        </span>
 
         <div className="flex items-center gap-1 border border-border/60 rounded-full py-0.5 px-1 bg-background/50">
           <button
@@ -414,12 +435,82 @@ function SortableServiceItem({
   );
 }
 
+// ─── Package Service Card ─────────────────────────────────────────────────────
+function PackageServiceCard({
+  packageData,
+  isSelected,
+  onSelect,
+}: {
+  packageData: any;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  const massage = packageData.massage;
+  const pkg = packageData.package;
+
+  return (
+    <button
+      onClick={onSelect}
+      className={cn(
+        "group relative flex items-center gap-3 p-4 rounded-xl border text-left transition-all",
+        isSelected
+          ? "border-primary/50 bg-primary/5 ring-2 ring-primary/20"
+          : "border-border/50 hover:border-primary/30 bg-card/40 hover:bg-card/60"
+      )}
+    >
+      {/* Package Badge */}
+      <div className="absolute -top-2 -right-2">
+        <Badge className="bg-secondary text-secondary-foreground text-[10px] px-1.5 py-0.5">
+          แพ็กเกจ
+        </Badge>
+      </div>
+
+      {/* Icon */}
+      <div
+        className={cn(
+          "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
+          isSelected ? "bg-primary text-white" : "bg-primary/10 text-primary"
+        )}
+      >
+        <Gift className="h-5 w-5" />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="font-medium font-mitr text-sm truncate">
+          {massage?.massage_name || "บริการ"}
+        </p>
+        <p className="text-xs text-muted-foreground truncate">
+          จาก: {pkg?.package_name || "แพ็กเกจ"}
+        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <Badge
+            variant="secondary"
+            className="text-[10px] px-1.5 py-0.5 bg-green-500/10 text-green-600 border-green-500/20"
+          >
+            ฟรี (ใช้แพ็กเกจ)
+          </Badge>
+          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+            <Clock className="h-2.5 w-2.5" />
+            {massage?.massage_time || 60} นาที
+          </span>
+        </div>
+      </div>
+
+      {/* Selection indicator */}
+      {isSelected && <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />}
+    </button>
+  );
+}
+
 // ─── Main Step Component ──────────────────────────────────────────────────────
 export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = true }: StepProps) {
   const [allServices, setAllServices] = useState<MassageService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [unusedPackages, setUnusedPackages] = useState<any[]>([]);
+  const [packagesLoading, setPackagesLoading] = useState(false);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -447,6 +538,27 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Fetch user's unused packages
+  useEffect(() => {
+    if (data.customerId) {
+      const fetchPackages = async () => {
+        try {
+          setPackagesLoading(true);
+          const res = await fetch(`/api/member_package/unused?customer_id=${data.customerId}`);
+          const json = await res.json();
+          if (json.success && json.data) {
+            setUnusedPackages(json.data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch packages:", err);
+        } finally {
+          setPackagesLoading(false);
+        }
+      };
+      fetchPackages();
+    }
+  }, [data.customerId]);
+
   const selectedIds = useMemo(
     () => new Set(data.selectedServices.map(s => s.massage_id)),
     [data.selectedServices]
@@ -458,6 +570,40 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
       onUpdate({ selectedServices: data.selectedServices.filter(s => s.massage_id !== service.massage_id) });
     } else {
       onUpdate({ selectedServices: [...data.selectedServices, service] });
+    }
+  };
+
+  const handlePackageToggle = (pkg: any) => {
+    const massage = pkg.massage;
+    const packageInfo = pkg.package;
+    
+    // Create a unique ID for package services
+    const uniqueId = `pkg_${pkg.member_package_id}`;
+    
+    if (selectedIds.has(uniqueId)) {
+      // Remove from selection
+      onUpdate({
+        selectedServices: data.selectedServices.filter(
+          s => s.massage_id !== uniqueId
+        )
+      });
+    } else {
+      // Add to selection as a service with package metadata
+      const packageService: MassageService = {
+        massage_id: uniqueId,
+        massage_name: massage?.massage_name || "บริการจากแพ็กเกจ",
+        massage_price: 0, // FREE - using package
+        image_src: packageInfo?.image_src || null,
+        duration: massage?.massage_time || 60,
+        // Package metadata
+        fromPackage: true,
+        member_package_id: pkg.member_package_id,
+        package_name: packageInfo?.package_name,
+      };
+      
+      onUpdate({
+        selectedServices: [...data.selectedServices, packageService]
+      });
     }
   };
 
@@ -499,8 +645,10 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
     }
   };
 
-  const totalPrice = data.selectedServices.reduce((sum, s) => sum + Number(s.massage_price), 0);
+  const totalPrice = data.selectedServices.reduce((sum, s) => sum + (s.fromPackage ? 0 : Number(s.massage_price)), 0);
   const totalTime = data.selectedServices.reduce((sum, s) => sum + (s.duration ?? DEFAULT_DURATION), 0);
+  const paidServices = data.selectedServices.filter(s => !s.fromPackage);
+  const packageServices = data.selectedServices.filter(s => s.fromPackage);
 
   if (loading) {
     return (
@@ -529,6 +677,43 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
       </div>
 
       <div className="max-w-2xl mx-auto w-full flex flex-col gap-3">
+        {/* My Packages Section - Only for authenticated users with packages */}
+        {data.customerId && !packagesLoading && unusedPackages.length > 0 && (
+          <div className="flex flex-col gap-3 pb-4 border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium font-mitr text-foreground flex items-center gap-2">
+                <Package className="h-4 w-4 text-primary" />
+                แพ็กเกจของฉัน
+              </h3>
+              <Badge variant="secondary" className="text-xs">
+                {unusedPackages.length} บริการพร้อมใช้
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {unusedPackages.map((pkg) => (
+                <PackageServiceCard
+                  key={pkg.member_package_id}
+                  packageData={pkg}
+                  isSelected={selectedIds.has(`pkg_${pkg.member_package_id}`)}
+                  onSelect={() => handlePackageToggle(pkg)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Divider */}
+        {data.customerId && !packagesLoading && unusedPackages.length > 0 && (
+          <div className="flex items-center gap-4 my-2">
+            <div className="flex-1 h-px bg-border/50" />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              หรือเลือกบริการเพิ่มเติม
+            </span>
+            <div className="flex-1 h-px bg-border/50" />
+          </div>
+        )}
+
         {/* Empty Placeholder */}
         {data.selectedServices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 rounded-2xl border border-dashed border-border/50 bg-card/20 text-muted-foreground text-sm gap-2">
@@ -562,12 +747,23 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
             </DndContext>
 
             {/* Summary */}
-            <div className="flex items-center justify-between px-5 py-3 rounded-2xl bg-primary/5 border border-primary/20 text-sm font-medium">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                รวมเวลา {totalTime} นาที
+            <div className="flex flex-col gap-2 px-5 py-3 rounded-2xl bg-primary/5 border border-primary/20 text-sm font-medium">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  รวมเวลา {totalTime} นาที
+                </div>
+                <span className="text-primary font-semibold text-base">รวม ฿{totalPrice.toLocaleString()}</span>
               </div>
-              <span className="text-primary font-semibold text-base">รวม ฿{totalPrice.toLocaleString()}</span>
+              {packageServices.length > 0 && (
+                <div className="flex items-center justify-between text-xs text-green-600">
+                  <span className="flex items-center gap-1">
+                    <Gift className="h-3 w-3" />
+                    ใช้แพ็กเกจ {packageServices.length} รายการ
+                  </span>
+                  <span>ฟรี</span>
+                </div>
+              )}
             </div>
           </div>
         )}
