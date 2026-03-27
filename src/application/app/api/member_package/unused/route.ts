@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       .select("*, package_detail(*, package(*), massage(*))")
       .eq("member_id", customer_id)
       .eq("is_used", false)
-      .or(`expire_dateTime.is.null,expire_dateTime.gt.${new Date().toISOString()}`);
+      .or(`expire_datetime.is.null,expire_datetime.gt.${new Date().toISOString()}`);
 
     if (error) {
       console.error("member_package/unused GET error:", error.message);
