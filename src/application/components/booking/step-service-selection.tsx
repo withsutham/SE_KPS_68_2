@@ -519,6 +519,14 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [unusedPackages, setUnusedPackages] = useState<any[]>([]);
   const [packagesLoading, setPackagesLoading] = useState(false);
+  const [expandedPackages, setExpandedPackages] = useState<Record<number, boolean>>({});
+
+  const togglePackageExpand = (packageId: number) => {
+    setExpandedPackages(prev => ({
+      ...prev,
+      [packageId]: !prev[packageId]
+    }));
+  };
 
   // Group packages by parent package
   const groupedPackages = useMemo(() => {
@@ -712,27 +720,72 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
               </Badge>
             </div>
 
-            <div className="space-y-6">
-              {groupedPackages.map((group: any) => (
-                <div key={group.package.package_id} className="space-y-3">
-                  <div className="flex items-center gap-2 px-1">
-                    <Gift className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {group.package.package_name} ({group.services.length})
-                    </span>
+            <div className="space-y-4">
+              {groupedPackages.map((group: any) => {
+                const isExpanded = !!expandedPackages[group.package.package_id];
+                const selectedCount = group.services.filter((s: any) => 
+                  selectedIds.has(`pkg_${s.member_package_id}`)
+                ).length;
+
+                return (
+                  <div key={group.package.package_id} className="rounded-2xl border border-border/40 bg-card/20 overflow-hidden transition-all duration-300">
+                    <button 
+                      onClick={() => togglePackageExpand(group.package.package_id)}
+                      className="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group/row"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
+                          isExpanded || selectedCount > 0 ? "bg-primary text-white" : "bg-primary/10 text-primary"
+                        )}>
+                          <Gift className="h-5 w-5" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium font-mitr text-sm text-foreground">
+                            {group.package.package_name}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-sans mt-0.5">
+                            {group.services.length} บริการในแพ็กเกจ
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        {selectedCount > 0 && (
+                          <Badge className="bg-primary text-white border-transparent text-[10px] h-5 px-1.5">
+                            เลือกแล้ว {selectedCount}
+                          </Badge>
+                        )}
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4 text-muted-foreground group-hover/row:text-primary transition-colors" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground group-hover/row:text-primary transition-colors" />
+                        )}
+                      </div>
+                    </button>
+
+                    <div className={cn(
+                      "grid transition-all duration-300 ease-in-out",
+                      isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                    )}>
+                      <div className="overflow-hidden">
+                        <div className="p-4 pt-0">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-border/40">
+                            {group.services.map((pkg: any) => (
+                              <PackageServiceCard
+                                key={pkg.member_package_id}
+                                packageData={pkg}
+                                isSelected={selectedIds.has(`pkg_${pkg.member_package_id}`)}
+                                onSelect={() => handlePackageToggle(pkg)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {group.services.map((pkg: any) => (
-                      <PackageServiceCard
-                        key={pkg.member_package_id}
-                        packageData={pkg}
-                        isSelected={selectedIds.has(`pkg_${pkg.member_package_id}`)}
-                        onSelect={() => handlePackageToggle(pkg)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
