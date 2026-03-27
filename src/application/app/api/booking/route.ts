@@ -183,61 +183,6 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-        }
-
-        // Find available room mapping
-        const validRooms =
-          rooms?.filter(
-            (r) => String(r.massage_id) === String(service.massage_id),
-          ) || [];
-        let assignedRoomId = null;
-        for (const rm of validRooms) {
-          const overlappingCount = localBookings.filter(
-            (b: any) =>
-              b.room_id === rm.room_id &&
-              new Date(b.massage_start_dateTime) < endDateTime &&
-              new Date(b.massage_end_dateTime) > currentStartTime,
-          ).length;
-
-          if (overlappingCount < rm.capacity) {
-            assignedRoomId = rm.room_id;
-            break;
-          }
-        }
-
-        const payload = {
-          booking_id: bookingId,
-          massage_id: service.massage_id,
-          price: service.price,
-          massage_start_dateTime: currentStartTime.toISOString(),
-          massage_end_dateTime: endDateTime.toISOString(),
-          employee_id: assignedEmployeeId,
-          room_id: assignedRoomId,
-        };
-        detailsPayload.push(payload);
-
-        // Track this new booking locally to prevent internal double booking for consecutive services
-        localBookings.push({
-          employee_id: assignedEmployeeId,
-          room_id: assignedRoomId,
-          massage_start_dateTime: currentStartTime.toISOString(),
-          massage_end_dateTime: endDateTime.toISOString(),
-        });
-
-        currentStartTime = new Date(endDateTime);
-      }
-
-      const { error: detailsError } = await supabase
-        .from("booking_detail")
-        .insert(detailsPayload);
-
-      if (detailsError) {
-        console.error(
-          "booking POST error (booking_detail table):",
-          detailsError.message,
-        );
-      }
-    }
 
     // 3. Create payment
     const paymentPayload: any = {
