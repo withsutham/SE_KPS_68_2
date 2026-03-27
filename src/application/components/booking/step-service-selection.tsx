@@ -764,25 +764,20 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
                       </div>
                     </button>
 
-                    <div className={cn(
-                      "grid transition-all duration-300 ease-in-out",
-                      isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                    )}>
-                      <div className="overflow-hidden">
-                        <div className="p-4 pt-0">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-border/40">
-                            {group.services.map((pkg: any) => (
-                              <PackageServiceCard
-                                key={pkg.member_package_id}
-                                packageData={pkg}
-                                isSelected={selectedIds.has(`pkg_${pkg.member_package_id}`)}
-                                onSelect={() => handlePackageToggle(pkg)}
-                              />
-                            ))}
-                          </div>
+                    {isExpanded && (
+                      <div className="p-4 pt-0 animate-in slide-in-from-top-2 fade-in duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-border/40">
+                          {group.services.map((pkg: any) => (
+                            <PackageServiceCard
+                              key={pkg.member_package_id}
+                              packageData={pkg}
+                              isSelected={selectedIds.has(`pkg_${pkg.member_package_id}`)}
+                              onSelect={() => handlePackageToggle(pkg)}
+                            />
+                          ))}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })}
