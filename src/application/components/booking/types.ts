@@ -8,6 +8,10 @@ export interface MassageService {
   // UI-only enrichments (not in DB)
   description?: string;
   duration?: number;
+  // Package tracking (optional - only set when service comes from user's package)
+  fromPackage?: boolean;
+  member_package_id?: number;
+  package_name?: string;
 }
 
 export interface BookingData {

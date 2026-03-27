@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
 
     // 2. Create booking details
     let detailsPayload: any[] = [];
+    let packageIdsToMark: number[] = [];
+    
     if (body.services && Array.isArray(body.services)) {
       const startDateTime = new Date(body.booking_datetime);
       const dateStr = startDateTime.toLocaleDateString("en-CA"); // 'YYYY-MM-DD'
@@ -85,63 +87,87 @@ export async function POST(request: NextRequest) {
           currentStartTime.getTime() + (service.duration || 60) * 60000,
         );
 
-        // Find available employee mapping
-        const skilledEmployees =
-          skills
-            ?.filter((s) => String(s.massage_id) === String(service.massage_id))
-            .map((s) => s.employee_id) || [];
-        let assignedEmployeeId = null;
-        for (const empId of skilledEmployees) {
-          const isOverlapping = localBookings.some(
-            (b: any) =>
-              b.employee_id === empId &&
-              new Date(b.massage_start_dateTime) < endDateTime &&
-              new Date(b.massage_end_dateTime) > currentStartTime,
-          );
-          if (!isOverlapping) {
-            assignedEmployeeId = empId;
-            break;
+        // Extract member_package_id if this service came from a package
+        let memberPackageId = null;
+        let massageId = service.massage_id;
+        
+        // Check if this is a package service (ID format: "pkg_123")
+        if (String(massageId).startsWith("pkg_")) {
+          memberPackageId = service.member_package_id;
+          // Don't auto-assign therapist/room for package services - use null
+          const payload = {
+            booking_id: bookingId,
+            massage_id: massageId,
+            price: 0, // Package services are free
+            massage_start_dateTime: currentStartTime.toISOString(),
+            massage_end_dateTime: endDateTime.toISOString(),
+            employee_id: null,
+            room_id: null,
+            member_package_id: memberPackageId,
+          };
+          detailsPayload.push(payload);
+          packageIdsToMark.push(memberPackageId);
+        } else {
+          // Regular paid service - apply auto-assignment
+          // Find available employee mapping
+          const skilledEmployees =
+            skills
+              ?.filter((s) => String(s.massage_id) === String(massageId))
+              .map((s) => s.employee_id) || [];
+          let assignedEmployeeId = null;
+          for (const empId of skilledEmployees) {
+            const isOverlapping = localBookings.some(
+              (b: any) =>
+                b.employee_id === empId &&
+                new Date(b.massage_start_dateTime) < endDateTime &&
+                new Date(b.massage_end_dateTime) > currentStartTime,
+            );
+            if (!isOverlapping) {
+              assignedEmployeeId = empId;
+              break;
+            }
           }
-        }
 
-        // Find available room mapping
-        const validRooms =
-          rooms?.filter(
-            (r) => String(r.massage_id) === String(service.massage_id),
-          ) || [];
-        let assignedRoomId = null;
-        for (const rm of validRooms) {
-          const overlappingCount = localBookings.filter(
-            (b: any) =>
-              b.room_id === rm.room_id &&
-              new Date(b.massage_start_dateTime) < endDateTime &&
-              new Date(b.massage_end_dateTime) > currentStartTime,
-          ).length;
+          // Find available room mapping
+          const validRooms =
+            rooms?.filter(
+              (r) => String(r.massage_id) === String(massageId),
+            ) || [];
+          let assignedRoomId = null;
+          for (const rm of validRooms) {
+            const overlappingCount = localBookings.filter(
+              (b: any) =>
+                b.room_id === rm.room_id &&
+                new Date(b.massage_start_dateTime) < endDateTime &&
+                new Date(b.massage_end_dateTime) > currentStartTime,
+            ).length;
 
-          if (overlappingCount < rm.capacity) {
-            assignedRoomId = rm.room_id;
-            break;
+            if (overlappingCount < rm.capacity) {
+              assignedRoomId = rm.room_id;
+              break;
+            }
           }
+
+          const payload = {
+            booking_id: bookingId,
+            massage_id: massageId,
+            price: service.price,
+            massage_start_dateTime: currentStartTime.toISOString(),
+            massage_end_dateTime: endDateTime.toISOString(),
+            employee_id: assignedEmployeeId,
+            room_id: assignedRoomId,
+            member_package_id: null,
+          };
+          detailsPayload.push(payload);
+
+          // Track this new booking locally to prevent internal double booking for consecutive services
+          localBookings.push({
+            employee_id: assignedEmployeeId,
+            room_id: assignedRoomId,
+            massage_start_dateTime: currentStartTime.toISOString(),
+            massage_end_dateTime: endDateTime.toISOString(),
+          });
         }
-
-        const payload = {
-          booking_id: bookingId,
-          massage_id: service.massage_id,
-          price: service.price,
-          massage_start_dateTime: currentStartTime.toISOString(),
-          massage_end_dateTime: endDateTime.toISOString(),
-          employee_id: assignedEmployeeId,
-          room_id: assignedRoomId,
-        };
-        detailsPayload.push(payload);
-
-        // Track this new booking locally to prevent internal double booking for consecutive services
-        localBookings.push({
-          employee_id: assignedEmployeeId,
-          room_id: assignedRoomId,
-          massage_start_dateTime: currentStartTime.toISOString(),
-          massage_end_dateTime: endDateTime.toISOString(),
-        });
 
         currentStartTime = new Date(endDateTime);
       }
@@ -195,6 +221,21 @@ export async function POST(request: NextRequest) {
         console.error(
           "booking POST error (member_coupon table):",
           couponError.message,
+        );
+      }
+    }
+
+    // 4. Mark used packages as used
+    if (packageIdsToMark.length > 0) {
+      const { error: packageError } = await supabase
+        .from("member_package")
+        .update({ is_used: true })
+        .in("member_package_id", packageIdsToMark);
+
+      if (packageError) {
+        console.error(
+          "booking POST error (member_package table):",
+          packageError.message,
         );
       }
     }
