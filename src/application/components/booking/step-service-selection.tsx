@@ -29,6 +29,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -162,12 +168,30 @@ interface ServicePickerProps {
   allServices: MassageService[];
   selectedIds: Set<string | number>;
   onToggle: (service: MassageService) => void;
+  customerId?: number;
+  unusedPackages?: any[];
+  onPackageToggle?: (pkg: any) => void;
 }
 
-function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle }: ServicePickerProps) {
+function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle, customerId, unusedPackages = [], onPackageToggle }: ServicePickerProps) {
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("default");
+  const [activeTab, setActiveTab] = useState<"all" | "packages">("all");
+
+  // Group packages by parent package
+  const groupedPackages = useMemo(() => {
+    const groups: Record<number, { package: any; services: any[] }> = {};
+    unusedPackages.forEach((pkg) => {
+      const packageId = pkg.package?.package_id;
+      if (!packageId) return;
+      if (!groups[packageId]) {
+        groups[packageId] = { package: pkg.package, services: [] };
+      }
+      groups[packageId].services.push(pkg);
+    });
+    return Object.values(groups);
+  }, [unusedPackages]);
 
   const bounds = useMemo(() => {
     if (!allServices.length) return { minPrice: 0, maxPrice: 9999, minTime: 0, maxTime: 999 };
@@ -207,6 +231,20 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle 
     return result;
   }, [allServices, search, priceRange, timeRange, sortKey]);
 
+  // Filter packages by search
+  const filteredPackages = useMemo(() => {
+    return groupedPackages.map(group => ({
+      ...group,
+      services: group.services.filter(pkg => {
+        const massage = pkg.massage;
+        const nameMatch = massage?.massage_name?.toLowerCase().includes(search.toLowerCase()) ?? true;
+        const priceMatch = true; // Packages are free
+        const timeMatch = pkg.duration == null || (pkg.duration >= timeRange[0] && pkg.duration <= timeRange[1]);
+        return nameMatch && priceMatch && timeMatch;
+      })
+    })).filter(group => group.services.length > 0);
+  }, [groupedPackages, search, timeRange]);
+
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-2xl w-full p-0 overflow-hidden max-h-[90vh] flex flex-col">
@@ -214,97 +252,213 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle 
           <DialogTitle className="font-mitr text-xl text-foreground">เพิ่มบริการ</DialogTitle>
         </DialogHeader>
 
-        {/* Controls */}
-        <div className="px-6 pt-4 pb-3 flex flex-col gap-3 border-b border-border/30 shrink-0">
-          {/* Row 1: Search + Sort + Filter */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <input
-                type="text"
-                placeholder="ค้นหาบริการ..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-8 py-2 rounded-full border border-border/50 bg-muted/30 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              />
-              {search && (
-                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  <X className="h-3.5 w-3.5" />
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "all" | "packages")} className="flex-1 flex flex-col">
+          <TabsList className="mx-6 mt-4 grid w-auto grid-cols-2 bg-muted/40 p-1 rounded-lg">
+            <TabsTrigger value="all" className="data-[state=active]:bg-background rounded-md">
+              บริการทั้งหมด
+            </TabsTrigger>
+            <TabsTrigger value="packages" className="data-[state=active]:bg-background rounded-md gap-2">
+              <Package className="h-4 w-4" />
+              แพ็กเกจของฉัน
+              {unusedPackages.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 h-5">
+                  {unusedPackages.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Controls - shown only on "All Services" tab */}
+          {activeTab === "all" && (
+            <div className="px-6 pt-4 pb-3 flex flex-col gap-3 border-b border-border/30 shrink-0">
+              {/* Row 1: Search + Sort + Filter */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาบริการ..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-8 py-2 rounded-full border border-border/50 bg-muted/30 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  />
+                  {search && (
+                    <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sort */}
+                <Select value={sortKey} onValueChange={v => setSortKey(v as SortKey)}>
+                  <SelectTrigger className="w-40 rounded-full border-border/50 bg-muted/30 text-sm h-9">
+                    <SelectValue placeholder="เรียงตาม" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">ค่าเริ่มต้น</SelectItem>
+                    <SelectItem value="price_asc">ราคา: น้อย → มาก</SelectItem>
+                    <SelectItem value="price_desc">ราคา: มาก → น้อย</SelectItem>
+                    <SelectItem value="time_asc">เวลา: สั้น → ยาว</SelectItem>
+                    <SelectItem value="time_desc">เวลา: ยาว → สั้น</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Filter toggle */}
+                <button
+                  onClick={() => setShowFilters(v => !v)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium transition-all h-9",
+                    showFilters ? "border-primary/50 bg-primary/10 text-primary" : "border-border/50 bg-muted/30 text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  กรอง
                 </button>
-              )}
-            </div>
-
-            {/* Sort */}
-            <Select value={sortKey} onValueChange={v => setSortKey(v as SortKey)}>
-              <SelectTrigger className="w-40 rounded-full border-border/50 bg-muted/30 text-sm h-9">
-                <SelectValue placeholder="เรียงตาม" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">ค่าเริ่มต้น</SelectItem>
-                <SelectItem value="price_asc">ราคา: น้อย → มาก</SelectItem>
-                <SelectItem value="price_desc">ราคา: มาก → น้อย</SelectItem>
-                <SelectItem value="time_asc">เวลา: สั้น → ยาว</SelectItem>
-                <SelectItem value="time_desc">เวลา: ยาว → สั้น</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Filter toggle */}
-            <button
-              onClick={() => setShowFilters(v => !v)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium transition-all h-9",
-                showFilters ? "border-primary/50 bg-primary/10 text-primary" : "border-border/50 bg-muted/30 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              กรอง
-            </button>
-          </div>
-
-          {/* Row 2: Filter sliders */}
-          {showFilters && (
-            <div className="flex flex-col gap-3 pb-1 animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-xs">
-                  <span className="font-medium">ช่วงราคา</span>
-                  <span className="text-primary">฿{priceRange[0].toLocaleString()} – ฿{priceRange[1].toLocaleString()}</span>
-                </div>
-                <Slider min={bounds.minPrice} max={bounds.maxPrice} step={50} value={priceRange} onValueChange={v => setPriceRange(v as [number, number])} />
               </div>
-              {bounds.maxTime > bounds.minTime && (
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-medium">ระยะเวลา</span>
-                    <span className="text-primary">{timeRange[0]}–{timeRange[1]} นาที</span>
+
+              {/* Row 2: Filter sliders */}
+              {showFilters && (
+                <div className="flex flex-col gap-3 pb-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="font-medium">ช่วงราคา</span>
+                      <span className="text-primary">฿{priceRange[0].toLocaleString()} – ฿{priceRange[1].toLocaleString()}</span>
+                    </div>
+                    <Slider min={bounds.minPrice} max={bounds.maxPrice} step={50} value={priceRange} onValueChange={v => setPriceRange(v as [number, number])} />
                   </div>
-                  <Slider min={bounds.minTime} max={bounds.maxTime} step={15} value={timeRange} onValueChange={v => setTimeRange(v as [number, number])} />
+                  {bounds.maxTime > bounds.minTime && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="font-medium">ระยะเวลา</span>
+                        <span className="text-primary">{timeRange[0]}–{timeRange[1]} นาที</span>
+                      </div>
+                      <Slider min={bounds.minTime} max={bounds.maxTime} step={15} value={timeRange} onValueChange={v => setTimeRange(v as [number, number])} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
-        </div>
 
-        {/* Card Grid */}
-        <div className="overflow-y-auto flex-1 p-4">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-2">
-              <Search className="h-8 w-8 opacity-20" />
-              <p>ไม่พบบริการที่ตรงกับเงื่อนไข</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {filtered.map((service, index) => (
-                <PickerCard
-                  key={service.massage_id}
-                  service={service}
-                  isSelected={selectedIds.has(service.massage_id)}
-                  index={index}
-                  onToggle={() => onToggle(service)}
-                />
-              ))}
+          {/* Controls for packages tab - search and time filter only */}
+          {activeTab === "packages" && (
+            <div className="px-6 pt-4 pb-3 flex flex-col gap-3 border-b border-border/30 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาบริการ..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-8 py-2 rounded-full border border-border/50 bg-muted/30 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  />
+                  {search && (
+                    <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter toggle for packages */}
+                <button
+                  onClick={() => setShowFilters(v => !v)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium transition-all h-9",
+                    showFilters ? "border-primary/50 bg-primary/10 text-primary" : "border-border/50 bg-muted/30 text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  กรอง
+                </button>
+              </div>
+
+              {/* Filter sliders for packages - time only */}
+              {showFilters && (
+                <div className="flex flex-col gap-3 pb-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {bounds.maxTime > bounds.minTime && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="font-medium">ระยะเวลา</span>
+                        <span className="text-primary">{timeRange[0]}–{timeRange[1]} นาที</span>
+                      </div>
+                      <Slider min={bounds.minTime} max={bounds.maxTime} step={15} value={timeRange} onValueChange={v => setTimeRange(v as [number, number])} />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
-        </div>
+
+          {/* Content Tabs */}
+          <TabsContent value="all" className="overflow-y-auto flex-1 p-4 mt-0">
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-2">
+                <Search className="h-8 w-8 opacity-20" />
+                <p>ไม่พบบริการที่ตรงกับเงื่อนไข</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {filtered.map((service, index) => (
+                  <PickerCard
+                    key={service.massage_id}
+                    service={service}
+                    isSelected={selectedIds.has(service.massage_id)}
+                    index={index}
+                    onToggle={() => onToggle(service)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="packages" className="overflow-y-auto flex-1 p-4 mt-0">
+            {!customerId || unusedPackages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-2">
+                <Gift className="h-8 w-8 opacity-20" />
+                <p>คุณยังไม่มีแพ็กเกจ</p>
+              </div>
+            ) : filteredPackages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-2">
+                <Search className="h-8 w-8 opacity-20" />
+                <p>ไม่พบแพ็กเกจที่ตรงกับเงื่อนไข</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredPackages.map((group: any) => (
+                  <div key={group.package.package_id} className="rounded-2xl border border-border/40 bg-card/20 overflow-hidden">
+                    <div className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-primary/10 text-primary">
+                          <Gift className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium font-mitr text-sm text-foreground">
+                            {group.package.package_name}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-sans">
+                            {group.services.length} บริการในแพ็กเกจ
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {group.services.map((pkg: any) => (
+                          <PackageServiceCard
+                            key={pkg.member_package_id}
+                            packageData={pkg}
+                            isSelected={selectedIds.has(`pkg_${pkg.member_package_id}`)}
+                            onSelect={() => onPackageToggle?.(pkg)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border/30 flex items-center justify-between shrink-0">
@@ -879,6 +1033,9 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
         allServices={allServices}
         selectedIds={selectedIds}
         onToggle={handleToggle}
+        customerId={data.customerId}
+        unusedPackages={unusedPackages}
+        onPackageToggle={handlePackageToggle}
       />
 
       <div className="flex justify-end pt-2 max-w-2xl mx-auto w-full">
