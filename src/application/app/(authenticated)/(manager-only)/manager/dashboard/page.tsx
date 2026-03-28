@@ -553,14 +553,14 @@ export default function ManagerDashboardPage() {
 
                             {/* 2.7 Package Sales vs Usage */}
                             <SectionCard
-                                title="แพคเกจ: ขายได้ vs ใช้แล้ว"
-                                subtitle="การขายเทียบกับการใช้งานแต่ละแพคเกจ"
+                                title="แพ็กเกจ: ขายได้ vs ใช้แล้ว"
+                                subtitle="การขายเทียบกับการใช้งานแต่ละแพ็กเกจ"
                                 icon={Receipt}
                                 iconColor="text-violet-500"
                                 iconBg="bg-violet-500/10 border-violet-500/20"
                             >
                                 {data.packageSalesUsage.length === 0 ? (
-                                    <EmptyState message="ยังไม่มีข้อมูลแพคเกจ" />
+                                    <EmptyState message="ยังไม่มีข้อมูลแพ็กเกจ" />
                                 ) : (
                                     <ResponsiveContainer width="100%" height={200}>
                                         <BarChart data={data.packageSalesUsage}>

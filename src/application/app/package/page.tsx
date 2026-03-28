@@ -163,11 +163,11 @@ export default function PackagePage() {
                         ฟื้นใจ · Massage & Spa
                     </p>
                     <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-foreground mb-3">
-                        แพคเกจและบริการ
+                        แพ็กเกจและบริการ
                     </h1>
                     <p className="text-muted-foreground font-sans max-w-lg">
-                        จัดการแพคเกจของคุณ
-                        หรือซื้อแพคเกจใหม่การนวดและสปาเพื่อความผ่อนคลายอย่างเหนือระดับ
+                        จัดการแพ็กเกจของคุณ
+                        หรือซื้อแพ็กเกจใหม่การนวดและสปาเพื่อความผ่อนคลายอย่างเหนือระดับ
                     </p>
                 </div>
 
@@ -175,7 +175,7 @@ export default function PackagePage() {
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
                         <TabsTrigger value="my-packages" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
-                            <Package className="h-4 w-4" /> แพคเกจที่มี
+                            <Package className="h-4 w-4" /> แพ็กเกจที่มี
                             <span className={cn(
                                 "ml-1.5 text-[10px] h-5 min-w-[20px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
                                 activeTab === "my-packages" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
@@ -184,7 +184,7 @@ export default function PackagePage() {
                             </span>
                         </TabsTrigger>
                         <TabsTrigger value="discover" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
-                            <PlusCircle className="h-4 w-4" /> ซื้อแพคเกจ
+                            <PlusCircle className="h-4 w-4" /> ซื้อแพ็กเกจ
                         </TabsTrigger>
                         <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <History className="h-4 w-4" /> ประวัติ
@@ -204,7 +204,7 @@ export default function PackagePage() {
                                 <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
                                     <Package className="h-12 w-12" />
                                 </div>
-                                <p className="text-lg text-muted-foreground">คุณยังไม่มีแพคเกจที่พร้อมใช้งานในขณะนี้</p>
+                                <p className="text-lg text-muted-foreground">คุณยังไม่มีแพ็กเกจที่พร้อมใช้งานในขณะนี้</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -331,7 +331,7 @@ export default function PackagePage() {
                                 <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
                                     <PlusCircle className="h-12 w-12" />
                                 </div>
-                                <p className="text-lg text-muted-foreground">ไม่มีแพคเกจที่เปิดขายในขณะนี้</p>
+                                <p className="text-lg text-muted-foreground">ไม่มีแพ็กเกจที่เปิดขายในขณะนี้</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -383,7 +383,7 @@ export default function PackagePage() {
                                                     size="lg"
                                                     onClick={() => setSelectedPackageToBuy(pkg)}
                                                 >
-                                                    ซื้อแพคเกจนี้
+                                                    ซื้อแพ็กเกจนี้
                                                 </Button>
                                             </CardFooter>
                                         </Card>
@@ -400,7 +400,7 @@ export default function PackagePage() {
                                 <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
                                     <History className="h-12 w-12" />
                                 </div>
-                                <p className="text-lg text-muted-foreground">คุณยังไม่มีประวัติการใช้แพคเกจ</p>
+                                <p className="text-lg text-muted-foreground">คุณยังไม่มีประวัติการใช้แพ็กเกจ</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -442,7 +442,7 @@ export default function PackagePage() {
                                                         <div className="space-y-2">
                                                             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 p-2.5 rounded-lg border border-border/40">
                                                                 <CheckCircle2 className="h-3.5 w-3.5" />
-                                                                <span>คุณได้ใช้บริการในแพคเกจนี้จนครบถ้วนแล้ว</span>
+                                                                <span>คุณได้ใช้บริการในแพ็กเกจนี้จนครบถ้วนแล้ว</span>
                                                             </div>
                                                         </div>
                                                     </CardContent>
@@ -459,12 +459,12 @@ export default function PackagePage() {
                                             <DialogContent className="sm:max-w-md font-mitr">
                                                 <DialogHeader>
                                                     <DialogTitle className="text-xl font-medium text-muted-foreground flex items-center gap-2">
-                                                        ประวัติแพคเกจ: {pkgInfo.package_name}
+                                                        ประวัติแพ็กเกจ: {pkgInfo.package_name}
                                                     </DialogTitle>
                                                 </DialogHeader>
                                                 <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border flex flex-col items-center justify-center py-8">
                                                     <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4 opacity-40" />
-                                                    <p className="text-sm font-medium text-muted-foreground">คุณใช้งานแพคเกจนี้ครบโควต้าแล้ว</p>
+                                                    <p className="text-sm font-medium text-muted-foreground">คุณใช้งานแพ็กเกจนี้ครบโควต้าแล้ว</p>
                                                 </div>
                                             </DialogContent>
                                         </Dialog>
@@ -484,7 +484,7 @@ export default function PackagePage() {
                     onSuccess={() => {
                         setSelectedPackageToBuy(null);
                         fetchPackages();
-                        showAlert('ซื้อแพคเกจสำเร็จ', 'success');
+                        showAlert('ซื้อแพ็กเกจสำเร็จ', 'success');
                     }}
                 />
 
