@@ -158,6 +158,12 @@ async function NavLinkGroup() {
         </Button>
 
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/manager/operating-time" className="text-sm">
+            จัดการเวลาทำการ
+          </Link>
+        </Button>
+
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
           <Link href="/manager/dashboard" className="text-sm">
             แดชบอร์ด
           </Link>
