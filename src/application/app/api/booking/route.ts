@@ -152,22 +152,35 @@ export async function POST(request: NextRequest) {
           // Use real_massage_id for auto-assignment if available
           const realMassageId = service.real_massage_id;
           
-          if (realMassageId) {
-            // Apply auto-assignment using the real massage ID
-            const assignment = autoAssignResources(
-              realMassageId,
-              currentStartTime,
-              endDateTime,
-              skills,
-              rooms,
-              localBookings
+          if (!realMassageId) {
+            // CRITICAL: real_massage_id is required for package services
+            console.error(
+              "Package service missing real_massage_id:",
+              service
             );
-            assignedEmployeeId = assignment.employeeId;
-            assignedRoomId = assignment.roomId;
-            
-            // Use the real massage_id for storage
-            massageId = realMassageId;
+            return NextResponse.json(
+              {
+                success: false,
+                error: "Invalid package service: real_massage_id is required",
+              },
+              { status: 400 }
+            );
           }
+          
+          // Apply auto-assignment using the real massage ID
+          const assignment = autoAssignResources(
+            realMassageId,
+            currentStartTime,
+            endDateTime,
+            skills,
+            rooms,
+            localBookings
+          );
+          assignedEmployeeId = assignment.employeeId;
+          assignedRoomId = assignment.roomId;
+          
+          // Use the real massage_id for storage
+          massageId = realMassageId;
           
           const payload = {
             booking_id: bookingId,
@@ -180,7 +193,11 @@ export async function POST(request: NextRequest) {
             member_package_id: memberPackageId,
           };
           detailsPayload.push(payload);
-          packageIdsToMark.push(memberPackageId);
+          
+          // Guard against null/undefined package IDs
+          if (memberPackageId != null) {
+            packageIdsToMark.push(memberPackageId);
+          }
           
           // Track this new booking locally to prevent internal double booking for consecutive services
           localBookings.push({

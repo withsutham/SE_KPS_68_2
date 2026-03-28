@@ -24,6 +24,19 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
+    // Filter out known browser extension errors early
+    const isExtensionError = 
+      error.message?.includes("webkit-masked-url") ||
+      error.message?.includes("autofillFieldData") ||
+      error.message?.includes("autoCompleteType") ||
+      error.stack?.includes("webkit-masked-url");
+
+    if (isExtensionError) {
+      // Don't update state for extension errors - avoid re-rendering crashing component
+      console.warn("Ignoring browser extension error:", error.message);
+      return { hasError: false, error: null, errorInfo: null };
+    }
+
     // Update state so the next render will show the fallback UI
     return { hasError: true, error, errorInfo: null };
   }
@@ -40,9 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
       error.stack?.includes("webkit-masked-url");
 
     if (isExtensionError) {
-      console.warn("Ignoring browser extension error:", error.message);
-      // Don't show error UI for extension errors - just log and ignore
-      this.setState({ hasError: false, error: null, errorInfo: null });
+      // Extension error already handled in getDerivedStateFromError
       return;
     }
 

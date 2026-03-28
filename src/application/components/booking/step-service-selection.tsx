@@ -221,7 +221,8 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle,
   const filteredPackages = useMemo(() => {
     let result = unusedPackages.filter(pkg => {
       const massage = pkg.massage;
-      const nameMatch = massage?.massage_name?.toLowerCase().includes(search.toLowerCase()) ?? true;
+      const massage_name = massage?.massage_name || "";
+      const nameMatch = search ? massage_name.toLowerCase().includes(search.toLowerCase()) : true;
       const priceMatch = true; // Packages are free
       const duration = pkg.duration ?? massage?.massage_time ?? DEFAULT_DURATION;
       const timeMatch = duration >= timeRange[0] && duration <= timeRange[1];
