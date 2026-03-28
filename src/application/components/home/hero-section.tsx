@@ -25,9 +25,11 @@ export function HeroSection() {
                             จองคิวรับบริการ
                         </Button>
                     </Link>
-                    <Button size="lg" variant="outline" className="rounded-full px-12 py-8 text-xl font-medium border-border/50 hover:bg-muted/50 transition-all hover:scale-105 active:scale-95 font-mitr">
-                        เลือกชมแพ็กเกจ
-                    </Button>
+                    <Link href="/package?tab=discover">
+                        <Button size="lg" variant="outline" className="rounded-full px-12 py-8 text-xl font-medium border-border/50 hover:bg-muted/50 transition-all hover:scale-105 active:scale-95 font-mitr">
+                            เลือกชมแพ็กเกจ
+                        </Button>
+                    </Link>
                 </div>
             </div>
         </section>
