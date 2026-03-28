@@ -102,7 +102,7 @@ export async function PackagesAdvertisementSection() {
                                     </div>
                                 </div>
                                 <Button asChild className="w-full rounded-full mt-2 font-mitr gap-2">
-                                    <Link href="/package">
+                                    <Link href={`/package?tab=discover&packageId=${pkg.package_id}`}>
                                         ดูรายละเอียดและสั่งซื้อ <ArrowRight className="h-4 w-4" />
                                     </Link>
                                 </Button>

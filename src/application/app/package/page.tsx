@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink, AlertCircle, Package, PlusCircle, History } from "lucide-react";
@@ -20,6 +20,7 @@ import { PaymentDialog } from "@/components/package/payment-dialog";
 
 export default function PackagePage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isAuthenticating, setIsAuthenticating] = useState(true);
     const [customerId, setCustomerId] = useState<number | null>(null);
 
@@ -32,6 +33,25 @@ export default function PackagePage() {
         type: "success" | "error";
     } | null>(null);
     const [activeTab, setActiveTab] = useState("my-packages");
+
+    // Handle URL params for redirect flow
+    useEffect(() => {
+        if (isLoading) return;
+
+        const tab = searchParams.get("tab");
+        const packageId = searchParams.get("packageId");
+
+        if (tab) {
+            setActiveTab(tab);
+        }
+
+        if (packageId) {
+            const pkg = availablePackages.find(p => p.package_id === Number(packageId));
+            if (pkg) {
+                setSelectedPackageToBuy(pkg);
+            }
+        }
+    }, [searchParams, availablePackages, isLoading]);
 
     const showAlert = (message: string, type: "success" | "error") => {
         setAlertMessage({ message, type });
