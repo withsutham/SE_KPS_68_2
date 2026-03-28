@@ -763,6 +763,7 @@ export function StepServiceSelection({ data, onUpdate, onNext, autoOpenPicker = 
         fromPackage: true,
         member_package_id: pkg.member_package_id,
         package_name: packageInfo?.package_name,
+        real_massage_id: massage?.massage_id, // Pass actual massage_id for auto-assignment
       };
       
       onUpdate({

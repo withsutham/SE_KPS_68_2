@@ -305,7 +305,9 @@ export default function PackagePage() {
                                                                                 variant={mp.is_used ? "secondary" : "default"}
                                                                                 className="h-8 gap-1"
                                                                                 disabled={mp.is_used}
-                                                                                onClick={() => alert(`Booking for ${massage?.massage_name} using member_package_id: ${mp.member_package_id}`)}
+                                                                                onClick={() => {
+                                                                                    router.push(`/booking?packageServiceId=${mp.member_package_id}&massageId=${massage?.massage_id}`);
+                                                                                }}
                                                                             >
                                                                                 {mp.is_used ? "ใช้แล้ว" : "จองทันที"}
                                                                             </Button>

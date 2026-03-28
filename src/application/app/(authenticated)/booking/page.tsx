@@ -69,32 +69,79 @@ function BookingPageInner() {
   // Pre-select a service if ?serviceId= is present in the URL
   useEffect(() => {
     const serviceId = searchParams.get("serviceId");
-    if (!serviceId) return;
+    const packageServiceId = searchParams.get("packageServiceId");
+    const massageId = searchParams.get("massageId");
 
-    async function preSelectService() {
-      try {
-        const res = await fetch(`/api/massage/${serviceId}`);
-        const json = await res.json();
-        if (!json.success || !json.data) return;
+    // Handle package service pre-selection
+    if (packageServiceId && massageId) {
+      async function preSelectPackageService() {
+        try {
+          // Fetch the massage details
+          const res = await fetch(`/api/massage/${massageId}`);
+          const json = await res.json();
+          if (!json.success || !json.data) return;
 
-        const massage = json.data;
-        setBookingData((prev) => ({
-          ...prev,
-          selectedServices: [
-            {
-              massage_id: massage.massage_id, // keep as-is (number) to match StepServiceSelection's runtime type
-              massage_name: massage.massage_name,
-              massage_price: massage.massage_price,
-              duration: massage.massage_time ?? 60,
-            },
-          ],
-        }));
-      } catch {
-        // Silently ignore — user can manually select
+          const massage = json.data;
+          
+          // Fetch the member_package details to get package name
+          const pkgRes = await fetch(`/api/member_package/unused?customer_id=${bookingData.customerId}`);
+          const pkgJson = await pkgRes.json();
+          if (pkgJson.success && pkgJson.data) {
+            const memberPackage = pkgJson.data.find(
+              (mp: any) => mp.member_package_id === Number(packageServiceId)
+            );
+            
+            setBookingData((prev) => ({
+              ...prev,
+              selectedServices: [
+                {
+                  massage_id: `pkg_${packageServiceId}`, // Synthetic ID for UI tracking
+                  massage_name: massage.massage_name,
+                  massage_price: 0, // Package services are free
+                  duration: massage.massage_time ?? 60,
+                  fromPackage: true,
+                  member_package_id: Number(packageServiceId),
+                  package_name: memberPackage?.package_detail?.package?.package_name,
+                  real_massage_id: massage.massage_id, // Real massage_id for auto-assignment
+                },
+              ],
+            }));
+          }
+        } catch {
+          // Silently ignore — user can manually select
+        }
       }
+      preSelectPackageService();
+      return;
     }
-    preSelectService();
-  }, [searchParams]);
+
+    // Handle regular service pre-selection
+    if (serviceId) {
+      async function preSelectService() {
+        try {
+          const res = await fetch(`/api/massage/${serviceId}`);
+          const json = await res.json();
+          if (!json.success || !json.data) return;
+
+          const massage = json.data;
+          setBookingData((prev) => ({
+            ...prev,
+            selectedServices: [
+              {
+                massage_id: massage.massage_id, // keep as-is (number) to match StepServiceSelection's runtime type
+                massage_name: massage.massage_name,
+                massage_price: massage.massage_price,
+                duration: massage.massage_time ?? 60,
+              },
+            ],
+          }));
+        } catch {
+          // Silently ignore — user can manually select
+        }
+      }
+      preSelectService();
+    }
+  }, [searchParams, bookingData.customerId]);
 
   const updateData = (updates: Partial<BookingData>) => {
     setBookingData((prev) => ({ ...prev, ...updates }));
