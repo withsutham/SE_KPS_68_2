@@ -3,15 +3,38 @@ import React, { useState, useEffect } from 'react';
 import { Home, User, Calendar, Bell, ChevronLeft, ChevronRight, Send, Folder } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { getEmployeeByUserId } from '@/lib/user-actions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HRDashboard() {
   // 1. สร้าง State สำหรับปฏิทิน
   const [currentDate, setCurrentDate] = useState(new Date());
   const [announcements, setAnnouncements] = useState([]);
+  const [employee, setEmployee] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   // 2. จำลองการดึงข้อมูลจาก API ( useEffect )
   useEffect(() => {
-    // สมมติว่านี่คือการดึงข้อมูลจากหลังบ้าน
+    async function fetchProfile() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const empData = await getEmployeeByUserId(user.id);
+          setEmployee(empData);
+        }
+      } catch (error) {
+        console.error("Error fetching therapist profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProfile();
+
+    // Mock announcements
     const mockData = [
       { id: 1, title: "การอบรมพนักงานใหม่", date: "25 เมษายน 2567", type: "train" },
       { id: 2, title: "หยุดทำงานวันแรงงาน", date: "1 พฤษภาคม 2567", type: "holiday" },
@@ -51,8 +74,19 @@ export default function HRDashboard() {
       <main className="flex-1 p-8">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">ชื่อ</h1>
-            <p className="text-gray-500 text-sm">ตำแหน่ง</p>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-slate-800">
+                  {employee ? `${employee.first_name} ${employee.last_name}` : 'ไม่พบข้อมูลชื่อ'}
+                </h1>
+                <p className="text-gray-500 text-sm">Therapist</p>
+              </>
+            )}
           </div>
         </header>
 
