@@ -68,6 +68,11 @@ html {
   }
 }
 
+body.manager-shell nav.print\:hidden,
+body.manager-shell footer {
+  display: none !important;
+}
+
 @media print {
 
   /* Hide password managers, grammar checkers, and other extensions injected into the body */

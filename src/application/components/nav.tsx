@@ -3,11 +3,12 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Flower2, ChevronDown } from "lucide-react";
+import { Flower2, ChevronDown, Menu } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -18,11 +19,16 @@ import { NavScrollLink } from "@/components/nav-scroll-link";
 export function Nav() {
   return (
     <nav className="print:hidden w-full flex justify-center border-b border-border/40 backdrop-blur-md sticky top-0 z-50">
-      <div className="w-full max-w-7xl flex justify-between items-center p-6 px-10">
-        <div className="flex gap-12 items-center">
-          <Link href="/" className="flex items-center gap-2 group">
+      <div className="w-full max-w-7xl flex justify-between items-center gap-3 py-3 px-4 sm:p-6 sm:px-10">
+        <div className="flex gap-3 sm:gap-12 items-center min-w-0">
+          <div className="md:hidden">
+            <Suspense fallback={<div className="h-9 w-9 rounded-md bg-muted animate-pulse" />}>
+              <MobileNavMenu />
+            </Suspense>
+          </div>
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
             <Flower2 className="h-7 w-7 text-primary transition-transform group-hover:rotate-45 duration-500" />
-            <span className="font-semibold text-xl tracking-wider uppercase text-foreground/90 font-mitr">ฟื้นใจ</span>
+            <span className="font-semibold text-base sm:text-xl tracking-normal sm:tracking-wider uppercase whitespace-nowrap text-foreground/90 font-mitr max-[340px]:hidden">ฟื้นใจ</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-2">
@@ -31,7 +37,7 @@ export function Nav() {
             </Suspense>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 sm:gap-4 shrink-0">
           <Suspense fallback={<div className="h-8 w-20 animate-pulse bg-muted rounded"></div>}>
             {hasEnvVars ? <AuthButton /> : null}
           </Suspense>
@@ -107,7 +113,7 @@ async function NavLinkGroup() {
 
         <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
           <Link href="/package" className="text-sm">
-            แพคเกจ
+            แพ็กเกจ
           </Link>
         </Button>
       </>
@@ -116,60 +122,7 @@ async function NavLinkGroup() {
 
   // manager, shop_owner — can manage employees, bookings, packages, coupons and see dashboard
   if (role === "manager" || role === "shop_owner") {
-    return (
-      <>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
-              <span className="text-sm">พนักงาน</span>
-              <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
-            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-              <Link href="/manager/employee/schedule" className="w-full cursor-pointer py-2.5 px-3 text-base">
-                จัดตารางงานรายสัปดาห์
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-              <Link href="/manager/employee/management" className="w-full cursor-pointer py-2.5 px-3 text-base">
-                จัดการข้อมูลพนักงาน
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/manager/booking" className="text-sm">
-            จัดการการจอง
-          </Link>
-        </Button>
-
-        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/manager/package" className="text-sm">
-            จัดการแพ็กเกจ
-          </Link>
-        </Button>
-
-        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/manager/coupon" className="text-sm">
-            จัดการคูปอง
-          </Link>
-        </Button>
-
-        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/manager/dashboard" className="text-sm">
-            แดชบอร์ด
-          </Link>
-        </Button>
-
-        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/manager/monitor" className="text-sm">
-            มอนิเตอร์
-          </Link>
-        </Button>
-      </>
-    );
+    return null;
   }
 
   // therapist — can view their own timetable
@@ -199,5 +152,83 @@ async function NavLinkGroup() {
     >
       ดูบริการนวด
     </NavScrollLink>
+  );
+}
+
+async function MobileNavMenu() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let role: string | null = null;
+  if (user) {
+    const adminSupabase = await createAdminClient();
+    const { data: profile } = await adminSupabase
+      .from("profiles")
+      .select("user_type")
+      .eq("profile_id", user.id)
+      .single();
+    role = profile?.user_type ?? null;
+  }
+
+  if (role === "manager" || role === "shop_owner") {
+    return null;
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-10 w-10 text-foreground/80 hover:text-primary">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">เมนูนำทาง</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
+        <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+          <Link href="/#services" className="w-full cursor-pointer py-2.5 px-3 text-base">
+            ดูบริการนวด
+          </Link>
+        </DropdownMenuItem>
+
+        {!user && null}
+
+        {role === "customer" && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/booking" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                จองคิวรับบริการ
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/booking/history" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                ดูประวัติการจอง
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/coupon" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                คูปอง
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/package" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                แพ็กเกจ
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
+        {role === "therapist" && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+              <Link href="/manager/employee/schedule" className="w-full cursor-pointer py-2.5 px-3 text-base">
+                ตารางทำงาน
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
