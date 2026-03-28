@@ -2,9 +2,10 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink, AlertCircle, Package, PlusCircle, History } from "lucide-react";
+import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink, AlertCircle, Package, PlusCircle, History, Gift } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -236,16 +237,30 @@ function PackagePageContent() {
                                         <Dialog key={`${pkgInfo.package_id}-${index}`}>
                                             <DialogTrigger asChild>
                                                 <Card className="group/card relative border-border/50 bg-background hover:border-primary/50 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col shadow-sm hover:shadow-md active:scale-[0.98]">
-                                                    {/* Top highlight bar */}
-                                                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/80 to-secondary/80" />
+                                                    {/* Image section */}
+                                                    <div className="relative h-40 w-full bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
+                                                        {pkgInfo.image_src ? (
+                                                            <Image
+                                                                src={pkgInfo.image_src}
+                                                                alt={pkgInfo.package_name}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                                <Gift className="h-10 w-10 text-primary/40" />
+                                                                <span className="text-xs">แพ็กเกจ</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
 
-                                                    <CardHeader className="pt-6 pb-2">
+                                                    <CardHeader className="pt-4 pb-2">
                                                         <div className="flex items-center gap-3">
                                                             <div className="p-2 bg-primary/5 rounded-lg text-primary group-hover/card:bg-primary group-hover/card:text-white transition-colors">
                                                                 <Package className="h-5 w-5" />
                                                             </div>
                                                         </div>
-                                                        <CardTitle className="text-xl font-medium mt-4 group-hover/card:text-primary transition-colors leading-relaxed">
+                                                        <CardTitle className="text-xl font-medium mt-2 group-hover/card:text-primary transition-colors leading-relaxed">
                                                             {pkgInfo.package_name}
                                                         </CardTitle>
                                                     </CardHeader>
@@ -371,7 +386,24 @@ function PackagePageContent() {
 
                                     return (
                                         <Card key={pkg.package_id} className="flex flex-col group overflow-hidden border-border/60 hover:border-primary/40 transition-all hover:shadow-lg dark:hover:shadow-primary/5 bg-background">
-                                            <CardHeader className="pb-4 relative pt-7">
+                                            {/* Image section */}
+                                            <div className="relative h-44 w-full bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
+                                                {pkg.image_src ? (
+                                                    <Image
+                                                        src={pkg.image_src}
+                                                        alt={pkg.package_name}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                        <Gift className="h-10 w-10 text-primary/40" />
+                                                        <span className="text-xs">แพ็กเกจ</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <CardHeader className="pb-4 relative pt-5">
                                                 <CardTitle className="text-xl font-medium leading-tight">
                                                     {pkg.package_name}
                                                 </CardTitle>
