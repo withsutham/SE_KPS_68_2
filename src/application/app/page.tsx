@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { HeroSection } from "@/components/home/hero-section";
-import { ServicesSection } from "@/components/home/services-section";
 import { FeaturesSection } from "@/components/home/features-section";
 import { MassageListingSection } from "@/components/home/massage-listing-section";
+import { PackagesAdvertisementSection } from "@/components/home/packages-advertisement-section";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +29,7 @@ export default async function Home() {
   return (
     <main className="flex flex-col items-center">
       <HeroSection />
-      <ServicesSection />
+      <PackagesAdvertisementSection />
       <MassageListingSection />
       <FeaturesSection />
     </main>
