@@ -253,8 +253,8 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle,
         </DialogHeader>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "all" | "packages")} className="flex-1 flex flex-col">
-          <TabsList className="mx-6 mt-4 grid w-auto grid-cols-2 bg-muted/40 p-1 rounded-lg">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "all" | "packages")} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <TabsList className="mx-6 mt-4 grid w-auto grid-cols-2 bg-muted/40 p-1 rounded-lg shrink-0">
             <TabsTrigger value="all" className="data-[state=active]:bg-background rounded-md">
               บริการทั้งหมด
             </TabsTrigger>
@@ -392,7 +392,7 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle,
           )}
 
           {/* Content Tabs */}
-          <TabsContent value="all" className="overflow-y-auto flex-1 p-4 mt-0">
+          <TabsContent value="all" className="overflow-y-auto flex-1 min-h-0 p-4 mt-0">
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-2">
                 <Search className="h-8 w-8 opacity-20" />
@@ -413,7 +413,7 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle,
             )}
           </TabsContent>
 
-          <TabsContent value="packages" className="overflow-y-auto flex-1 p-4 mt-0">
+          <TabsContent value="packages" className="overflow-y-auto flex-1 min-h-0 p-4 mt-0">
             {!customerId || unusedPackages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm gap-2">
                 <Gift className="h-8 w-8 opacity-20" />
