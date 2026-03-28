@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink, AlertCircle, Package, PlusCircle, History } from "lucide-react";
+import { Loader2, Calendar, CheckCircle2, Clock, Check, ShoppingCart, Tag, ExternalLink, AlertCircle, Package, PlusCircle, History, Gift } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +19,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PaymentDialog } from "@/components/package/payment-dialog";
 
-export default function PackagePage() {
+function PackagePageContent() {
     const router = useRouter();
-    const [isAuthenticating, setIsAuthenticating] = useState(true);
+    const searchParams = useSearchParams();
     const [customerId, setCustomerId] = useState<number | null>(null);
 
     const [availablePackages, setAvailablePackages] = useState<any[]>([]);
@@ -33,21 +34,37 @@ export default function PackagePage() {
     } | null>(null);
     const [activeTab, setActiveTab] = useState("my-packages");
 
+    // Handle URL params for redirect flow
+    useEffect(() => {
+        if (isLoading) return;
+
+        const tab = searchParams.get("tab");
+        const packageId = searchParams.get("packageId");
+
+        if (tab) {
+            setActiveTab(tab);
+        }
+
+        if (packageId) {
+            const pkg = availablePackages.find(p => p.package_id === Number(packageId));
+            if (pkg) {
+                setSelectedPackageToBuy(pkg);
+            }
+        }
+    }, [searchParams, availablePackages, isLoading]);
+
     const showAlert = (message: string, type: "success" | "error") => {
         setAlertMessage({ message, type });
         setTimeout(() => setAlertMessage(null), 3000);
     };
 
-    // Check auth and fetch user ID
+    // Fetch customer ID on mount (auth is handled by layout)
     useEffect(() => {
-        const checkAuth = async () => {
+        const fetchCustomerId = async () => {
             const supabase = createClient();
             const { data: { session } } = await supabase.auth.getSession();
 
-            if (!session) {
-                const currentPath = window.location.pathname + window.location.search;
-                window.location.href = `/auth/login?returnTo=${encodeURIComponent(currentPath)}&message=package`;
-            } else {
+            if (session) {
                 try {
                     const res = await fetch(`/api/customer?profile_id=${session.user.id}`);
                     if (res.ok) {
@@ -59,17 +76,16 @@ export default function PackagePage() {
                 } catch (error) {
                     console.error("Failed to fetch customer data:", error);
                 }
-                setIsAuthenticating(false);
             }
         };
-        checkAuth();
-    }, [router]);
+        fetchCustomerId();
+    }, []);
 
     useEffect(() => {
-        if (!isAuthenticating && customerId) {
+        if (customerId) {
             fetchPackages();
         }
-    }, [isAuthenticating, customerId]);
+    }, [customerId]);
 
     const fetchPackages = async () => {
         setIsLoading(true);
@@ -103,7 +119,7 @@ export default function PackagePage() {
 
     // Using PaymentDialog instead of handleBuyPackage
 
-    if (isAuthenticating || isLoading) {
+    if (isLoading) {
         return (
             <main className="flex-1 w-full flex items-center justify-center min-h-[50vh]">
                 <Loader2 className="animate-spin h-8 w-8 text-primary" />
@@ -163,11 +179,11 @@ export default function PackagePage() {
                         ฟื้นใจ · Massage & Spa
                     </p>
                     <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-foreground mb-3">
-                        แพคเกจและบริการ
+                        แพ็กเกจและบริการ
                     </h1>
                     <p className="text-muted-foreground font-sans max-w-lg">
-                        จัดการแพคเกจของคุณ
-                        หรือซื้อแพคเกจใหม่การนวดและสปาเพื่อความผ่อนคลายอย่างเหนือระดับ
+                        จัดการแพ็กเกจของคุณ
+                        หรือซื้อแพ็กเกจใหม่การนวดและสปาเพื่อความผ่อนคลายอย่างเหนือระดับ
                     </p>
                 </div>
 
@@ -175,7 +191,7 @@ export default function PackagePage() {
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-8 h-12 rounded-xl bg-muted/40 p-1 font-sans">
                         <TabsTrigger value="my-packages" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
-                            <Package className="h-4 w-4" /> แพคเกจที่มี
+                            <Package className="h-4 w-4" /> แพ็กเกจที่มี
                             <span className={cn(
                                 "ml-1.5 text-[10px] h-5 min-w-[20px] px-1 rounded-full flex items-center justify-center font-bold transition-colors",
                                 activeTab === "my-packages" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
@@ -184,7 +200,7 @@ export default function PackagePage() {
                             </span>
                         </TabsTrigger>
                         <TabsTrigger value="discover" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
-                            <PlusCircle className="h-4 w-4" /> ซื้อแพคเกจ
+                            <PlusCircle className="h-4 w-4" /> ซื้อแพ็กเกจ
                         </TabsTrigger>
                         <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all gap-2 h-full">
                             <History className="h-4 w-4" /> ประวัติ
@@ -204,7 +220,7 @@ export default function PackagePage() {
                                 <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
                                     <Package className="h-12 w-12" />
                                 </div>
-                                <p className="text-lg text-muted-foreground">คุณยังไม่มีแพคเกจที่พร้อมใช้งานในขณะนี้</p>
+                                <p className="text-lg text-muted-foreground">คุณยังไม่มีแพ็กเกจที่พร้อมใช้งานในขณะนี้</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -216,16 +232,30 @@ export default function PackagePage() {
                                         <Dialog key={`${pkgInfo.package_id}-${index}`}>
                                             <DialogTrigger asChild>
                                                 <Card className="group/card relative border-border/50 bg-background hover:border-primary/50 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col shadow-sm hover:shadow-md active:scale-[0.98]">
-                                                    {/* Top highlight bar */}
-                                                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/80 to-secondary/80" />
+                                                    {/* Image section */}
+                                                    <div className="relative h-40 w-full bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
+                                                        {pkgInfo.image_src ? (
+                                                            <Image
+                                                                src={pkgInfo.image_src}
+                                                                alt={pkgInfo.package_name}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                                <Gift className="h-10 w-10 text-primary/40" />
+                                                                <span className="text-xs">แพ็กเกจ</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
 
-                                                    <CardHeader className="pt-6 pb-2">
+                                                    <CardHeader className="pt-4 pb-2">
                                                         <div className="flex items-center gap-3">
                                                             <div className="p-2 bg-primary/5 rounded-lg text-primary group-hover/card:bg-primary group-hover/card:text-white transition-colors">
                                                                 <Package className="h-5 w-5" />
                                                             </div>
                                                         </div>
-                                                        <CardTitle className="text-xl font-medium mt-4 group-hover/card:text-primary transition-colors leading-relaxed">
+                                                        <CardTitle className="text-xl font-medium mt-2 group-hover/card:text-primary transition-colors leading-relaxed">
                                                             {pkgInfo.package_name}
                                                         </CardTitle>
                                                     </CardHeader>
@@ -304,8 +334,12 @@ export default function PackagePage() {
                                                                                 size="sm"
                                                                                 variant={mp.is_used ? "secondary" : "default"}
                                                                                 className="h-8 gap-1"
-                                                                                disabled={mp.is_used}
-                                                                                onClick={() => alert(`Booking for ${massage?.massage_name} using member_package_id: ${mp.member_package_id}`)}
+                                                                                disabled={mp.is_used || !massage?.massage_id}
+                                                                                onClick={() => {
+                                                                                    if (massage?.massage_id) {
+                                                                                        router.push(`/booking?packageServiceId=${mp.member_package_id}&massageId=${massage.massage_id}`);
+                                                                                    }
+                                                                                }}
                                                                             >
                                                                                 {mp.is_used ? "ใช้แล้ว" : "จองทันที"}
                                                                             </Button>
@@ -331,7 +365,7 @@ export default function PackagePage() {
                                 <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
                                     <PlusCircle className="h-12 w-12" />
                                 </div>
-                                <p className="text-lg text-muted-foreground">ไม่มีแพคเกจที่เปิดขายในขณะนี้</p>
+                                <p className="text-lg text-muted-foreground">ไม่มีแพ็กเกจที่เปิดขายในขณะนี้</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -347,7 +381,24 @@ export default function PackagePage() {
 
                                     return (
                                         <Card key={pkg.package_id} className="flex flex-col group overflow-hidden border-border/60 hover:border-primary/40 transition-all hover:shadow-lg dark:hover:shadow-primary/5 bg-background">
-                                            <CardHeader className="pb-4 relative pt-7">
+                                            {/* Image section */}
+                                            <div className="relative h-44 w-full bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
+                                                {pkg.image_src ? (
+                                                    <Image
+                                                        src={pkg.image_src}
+                                                        alt={pkg.package_name}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                        <Gift className="h-10 w-10 text-primary/40" />
+                                                        <span className="text-xs">แพ็กเกจ</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <CardHeader className="pb-4 relative pt-5">
                                                 <CardTitle className="text-xl font-medium leading-tight">
                                                     {pkg.package_name}
                                                 </CardTitle>
@@ -383,7 +434,7 @@ export default function PackagePage() {
                                                     size="lg"
                                                     onClick={() => setSelectedPackageToBuy(pkg)}
                                                 >
-                                                    ซื้อแพคเกจนี้
+                                                    ซื้อแพ็กเกจนี้
                                                 </Button>
                                             </CardFooter>
                                         </Card>
@@ -400,7 +451,7 @@ export default function PackagePage() {
                                 <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
                                     <History className="h-12 w-12" />
                                 </div>
-                                <p className="text-lg text-muted-foreground">คุณยังไม่มีประวัติการใช้แพคเกจ</p>
+                                <p className="text-lg text-muted-foreground">คุณยังไม่มีประวัติการใช้แพ็กเกจ</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -442,7 +493,7 @@ export default function PackagePage() {
                                                         <div className="space-y-2">
                                                             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 p-2.5 rounded-lg border border-border/40">
                                                                 <CheckCircle2 className="h-3.5 w-3.5" />
-                                                                <span>คุณได้ใช้บริการในแพคเกจนี้จนครบถ้วนแล้ว</span>
+                                                                <span>คุณได้ใช้บริการในแพ็กเกจนี้จนครบถ้วนแล้ว</span>
                                                             </div>
                                                         </div>
                                                     </CardContent>
@@ -459,12 +510,12 @@ export default function PackagePage() {
                                             <DialogContent className="sm:max-w-md font-mitr">
                                                 <DialogHeader>
                                                     <DialogTitle className="text-xl font-medium text-muted-foreground flex items-center gap-2">
-                                                        ประวัติแพคเกจ: {pkgInfo.package_name}
+                                                        ประวัติแพ็กเกจ: {pkgInfo.package_name}
                                                     </DialogTitle>
                                                 </DialogHeader>
                                                 <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border flex flex-col items-center justify-center py-8">
                                                     <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4 opacity-40" />
-                                                    <p className="text-sm font-medium text-muted-foreground">คุณใช้งานแพคเกจนี้ครบโควต้าแล้ว</p>
+                                                    <p className="text-sm font-medium text-muted-foreground">คุณใช้งานแพ็กเกจนี้ครบโควต้าแล้ว</p>
                                                 </div>
                                             </DialogContent>
                                         </Dialog>
@@ -484,11 +535,23 @@ export default function PackagePage() {
                     onSuccess={() => {
                         setSelectedPackageToBuy(null);
                         fetchPackages();
-                        showAlert('ซื้อแพคเกจสำเร็จ', 'success');
+                        showAlert('ซื้อแพ็กเกจสำเร็จ', 'success');
                     }}
                 />
 
             </div>
         </main>
+    );
+}
+
+export default function PackagePage() {
+    return (
+        <Suspense fallback={
+            <main className="flex-1 w-full flex items-center justify-center min-h-[50vh]">
+                <Loader2 className="animate-spin h-8 w-8 text-primary" />
+            </main>
+        }>
+            <PackagePageContent />
+        </Suspense>
     );
 }

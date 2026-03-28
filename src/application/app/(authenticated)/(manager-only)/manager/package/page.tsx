@@ -54,7 +54,7 @@ export default function PackagePage() {
     }
 
     async function deletePackage(id: string) {
-        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบแพคเกจนี้?")) return;
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบแพ็กเกจนี้?")) return;
 
         try {
             const res = await fetch(`/api/package/${id}`, {
@@ -64,7 +64,7 @@ export default function PackagePage() {
                 fetchPackages();
             } else {
                 const errorJson = await res.json();
-                alert("เกิดข้อผิดพลาดในการลบแพคเกจ: " + errorJson.error);
+                alert("เกิดข้อผิดพลาดในการลบแพ็กเกจ: " + errorJson.error);
             }
         } catch (error) {
             console.error("Error deleting package:", error);
@@ -86,35 +86,35 @@ export default function PackagePage() {
     return (
         <div className="w-full min-w-0 max-w-5xl mx-auto p-8 font-mitr">
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">จัดการแพคเกจ</h1>
+                <h1 className="text-3xl font-bold">จัดการแพ็กเกจ</h1>
                 <Link href="/manager/package/create">
-                    <Button>+ สร้างแพคเกจใหม่</Button>
+                    <Button>+ สร้างแพ็กเกจใหม่</Button>
                 </Link>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 w-full min-w-0">
                 <div className="flex min-w-0 flex-col gap-4 mb-4">
-                    <h3 className="text-xl font-semibold">รายการแพคเกจ</h3>
+                    <h3 className="text-xl font-semibold">รายการแพ็กเกจ</h3>
                     <Input
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="ค้นหาด้วยชื่อแพคเกจหรือชื่อบริการนวด"
+                        placeholder="ค้นหาด้วยชื่อแพ็กเกจหรือชื่อบริการนวด"
                         className="w-full min-w-0 max-w-md font-mitr"
                     />
                 </div>
 
                 {loading ? (
-                    <p className="text-gray-500 text-center py-8">กำลังโหลดแพคเกจ...</p>
+                    <p className="text-gray-500 text-center py-8">กำลังโหลดแพ็กเกจ...</p>
                 ) : packages.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">ไม่พบแพคเกจ</p>
+                    <p className="text-gray-500 text-center py-8">ไม่พบแพ็กเกจ</p>
                 ) : filteredPackages.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">ไม่พบแพคเกจที่ตรงกับการค้นหา</p>
+                    <p className="text-gray-500 text-center py-8">ไม่พบแพ็กเกจที่ตรงกับการค้นหา</p>
                 ) : (
                     <div className="w-full min-w-0 overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b text-gray-600 bg-gray-50">
-                                    <th className="py-3 px-4 rounded-tl-lg">ชื่อแพคเกจ</th>
+                                    <th className="py-3 px-4 rounded-tl-lg">ชื่อแพ็กเกจ</th>
                                     <th className="py-3 px-4">ราคา</th>
                                     <th className="py-3 px-4">บริการนวดที่รวมอยู่</th>
                                     <th className="py-3 px-4">ระยะเวลาแคมเปญ</th>

@@ -1,6 +1,58 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 
+// Helper function to auto-assign therapist and room for a service
+function autoAssignResources(
+  massageId: number | string,
+  startTime: Date,
+  endTime: Date,
+  skills: any[] | null,
+  rooms: any[] | null,
+  localBookings: any[]
+): { employeeId: number | null; roomId: number | null } {
+  let assignedEmployeeId: number | null = null;
+  let assignedRoomId: number | null = null;
+
+  // Find available employee
+  const skilledEmployees =
+    skills
+      ?.filter((s) => String(s.massage_id) === String(massageId))
+      .map((s) => s.employee_id) || [];
+
+  for (const empId of skilledEmployees) {
+    const isOverlapping = localBookings.some(
+      (b: any) =>
+        b.employee_id === empId &&
+        new Date(b.massage_start_dateTime) < endTime &&
+        new Date(b.massage_end_dateTime) > startTime
+    );
+    if (!isOverlapping) {
+      assignedEmployeeId = empId;
+      break;
+    }
+  }
+
+  // Find available room
+  const validRooms =
+    rooms?.filter((r) => String(r.massage_id) === String(massageId)) || [];
+
+  for (const rm of validRooms) {
+    const overlappingCount = localBookings.filter(
+      (b: any) =>
+        b.room_id === rm.room_id &&
+        new Date(b.massage_start_dateTime) < endTime &&
+        new Date(b.massage_end_dateTime) > startTime
+    ).length;
+
+    if (overlappingCount < rm.capacity) {
+      assignedRoomId = rm.room_id;
+      break;
+    }
+  }
+
+  return { employeeId: assignedEmployeeId, roomId: assignedRoomId };
+}
+
 export async function GET(request: NextRequest) {
   const supabase = await createAdminClient();
   const { data, error } = await supabase.from("booking").select("*");
@@ -57,6 +109,8 @@ export async function POST(request: NextRequest) {
 
     // 2. Create booking details
     let detailsPayload: any[] = [];
+    let packageIdsToMark: number[] = [];
+    
     if (body.services && Array.isArray(body.services)) {
       const startDateTime = new Date(body.booking_datetime);
       const dateStr = startDateTime.toLocaleDateString("en-CA"); // 'YYYY-MM-DD'
@@ -85,63 +139,106 @@ export async function POST(request: NextRequest) {
           currentStartTime.getTime() + (service.duration || 60) * 60000,
         );
 
-        // Find available employee mapping
-        const skilledEmployees =
-          skills
-            ?.filter((s) => String(s.massage_id) === String(service.massage_id))
-            .map((s) => s.employee_id) || [];
+        // Extract member_package_id if this service came from a package
+        let memberPackageId = null;
+        let massageId = service.massage_id;
         let assignedEmployeeId = null;
-        for (const empId of skilledEmployees) {
-          const isOverlapping = localBookings.some(
-            (b: any) =>
-              b.employee_id === empId &&
-              new Date(b.massage_start_dateTime) < endDateTime &&
-              new Date(b.massage_end_dateTime) > currentStartTime,
-          );
-          if (!isOverlapping) {
-            assignedEmployeeId = empId;
-            break;
-          }
-        }
-
-        // Find available room mapping
-        const validRooms =
-          rooms?.filter(
-            (r) => String(r.massage_id) === String(service.massage_id),
-          ) || [];
         let assignedRoomId = null;
-        for (const rm of validRooms) {
-          const overlappingCount = localBookings.filter(
-            (b: any) =>
-              b.room_id === rm.room_id &&
-              new Date(b.massage_start_dateTime) < endDateTime &&
-              new Date(b.massage_end_dateTime) > currentStartTime,
-          ).length;
-
-          if (overlappingCount < rm.capacity) {
-            assignedRoomId = rm.room_id;
-            break;
+        
+        // Check if this is a package service (ID format: "pkg_123")
+        if (String(massageId).startsWith("pkg_")) {
+          memberPackageId = service.member_package_id;
+          
+          // Use real_massage_id for auto-assignment if available
+          const realMassageId = service.real_massage_id;
+          
+          if (!realMassageId) {
+            // CRITICAL: real_massage_id is required for package services
+            console.error(
+              "Package service missing real_massage_id:",
+              service
+            );
+            return NextResponse.json(
+              {
+                success: false,
+                error: "Invalid package service: real_massage_id is required",
+              },
+              { status: 400 }
+            );
           }
+          
+          // Apply auto-assignment using the real massage ID
+          const assignment = autoAssignResources(
+            realMassageId,
+            currentStartTime,
+            endDateTime,
+            skills,
+            rooms,
+            localBookings
+          );
+          assignedEmployeeId = assignment.employeeId;
+          assignedRoomId = assignment.roomId;
+          
+          // Use the real massage_id for storage
+          massageId = realMassageId;
+          
+          const payload = {
+            booking_id: bookingId,
+            massage_id: massageId,
+            price: 0, // Package services are free
+            massage_start_dateTime: currentStartTime.toISOString(),
+            massage_end_dateTime: endDateTime.toISOString(),
+            employee_id: assignedEmployeeId,
+            room_id: assignedRoomId,
+            member_package_id: memberPackageId,
+          };
+          detailsPayload.push(payload);
+          
+          // Guard against null/undefined package IDs
+          if (memberPackageId != null) {
+            packageIdsToMark.push(memberPackageId);
+          }
+          
+          // Track this new booking locally to prevent internal double booking for consecutive services
+          localBookings.push({
+            employee_id: assignedEmployeeId,
+            room_id: assignedRoomId,
+            massage_start_dateTime: currentStartTime.toISOString(),
+            massage_end_dateTime: endDateTime.toISOString(),
+          });
+        } else {
+          // Regular paid service - apply auto-assignment
+          const assignment = autoAssignResources(
+            massageId,
+            currentStartTime,
+            endDateTime,
+            skills,
+            rooms,
+            localBookings
+          );
+          assignedEmployeeId = assignment.employeeId;
+          assignedRoomId = assignment.roomId;
+
+          const payload = {
+            booking_id: bookingId,
+            massage_id: massageId,
+            price: service.price,
+            massage_start_dateTime: currentStartTime.toISOString(),
+            massage_end_dateTime: endDateTime.toISOString(),
+            employee_id: assignedEmployeeId,
+            room_id: assignedRoomId,
+            member_package_id: null,
+          };
+          detailsPayload.push(payload);
+
+          // Track this new booking locally to prevent internal double booking for consecutive services
+          localBookings.push({
+            employee_id: assignedEmployeeId,
+            room_id: assignedRoomId,
+            massage_start_dateTime: currentStartTime.toISOString(),
+            massage_end_dateTime: endDateTime.toISOString(),
+          });
         }
-
-        const payload = {
-          booking_id: bookingId,
-          massage_id: service.massage_id,
-          price: service.price,
-          massage_start_dateTime: currentStartTime.toISOString(),
-          massage_end_dateTime: endDateTime.toISOString(),
-          employee_id: assignedEmployeeId,
-          room_id: assignedRoomId,
-        };
-        detailsPayload.push(payload);
-
-        // Track this new booking locally to prevent internal double booking for consecutive services
-        localBookings.push({
-          employee_id: assignedEmployeeId,
-          room_id: assignedRoomId,
-          massage_start_dateTime: currentStartTime.toISOString(),
-          massage_end_dateTime: endDateTime.toISOString(),
-        });
 
         currentStartTime = new Date(endDateTime);
       }
@@ -195,6 +292,21 @@ export async function POST(request: NextRequest) {
         console.error(
           "booking POST error (member_coupon table):",
           couponError.message,
+        );
+      }
+    }
+
+    // 4. Mark used packages as used
+    if (packageIdsToMark.length > 0) {
+      const { error: packageError } = await supabase
+        .from("member_package")
+        .update({ is_used: true })
+        .in("member_package_id", packageIdsToMark);
+
+      if (packageError) {
+        console.error(
+          "booking POST error (member_package table):",
+          packageError.message,
         );
       }
     }

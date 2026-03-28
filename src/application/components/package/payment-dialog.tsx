@@ -103,9 +103,9 @@ export function PaymentDialog({ open, onClose, pkg, customerId, onSuccess }: Pay
         <Dialog open={open} onOpenChange={(v) => !v && !loading && onClose()}>
             <DialogContent className="sm:max-w-md md:max-w-lg font-mitr overflow-y-auto max-h-[90vh]">
                 <DialogHeader>
-                    <DialogTitle className="text-xl md:text-2xl font-medium">ชำระเงินแพคเกจ</DialogTitle>
+                    <DialogTitle className="text-xl md:text-2xl font-medium">ชำระเงินแพ็กเกจ</DialogTitle>
                     <p className="font-sans text-sm text-foreground/80 mt-1">
-                        ยืนยันการซื้อแพคเกจ {pkg.package_name}
+                        ยืนยันการซื้อแพ็กเกจ {pkg.package_name}
                     </p>
                 </DialogHeader>
 
