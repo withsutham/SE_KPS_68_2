@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 
@@ -10,9 +9,6 @@ export default function AuthenticatedLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
     const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
@@ -21,7 +17,7 @@ export default function AuthenticatedLayout({
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
+        const currentPath = `${window.location.pathname}${window.location.search}`;
         const params = new URLSearchParams({
           returnTo: currentPath,
           message: "auth_required",
@@ -33,7 +29,7 @@ export default function AuthenticatedLayout({
     };
 
         checkAuth();
-    }, [router, pathname, searchParams]);
+    }, []);
 
     if (isChecking) {
         return (
