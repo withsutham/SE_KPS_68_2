@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PaymentDialog } from "@/components/package/payment-dialog";
 
-export default function PackagePage() {
+function PackagePageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isAuthenticating, setIsAuthenticating] = useState(true);
@@ -510,5 +510,17 @@ export default function PackagePage() {
 
             </div>
         </main>
+    );
+}
+
+export default function PackagePage() {
+    return (
+        <Suspense fallback={
+            <main className="flex-1 w-full flex items-center justify-center min-h-[50vh]">
+                <Loader2 className="animate-spin h-8 w-8 text-primary" />
+            </main>
+        }>
+            <PackagePageContent />
+        </Suspense>
     );
 }
