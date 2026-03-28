@@ -15,18 +15,22 @@ export default function AuthenticatedLayout({
     const searchParams = useSearchParams();
     const [isChecking, setIsChecking] = useState(true);
 
-    useEffect(() => {
-        const checkAuth = async () => {
-            const supabase = createClient();
-            const { data: { user } } = await supabase.auth.getUser();
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
 
-            if (!user) {
-                const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
-                router.push(`/auth/login?returnTo=${encodeURIComponent(currentPath)}&message=auth_required`);
-            } else {
-                setIsChecking(false);
-            }
-        };
+      if (!user) {
+        const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
+        const params = new URLSearchParams({
+          returnTo: currentPath,
+          message: "auth_required",
+        });
+        window.location.replace(`/auth/login?${params.toString()}`);
+      } else {
+        setIsChecking(false);
+      }
+    };
 
         checkAuth();
     }, [router, pathname, searchParams]);
