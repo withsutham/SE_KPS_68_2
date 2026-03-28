@@ -25,14 +25,7 @@ async function ManagerGuard({ children }: { children: React.ReactNode }) {
         redirect("/");
     }
 
-    return (
-        <div className="flex min-h-screen">
-            <ManagerSideMenu />
-            <main className="flex-1 overflow-y-auto bg-muted/10">
-                {children}
-            </main>
-        </div>
-    );
+    return <>{children}</>;
 }
 
 export default function ManagerOnlyLayout({
