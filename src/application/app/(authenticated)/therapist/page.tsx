@@ -7,10 +7,17 @@ import { createClient } from '@/lib/supabase/client';
 import { getEmployeeByUserId } from '@/lib/user-actions';
 import { Skeleton } from '@/components/ui/skeleton';
 
+interface Announcement {
+  id: number;
+  title: string;
+  date: string;
+  type: string;
+}
+
 export default function HRDashboard() {
   // 1. สร้าง State สำหรับปฏิทิน
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [announcements, setAnnouncements] = useState([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [employee, setEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -133,7 +140,7 @@ export default function HRDashboard() {
               <h3 className="font-bold mb-4">ประกาศล่าสุด</h3>
               <div className="space-y-3">
                 {/* 4. ดึงข้อมูลมาวนลูปแสดงผล */}
-                {announcements.map((item: any) => (
+                {announcements.map((item) => (
                   <AnnouncementItem 
                     key={item.id}
                     title={item.title} 
@@ -179,7 +186,7 @@ function SidebarItem({ icon, label, href }: { icon: React.ReactNode, label: stri
   );
 }
 
-function AnnouncementItem({ title, date, icon, color }: any) {
+function AnnouncementItem({ title, date, icon, color }: { title: string, date: string, icon: React.ReactNode, color: string }) {
   return (
     <div className="flex items-start gap-3 p-3 rounded-xl border border-gray-50 bg-[#F9FBFA]">
       <div className={`mt-1 p-2 rounded-lg bg-white shadow-sm ${color}`}>{icon}</div>
@@ -191,7 +198,7 @@ function AnnouncementItem({ title, date, icon, color }: any) {
   );
 }
 
-function ActionButton({ label, icon, color }: any) {
+function ActionButton({ label, icon, color }: { label: string, icon: React.ReactNode, color: string }) {
   return (
     <button className={`${color} text-white py-5 px-6 rounded-2xl flex flex-row items-center justify-center gap-3 shadow-md hover:scale-[1] transition-transform`}>
       {icon}
