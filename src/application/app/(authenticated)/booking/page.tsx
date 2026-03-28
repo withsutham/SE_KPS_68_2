@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { BookingProgress } from "@/components/booking/booking-progress";
 import { StepServiceSelection } from "@/components/booking/step-service-selection";
 import { StepDateTime } from "@/components/booking/step-date-time";
@@ -23,6 +24,7 @@ function BookingPageInner() {
   const [bookingData, setBookingData] =
     useState<BookingData>(INITIAL_BOOKING_DATA);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const hasPreSelectedRef = useRef(false);
 
   // Check authentication
   useEffect(() => {
@@ -68,33 +70,100 @@ function BookingPageInner() {
 
   // Pre-select a service if ?serviceId= is present in the URL
   useEffect(() => {
+    // Only run pre-selection once on mount to avoid overwriting user selections
+    if (hasPreSelectedRef.current) return;
+
     const serviceId = searchParams.get("serviceId");
-    if (!serviceId) return;
+    const packageServiceId = searchParams.get("packageServiceId");
+    const massageId = searchParams.get("massageId");
 
-    async function preSelectService() {
-      try {
-        const res = await fetch(`/api/massage/${serviceId}`);
-        const json = await res.json();
-        if (!json.success || !json.data) return;
+    // Handle package service pre-selection
+    if (packageServiceId && massageId) {
+      async function preSelectPackageService() {
+        try {
+          // Fetch the massage details (required)
+          const res = await fetch(`/api/massage/${massageId}`);
+          const json = await res.json();
+          if (!json.success || !json.data) return;
 
-        const massage = json.data;
-        setBookingData((prev) => ({
-          ...prev,
-          selectedServices: [
-            {
-              massage_id: massage.massage_id, // keep as-is (number) to match StepServiceSelection's runtime type
-              massage_name: massage.massage_name,
-              massage_price: massage.massage_price,
-              duration: massage.massage_time ?? 60,
-            },
-          ],
-        }));
-      } catch {
-        // Silently ignore — user can manually select
+          const massage = json.data;
+          
+          // Build base selected service from massage data
+          const baseSelectedService = {
+            massage_id: `pkg_${packageServiceId}`, // Synthetic ID for UI tracking
+            massage_name: massage.massage_name,
+            massage_price: 0, // Package services are free
+            duration: massage.massage_time ?? 60,
+            fromPackage: true,
+            member_package_id: Number(packageServiceId),
+            real_massage_id: massage.massage_id, // Real massage_id for auto-assignment
+          };
+          
+          let packageName: string | undefined;
+          
+          // Try to fetch package name (optional enrichment)
+          try {
+            const pkgRes = await fetch(`/api/member_package/unused?customer_id=${bookingData.customerId}`);
+            const pkgJson = await pkgRes.json();
+            if (pkgJson.success && pkgJson.data) {
+              const memberPackage = pkgJson.data.find(
+                (mp: any) => mp.member_package_id === Number(packageServiceId)
+              );
+              packageName = memberPackage?.package_detail?.package?.package_name;
+            }
+          } catch (err) {
+            console.warn("Failed to fetch package name, proceeding without it:", err);
+            // Continue without package name - not critical
+          }
+          
+          // Set booking data with or without package name
+          setBookingData((prev) => ({
+            ...prev,
+            selectedServices: [
+              {
+                ...baseSelectedService,
+                package_name: packageName,
+              },
+            ],
+          }));
+        } catch (err) {
+          console.error("Failed to pre-select package service:", err);
+          // Silently ignore — user can manually select
+        }
       }
+      preSelectPackageService();
+      hasPreSelectedRef.current = true;
+      return;
     }
-    preSelectService();
-  }, [searchParams]);
+
+    // Handle regular service pre-selection
+    if (serviceId) {
+      async function preSelectService() {
+        try {
+          const res = await fetch(`/api/massage/${serviceId}`);
+          const json = await res.json();
+          if (!json.success || !json.data) return;
+
+          const massage = json.data;
+          setBookingData((prev) => ({
+            ...prev,
+            selectedServices: [
+              {
+                massage_id: massage.massage_id, // keep as-is (number) to match StepServiceSelection's runtime type
+                massage_name: massage.massage_name,
+                massage_price: massage.massage_price,
+                duration: massage.massage_time ?? 60,
+              },
+            ],
+          }));
+        } catch {
+          // Silently ignore — user can manually select
+        }
+      }
+      preSelectService();
+      hasPreSelectedRef.current = true;
+    }
+  }, [searchParams, bookingData.customerId]);
 
   const updateData = (updates: Partial<BookingData>) => {
     setBookingData((prev) => ({ ...prev, ...updates }));
@@ -143,12 +212,13 @@ function BookingPageInner() {
   };
 
   const serviceId = searchParams.get("serviceId");
+  const packageServiceId = searchParams.get("packageServiceId");
   const stepProps = {
     data: bookingData,
     onUpdate: updateData,
     onNext: goNext,
     onBack: goBack,
-    autoOpenPicker: !serviceId,
+    autoOpenPicker: !serviceId && !packageServiceId,
   };
 
   if (isAuthenticating) {
@@ -192,11 +262,21 @@ function BookingPageInner() {
 
         {/* Step content */}
         <div className="min-h-[420px] print:min-h-0">
-          {currentStep === 1 && <StepServiceSelection {...stepProps} />}
-          {currentStep === 2 && <StepDateTime {...stepProps} />}
-          {currentStep === 3 && <StepDetails {...stepProps} />}
-          {currentStep === 4 && <StepPayment {...stepProps} />}
-          {currentStep === 5 && <StepSummary data={bookingData} />}
+          <ErrorBoundary>
+            {currentStep === 1 && <StepServiceSelection {...stepProps} />}
+          </ErrorBoundary>
+          <ErrorBoundary>
+            {currentStep === 2 && <StepDateTime {...stepProps} />}
+          </ErrorBoundary>
+          <ErrorBoundary>
+            {currentStep === 3 && <StepDetails {...stepProps} />}
+          </ErrorBoundary>
+          <ErrorBoundary>
+            {currentStep === 4 && <StepPayment {...stepProps} />}
+          </ErrorBoundary>
+          <ErrorBoundary>
+            {currentStep === 5 && <StepSummary data={bookingData} />}
+          </ErrorBoundary>
         </div>
       </div>
     </main>
