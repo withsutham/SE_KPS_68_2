@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { ManagerSidebar } from "@/components/manager/sidebar";
 
 import { Suspense } from "react";
 
@@ -24,7 +25,16 @@ async function ManagerGuard({ children }: { children: React.ReactNode }) {
         redirect("/");
     }
 
-    return <>{children}</>;
+    return (
+        <div className="flex min-h-screen bg-muted/20">
+            <ManagerSidebar />
+            <div className="flex-1 pl-72">
+                <div className="min-h-screen">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 export default function ManagerOnlyLayout({

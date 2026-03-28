@@ -16,7 +16,26 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NavScrollLink } from "@/components/nav-scroll-link";
 
-export function Nav() {
+export async function Nav() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let role: string | null = null;
+  if (user) {
+    const adminSupabase = await createAdminClient();
+    const { data: profile } = await adminSupabase
+      .from("profiles")
+      .select("user_type")
+      .eq("profile_id", user.id)
+      .single();
+    role = profile?.user_type ?? null;
+  }
+
+  // Hide top nav for manager/shop_owner as they use the sidebar
+  if (role === "manager" || role === "shop_owner") {
+    return null;
+  }
+
   return (
     <nav className="print:hidden w-full flex justify-center border-b border-border/40 backdrop-blur-md sticky top-0 z-50">
       <div className="w-full max-w-7xl flex justify-between items-center gap-3 py-3 px-4 sm:p-6 sm:px-10">
@@ -120,11 +139,6 @@ async function NavLinkGroup() {
     );
   }
 
-  // manager, shop_owner — can manage employees, bookings, packages, coupons and see dashboard
-  if (role === "manager" || role === "shop_owner") {
-    return null;
-  }
-
   // therapist — can view their own timetable
   if (role === "therapist") {
     return (
@@ -168,10 +182,6 @@ async function MobileNavMenu() {
       .eq("profile_id", user.id)
       .single();
     role = profile?.user_type ?? null;
-  }
-
-  if (role === "manager" || role === "shop_owner") {
-    return null;
   }
 
   return (
