@@ -18,6 +18,7 @@ import {
   PanelLeft,
   PanelLeftClose,
   LogOut,
+  Clock,
 } from "lucide-react";
 
 type MenuItem = {
@@ -32,6 +33,7 @@ const topItems: MenuItem[] = [
   { href: "/manager/booking", label: "จัดการการจอง", icon: ClipboardList },
   { href: "/manager/package", label: "จัดการแพ็กเกจ", icon: Package },
   { href: "/manager/coupon", label: "จัดการคูปอง", icon: Tag },
+  { href: "/manager/operating-time", label: "เวลาทำการ", icon: Clock },
 ];
 
 const employeeItems: MenuItem[] = [

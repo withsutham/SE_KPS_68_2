@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-import { ManagerSidebar } from "@/components/manager/sidebar";
+import { ManagerSideMenu } from "@/components/manager/manager-side-menu";
 
 import { Suspense } from "react";
 
@@ -26,13 +26,11 @@ async function ManagerGuard({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="flex min-h-screen bg-muted/20">
-            <ManagerSidebar />
-            <div className="flex-1 pl-72">
-                <div className="min-h-screen">
-                    {children}
-                </div>
-            </div>
+        <div className="flex min-h-screen">
+            <ManagerSideMenu />
+            <main className="flex-1 overflow-y-auto bg-muted/10">
+                {children}
+            </main>
         </div>
     );
 }
