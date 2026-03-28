@@ -22,7 +22,6 @@ import { PaymentDialog } from "@/components/package/payment-dialog";
 function PackagePageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [isAuthenticating, setIsAuthenticating] = useState(true);
     const [customerId, setCustomerId] = useState<number | null>(null);
 
     const [availablePackages, setAvailablePackages] = useState<any[]>([]);
@@ -59,16 +58,13 @@ function PackagePageContent() {
         setTimeout(() => setAlertMessage(null), 3000);
     };
 
-    // Check auth and fetch user ID
+    // Fetch customer ID on mount (auth is handled by layout)
     useEffect(() => {
-        const checkAuth = async () => {
+        const fetchCustomerId = async () => {
             const supabase = createClient();
             const { data: { session } } = await supabase.auth.getSession();
 
-            if (!session) {
-                const currentPath = window.location.pathname + window.location.search;
-                window.location.href = `/auth/login?returnTo=${encodeURIComponent(currentPath)}&message=package`;
-            } else {
+            if (session) {
                 try {
                     const res = await fetch(`/api/customer?profile_id=${session.user.id}`);
                     if (res.ok) {
@@ -80,17 +76,16 @@ function PackagePageContent() {
                 } catch (error) {
                     console.error("Failed to fetch customer data:", error);
                 }
-                setIsAuthenticating(false);
             }
         };
-        checkAuth();
-    }, [router]);
+        fetchCustomerId();
+    }, []);
 
     useEffect(() => {
-        if (!isAuthenticating && customerId) {
+        if (customerId) {
             fetchPackages();
         }
-    }, [isAuthenticating, customerId]);
+    }, [customerId]);
 
     const fetchPackages = async () => {
         setIsLoading(true);
@@ -124,7 +119,7 @@ function PackagePageContent() {
 
     // Using PaymentDialog instead of handleBuyPackage
 
-    if (isAuthenticating || isLoading) {
+    if (isLoading) {
         return (
             <main className="flex-1 w-full flex items-center justify-center min-h-[50vh]">
                 <Loader2 className="animate-spin h-8 w-8 text-primary" />
