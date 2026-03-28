@@ -233,17 +233,44 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle,
 
   // Filter packages by search
   const filteredPackages = useMemo(() => {
-    return groupedPackages.map(group => ({
+    let result = groupedPackages.map(group => ({
       ...group,
       services: group.services.filter(pkg => {
         const massage = pkg.massage;
         const nameMatch = massage?.massage_name?.toLowerCase().includes(search.toLowerCase()) ?? true;
         const priceMatch = true; // Packages are free
-        const timeMatch = pkg.duration == null || (pkg.duration >= timeRange[0] && pkg.duration <= timeRange[1]);
+        // Note: pkg.massage?.massage_time is used to get the time, or pkg.duration if enriched
+        const duration = pkg.duration ?? pkg.massage?.massage_time ?? DEFAULT_DURATION;
+        const timeMatch = duration >= timeRange[0] && duration <= timeRange[1];
         return nameMatch && priceMatch && timeMatch;
       })
     })).filter(group => group.services.length > 0);
-  }, [groupedPackages, search, timeRange]);
+
+    // Apply sort inside each group
+    result = result.map(group => {
+      let sortedServices = [...group.services];
+      switch (sortKey) {
+        case "time_asc":
+          sortedServices.sort((a, b) => {
+            const durationA = a.duration ?? a.massage?.massage_time ?? DEFAULT_DURATION;
+            const durationB = b.duration ?? b.massage?.massage_time ?? DEFAULT_DURATION;
+            return durationA - durationB;
+          });
+          break;
+        case "time_desc":
+          sortedServices.sort((a, b) => {
+            const durationA = a.duration ?? a.massage?.massage_time ?? DEFAULT_DURATION;
+            const durationB = b.duration ?? b.massage?.massage_time ?? DEFAULT_DURATION;
+            return durationB - durationA;
+          });
+          break;
+        // Skip price sorts since all package services are "Free"
+      }
+      return { ...group, services: sortedServices };
+    });
+
+    return result;
+  }, [groupedPackages, search, timeRange, sortKey]);
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -360,6 +387,18 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle,
                     </button>
                   )}
                 </div>
+
+                {/* Sort for packages (Time only) */}
+                <Select value={sortKey === "price_asc" || sortKey === "price_desc" ? "default" : sortKey} onValueChange={v => setSortKey(v as SortKey)}>
+                  <SelectTrigger className="w-40 rounded-full border-border/50 bg-muted/30 text-sm h-9">
+                    <SelectValue placeholder="เรียงตาม" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">ค่าเริ่มต้น</SelectItem>
+                    <SelectItem value="time_asc">เวลา: สั้น → ยาว</SelectItem>
+                    <SelectItem value="time_desc">เวลา: ยาว → สั้น</SelectItem>
+                  </SelectContent>
+                </Select>
 
                 {/* Filter toggle for packages */}
                 <button
