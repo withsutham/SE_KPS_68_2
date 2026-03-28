@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { SignUpForm } from "@/components/sign-up-form";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: "สมัครสมาชิก",
+};
 
 export default function Page() {
   return (

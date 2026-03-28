@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: "เกิดข้อผิดพลาด",
+};
 
 async function ErrorContent({
   searchParams,
