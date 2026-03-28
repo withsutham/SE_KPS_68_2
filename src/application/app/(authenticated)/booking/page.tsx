@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { BookingProgress } from "@/components/booking/booking-progress";
 import { StepServiceSelection } from "@/components/booking/step-service-selection";
 import { StepDateTime } from "@/components/booking/step-date-time";
@@ -239,11 +240,21 @@ function BookingPageInner() {
 
         {/* Step content */}
         <div className="min-h-[420px] print:min-h-0">
-          {currentStep === 1 && <StepServiceSelection {...stepProps} />}
-          {currentStep === 2 && <StepDateTime {...stepProps} />}
-          {currentStep === 3 && <StepDetails {...stepProps} />}
-          {currentStep === 4 && <StepPayment {...stepProps} />}
-          {currentStep === 5 && <StepSummary data={bookingData} />}
+          <ErrorBoundary>
+            {currentStep === 1 && <StepServiceSelection {...stepProps} />}
+          </ErrorBoundary>
+          <ErrorBoundary>
+            {currentStep === 2 && <StepDateTime {...stepProps} />}
+          </ErrorBoundary>
+          <ErrorBoundary>
+            {currentStep === 3 && <StepDetails {...stepProps} />}
+          </ErrorBoundary>
+          <ErrorBoundary>
+            {currentStep === 4 && <StepPayment {...stepProps} />}
+          </ErrorBoundary>
+          <ErrorBoundary>
+            {currentStep === 5 && <StepSummary data={bookingData} />}
+          </ErrorBoundary>
         </div>
       </div>
     </main>
