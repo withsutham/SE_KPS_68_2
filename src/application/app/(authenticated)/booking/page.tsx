@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -24,6 +24,7 @@ function BookingPageInner() {
   const [bookingData, setBookingData] =
     useState<BookingData>(INITIAL_BOOKING_DATA);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const hasPreSelectedRef = useRef(false);
 
   // Check authentication
   useEffect(() => {
@@ -69,6 +70,9 @@ function BookingPageInner() {
 
   // Pre-select a service if ?serviceId= is present in the URL
   useEffect(() => {
+    // Only run pre-selection once on mount to avoid overwriting user selections
+    if (hasPreSelectedRef.current) return;
+
     const serviceId = searchParams.get("serviceId");
     const packageServiceId = searchParams.get("packageServiceId");
     const massageId = searchParams.get("massageId");
@@ -128,6 +132,7 @@ function BookingPageInner() {
         }
       }
       preSelectPackageService();
+      hasPreSelectedRef.current = true;
       return;
     }
 
@@ -156,6 +161,7 @@ function BookingPageInner() {
         }
       }
       preSelectService();
+      hasPreSelectedRef.current = true;
     }
   }, [searchParams, bookingData.customerId]);
 

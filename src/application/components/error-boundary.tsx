@@ -15,12 +15,13 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: React.ErrorInfo | null;
+  isExtensionError: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null, errorInfo: null, isExtensionError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
@@ -32,13 +33,13 @@ export class ErrorBoundary extends Component<Props, State> {
       error.stack?.includes("webkit-masked-url");
 
     if (isExtensionError) {
-      // Don't update state for extension errors - avoid re-rendering crashing component
+      // Mark as extension error to render null instead of error UI
       console.warn("Ignoring browser extension error:", error.message);
-      return { hasError: false, error: null, errorInfo: null };
+      return { hasError: true, error, errorInfo: null, isExtensionError: true };
     }
 
     // Update state so the next render will show the fallback UI
-    return { hasError: true, error, errorInfo: null };
+    return { hasError: true, error, errorInfo: null, isExtensionError: false };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -54,10 +55,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
     if (isExtensionError) {
       // Extension error already handled in getDerivedStateFromError
+      this.setState({ errorInfo, isExtensionError: true });
       return;
     }
 
-    this.setState({ error, errorInfo });
+    this.setState({ error, errorInfo, isExtensionError: false });
 
     // Call optional error handler
     if (this.props.onError) {
@@ -66,10 +68,15 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+    this.setState({ hasError: false, error: null, errorInfo: null, isExtensionError: false });
   };
 
   render() {
+    // For extension errors, render nothing to avoid infinite loops
+    if (this.state.isExtensionError) {
+      return null;
+    }
+
     if (this.state.hasError && this.state.error) {
       // Use custom fallback if provided
       if (this.props.fallback) {
