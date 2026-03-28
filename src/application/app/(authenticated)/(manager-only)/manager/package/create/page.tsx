@@ -102,7 +102,7 @@ export default function CreatePackagePage() {
             const packageJson = await packageRes.json();
 
             if (!packageRes.ok || !packageJson.success) {
-                alert("เกิดข้อผิดพลาดในการสร้างแพคเกจ: " + (packageJson.error || "ข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
+                alert("เกิดข้อผิดพลาดในการสร้างแพ็กเกจ: " + (packageJson.error || "ข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
                 setSubmitting(false);
                 return;
             }
@@ -146,7 +146,7 @@ export default function CreatePackagePage() {
     return (
         <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 p-8 font-mitr">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">สร้างแพคเกจใหม่</h1>
+                <h1 className="text-3xl font-bold">สร้างแพ็กเกจใหม่</h1>
                 <Button variant="outline" onClick={() => router.push("/manager/package")}>
                     กลับไปหน้ารายการ
                 </Button>
@@ -155,11 +155,11 @@ export default function CreatePackagePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Left Column: Form Info */}
                 <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 h-fit min-w-0">
-                    <h3 className="text-xl font-semibold mb-6">รายละเอียดแพคเกจ</h3>
+                    <h3 className="text-xl font-semibold mb-6">รายละเอียดแพ็กเกจ</h3>
 
                     <form id="create-package-form" onSubmit={handleSavePackage} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="packageName">ชื่อแพคเกจ</Label>
+                            <Label htmlFor="packageName">ชื่อแพ็กเกจ</Label>
                             <Input
                                 id="packageName"
                                 placeholder="เช่น พรีเมียมสปา 2 ชั่วโมง"
@@ -170,7 +170,7 @@ export default function CreatePackagePage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="packagePrice">ราคาขายแพคเกจ (บาท)</Label>
+                            <Label htmlFor="packagePrice">ราคาขายแพ็กเกจ (บาท)</Label>
                             <Input
                                 id="packagePrice"
                                 type="number"
@@ -217,7 +217,7 @@ export default function CreatePackagePage() {
                                 className="min-w-[150px]"
                                 disabled={submitting || selectedMassages.length === 0}
                             >
-                                {submitting ? "กำลังบันทึก..." : "บันทึกแพคเกจ"}
+                                {submitting ? "กำลังบันทึก..." : "บันทึกแพ็กเกจ"}
                             </Button>
                         </div>
                     </form>
@@ -227,7 +227,7 @@ export default function CreatePackagePage() {
                 <div className="flex min-w-0 flex-col gap-6">
                     {/* Selected Massages Summary */}
                     <div className="bg-emerald-50 p-6 rounded-lg shadow-sm border border-emerald-100 min-w-0">
-                        <h3 className="text-lg font-semibold text-emerald-800 mb-4">บริการนวดที่รวมอยู่ในแพคเกจ</h3>
+                        <h3 className="text-lg font-semibold text-emerald-800 mb-4">บริการนวดที่รวมอยู่ในแพ็กเกจ</h3>
 
                         {selectedMassages.length === 0 ? (
                             <p className="text-emerald-600/60 italic text-sm text-center py-4 bg-white/50 rounded-md">

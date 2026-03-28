@@ -41,18 +41,21 @@ export async function AuthButton() {
   }
 
   return user ? (
-    <div className="flex items-center gap-4">
-      <span className="text-muted-foreground font-mitr">
+    <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+      <span className="hidden sm:inline text-muted-foreground font-mitr truncate max-w-[220px]">
         สวัสดีคุณ {displayName}
       </span>
       <LogoutButton />
     </div>
   ) : (
-    <div className="flex gap-2">
-      <Button asChild size="sm" variant={"outline"} className="font-mitr">
+    <div className="flex gap-2 items-center">
+      <Button asChild size="sm" variant={"default"} className="font-mitr sm:hidden">
         <Link href="/auth/login">เข้าสู่ระบบ</Link>
       </Button>
-      <Button asChild size="sm" variant={"default"} className="font-mitr">
+      <Button asChild size="sm" variant={"outline"} className="font-mitr hidden sm:inline-flex">
+        <Link href="/auth/login">เข้าสู่ระบบ</Link>
+      </Button>
+      <Button asChild size="sm" variant={"default"} className="font-mitr hidden sm:inline-flex">
         <Link href="/auth/sign-up">สมัครสมาชิก</Link>
       </Button>
     </div>

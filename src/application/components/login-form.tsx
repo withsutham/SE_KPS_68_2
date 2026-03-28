@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { getUserType } from "@/lib/user-actions";
@@ -26,10 +26,20 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo") || "/";
-  const message = searchParams.get("message");
+  const tab = searchParams.get("tab");
+  const packageId = searchParams.get("packageId");
+  const message = searchParams.get("message") ?? (tab ? "auth_required" : null);
+  let returnTo = searchParams.get("returnTo") || "/";
+
+  if (!searchParams.get("returnTo") && tab) {
+    const params = new URLSearchParams();
+    params.set("tab", tab);
+    if (packageId) {
+      params.set("packageId", packageId);
+    }
+    returnTo = `/package?${params.toString()}`;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

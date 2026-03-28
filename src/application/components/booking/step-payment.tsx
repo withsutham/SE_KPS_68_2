@@ -10,6 +10,7 @@ import {
   Loader2,
   Ticket,
   Upload,
+  Gift,
 } from "lucide-react";
 import { StepProps } from "./types";
 import generatePayload from "promptpay-qr";
@@ -64,7 +65,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
   }, [data.customerId]);
 
   const subtotal = data.selectedServices.reduce(
-    (sum, s) => sum + Number(s.massage_price),
+    (sum, s) => sum + (s.fromPackage ? 0 : Number(s.massage_price)),
     0,
   );
   let discount = 0;
@@ -81,12 +82,78 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
 
   const total = Math.max(0, subtotal - discount);
   const depositAmount = Math.max(0, Math.round(total * 0.3)); // 30% Deposit
+  
+  // Separate package and paid services
+  const packageServices = data.selectedServices.filter(s => s.fromPackage);
+  const paidServices = data.selectedServices.filter(s => !s.fromPackage);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const targetPromptPay = "0643981531"; // Replace with your actual shop phone/ID
   const qrPayload = generatePayload(targetPromptPay, { amount: depositAmount });
 
   const handleConfirm = async () => {
+    // For all-package bookings, skip payment requirement
+    if (paidServices.length === 0) {
+      // Create booking without payment
+      setLoading(true);
+      try {
+        const d = data.selectedDate!;
+        const datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        const timePart = data.selectedTime;
+        const bookingDateTime = `${datePart}T${timePart}:00+07:00`;
+
+        const payload = {
+          customer_id: data.customerId ?? null,
+          customer_name: `${data.firstName} ${data.lastName}`,
+          customer_phone: data.phone,
+          customer_email: data.email,
+          booking_datetime: bookingDateTime,
+          services: data.selectedServices.map((s) => ({
+            massage_id: s.massage_id,
+            price: s.fromPackage ? 0 : s.massage_price,
+            duration: s.duration || 60,
+            member_package_id: s.member_package_id || null,
+          })),
+          payment_method: "package",
+          total_price: 0,
+          deposit_amount: 0,
+          member_coupon_id: data.selectedCouponId,
+          payment_slip_url: null,
+        };
+
+        let bookingId: string | null = null;
+        let bookingDetails: any[] | null = null;
+        try {
+          const res = await fetch("/api/booking", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok) {
+            const json = await res.json();
+            bookingId = json.data?.id ?? null;
+            bookingDetails = json.data?.details ?? null;
+          }
+        } catch (err) {
+          console.error("Booking submission error:", err);
+        }
+
+        onUpdate({
+          bookingId:
+            bookingId ?? `FJ-${Date.now().toString(36).toUpperCase().slice(-6)}`,
+          bookingDetails,
+          discountAmount: 0,
+        });
+
+        await new Promise((r) => setTimeout(r, 800));
+        onNext();
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    
+    // Normal payment flow for paid services
     if (!data.paymentMethod) return;
     if (data.paymentMethod === "qr" && !data.paymentSlipFile) {
       alert("กรุณาอัปโหลดสลิปการโอนเงินมัดจำ (Please upload deposit slip)");
@@ -134,8 +201,9 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
         booking_datetime: bookingDateTime,
         services: data.selectedServices.map((s) => ({
           massage_id: s.massage_id,
-          price: s.massage_price,
+          price: s.fromPackage ? 0 : s.massage_price,
           duration: s.duration || 60,
+          member_package_id: s.member_package_id || null,
         })),
         payment_method: data.paymentMethod,
         total_price: total,
@@ -311,81 +379,103 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
           </div>
         </div>
 
-        {/* Payment method */}
-        <div className="bg-card/40 backdrop-blur-sm border border-border/40 rounded-2xl p-6">
-          <h3 className="font-medium font-mitr mb-4 text-foreground">
-            วิธีชำระเงินมัดจำ
-          </h3>
-          <div className="grid grid-cols-1 gap-3">
-            {PAYMENT_METHODS.map((method) => {
-              const Icon = method.icon;
-              const selected = data.paymentMethod === method.id;
-              return (
-                <button
-                  key={method.id}
-                  onClick={() => onUpdate({ paymentMethod: method.id })}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 text-center",
-                    selected
-                      ? "border-primary bg-primary/5 text-primary shadow-md shadow-primary/10"
-                      : "border-border/40 bg-background/30 text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-xs font-medium font-sans leading-tight">
-                    {method.label}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-sans">
-                    {method.sublabel}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {data.paymentMethod === "qr" && (
-            <div className="mt-6 flex flex-col items-center gap-4 p-4 border border-primary/20 bg-primary/5 rounded-xl animate-in fade-in slide-in-from-top-4">
-              <p className="text-sm font-medium text-foreground">
-                สแกน QR Code เพื่อชำระเงินมัดจำ
-              </p>
-              <div className="bg-white p-3 rounded-xl shadow-sm">
-                <QRCodeSVG value={qrPayload} size={200} />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                ยอดชำระ: ฿{depositAmount.toLocaleString()}
-              </p>
-
-              <div className="w-full mt-2">
-                <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  อัปโหลดสลิปการโอนเงิน
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      onUpdate({ paymentSlipFile: file });
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-dashed"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {data.paymentSlipFile
-                    ? data.paymentSlipFile.name
-                    : "เลือกรูปภาพสลิป"}
-                </Button>
-              </div>
+        {/* All-Package Booking - No Payment Required */}
+        {paidServices.length === 0 && packageServices.length > 0 ? (
+          <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-2xl p-8 flex flex-col items-center text-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
+              <Gift className="h-6 w-6 text-green-600" />
             </div>
-          )}
-        </div>
+            <div className="flex flex-col gap-1">
+              <h3 className="font-medium font-mitr text-lg text-foreground">
+                ใช้แพ็กเกจจองบริการ
+              </h3>
+              <p className="text-sm text-muted-foreground font-sans">
+                คุณกำลังใช้ {packageServices.length} บริการจากแพ็กเกจ
+              </p>
+            </div>
+            <div className="text-sm text-green-600 font-medium font-sans">
+              ✓ ไม่ต้องชำระเงินเพิ่มเติม
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Payment method */}
+            <div className="bg-card/40 backdrop-blur-sm border border-border/40 rounded-2xl p-6">
+              <h3 className="font-medium font-mitr mb-4 text-foreground">
+                วิธีชำระเงินมัดจำ
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                {PAYMENT_METHODS.map((method) => {
+                  const Icon = method.icon;
+                  const selected = data.paymentMethod === method.id;
+                  return (
+                    <button
+                      key={method.id}
+                      onClick={() => onUpdate({ paymentMethod: method.id })}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 text-center",
+                        selected
+                          ? "border-primary bg-primary/5 text-primary shadow-md shadow-primary/10"
+                          : "border-border/40 bg-background/30 text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-xs font-medium font-sans leading-tight">
+                        {method.label}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-sans">
+                        {method.sublabel}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {data.paymentMethod === "qr" && (
+                <div className="mt-6 flex flex-col items-center gap-4 p-4 border border-primary/20 bg-primary/5 rounded-xl animate-in fade-in slide-in-from-top-4">
+                  <p className="text-sm font-medium text-foreground">
+                    สแกน QR Code เพื่อชำระเงินมัดจำ
+                  </p>
+                  <div className="bg-white p-3 rounded-xl shadow-sm">
+                    <QRCodeSVG value={qrPayload} size={200} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    ยอดชำระ: ฿{depositAmount.toLocaleString()}
+                  </p>
+
+                  <div className="w-full mt-2">
+                    <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      อัปโหลดสลิปการโอนเงิน
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          onUpdate({ paymentSlipFile: file });
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-dashed"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {data.paymentSlipFile
+                        ? data.paymentSlipFile.name
+                        : "เลือกรูปภาพสลิป"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Security note */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground font-sans justify-center">
@@ -407,7 +497,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
         </Button>
         <Button
           onClick={handleConfirm}
-          disabled={!data.paymentMethod || loading}
+          disabled={paidServices.length > 0 && !data.paymentMethod || loading}
           className="gap-2 px-8 font-sans"
           size="lg"
         >
@@ -416,6 +506,8 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
               <Loader2 className="h-4 w-4 animate-spin" />
               กำลังดำเนินการ...
             </>
+          ) : paidServices.length === 0 ? (
+            "ยืนยันการจอง"
           ) : (
             "ยืนยันการชำระเงิน"
           )}
