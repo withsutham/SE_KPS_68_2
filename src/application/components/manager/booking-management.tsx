@@ -19,6 +19,7 @@ import {
     User,
     ChevronLeft,
     ChevronRight,
+    DoorOpen,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -456,28 +457,5 @@ export function BookingManagement() {
                 </DialogContent>
             </Dialog>
         </main>
-    );
-}
-
-function DoorOpen(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M13 4h3a2 2 0 0 1 2 2v14" />
-            <path d="M2 20h20" />
-            <path d="M13 20V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v16" />
-            <path d="M9 12v.01" />
-            <path d="M13 12h.01" />
-        </svg>
     );
 }
