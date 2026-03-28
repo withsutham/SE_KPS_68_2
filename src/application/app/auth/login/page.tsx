@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { LoginForm } from "@/components/login-form";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: "เข้าสู่ระบบ",
+};
 
 export default function Page() {
   return (
