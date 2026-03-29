@@ -251,7 +251,8 @@ export default function CouponPage() {
   const totalItems = currentList.length;
   const itemsPerPageNum = rowsPerPage === "all" ? totalItems : parseInt(rowsPerPage, 10) || 9;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPageNum));
-  const startIndex = (currentPage - 1) * itemsPerPageNum;
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const startIndex = (safeCurrentPage - 1) * itemsPerPageNum;
   const endIndex = rowsPerPage === "all" ? totalItems : Math.min(startIndex + itemsPerPageNum, totalItems);
 
   const paginatedList = currentList.slice(startIndex, endIndex);
