@@ -58,23 +58,38 @@ export async function GET(request: NextRequest) {
     const fromDate = from ? new Date(`${from}T00:00:00+07:00`) : new Date(0);
     const toDate = to ? new Date(`${to}T23:59:59+07:00`) : new Date("2099-12-31");
 
+    // Calculate previous period for comparison
+    const rangeMs = toDate.getTime() - fromDate.getTime();
+    const prevToDate = new Date(fromDate.getTime() - 1);
+    const prevFromDate = new Date(prevToDate.getTime() - rangeMs);
+
     const filteredBookings = allBookings.filter((b: any) => {
         const d = new Date(b.booking_dateTime);
         return d >= fromDate && d <= toDate;
     });
 
+    const prevFilteredBookings = allBookings.filter((b: any) => {
+        const d = new Date(b.booking_dateTime);
+        return d >= prevFromDate && d <= prevToDate;
+    });
+
     const filteredBookingIds = new Set(filteredBookings.map((b: any) => b.booking_id));
+    const prevFilteredBookingIds = new Set(prevFilteredBookings.map((b: any) => b.booking_id));
 
     const filteredDetails = allDetails.filter((d: any) => filteredBookingIds.has(d.booking_id));
-
     const filteredPayments = allPayments.filter((p: any) => filteredBookingIds.has(p.booking_id));
+    const prevFilteredPayments = allPayments.filter((p: any) => prevFilteredBookingIds.has(p.booking_id));
 
     // ─── 1. KPI: Total Revenue ───────────────────────────────────────────
     const completedPayments = filteredPayments.filter((p: any) => p.payment_status === "completed");
     const totalRevenue = completedPayments.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0);
 
+    const prevCompletedPayments = prevFilteredPayments.filter((p: any) => p.payment_status === "completed");
+    const prevTotalRevenue = prevCompletedPayments.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0);
+
     // ─── 2. KPI: Total Bookings ──────────────────────────────────────────
     const totalBookings = filteredBookings.length;
+    const prevTotalBookings = prevFilteredBookings.length;
 
     // ─── 3. KPI: New Customers ───────────────────────────────────────────
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -172,7 +187,7 @@ export async function GET(request: NextRequest) {
         const dayCount = Math.max(1, Math.ceil((toDate.getTime() - fromDate.getTime()) / 86400000));
         const maxMinutes = dayCount * 600; // 10 hours * 60 min
         const rate = maxMinutes > 0 ? Math.min(100, Math.round((totalMinutes / maxMinutes) * 100)) : 0;
-        return { name: room.room_name, rate };
+        return { name: room.room_name, rate, totalMinutes, maxMinutes };
     });
 
     // ─── 10. Therapist Utilization Rate ──────────────────────────────────
@@ -186,7 +201,7 @@ export async function GET(request: NextRequest) {
         const dayCount = Math.max(1, Math.ceil((toDate.getTime() - fromDate.getTime()) / 86400000));
         const maxMinutes = dayCount * 480; // 8 hours * 60 min
         const rate = maxMinutes > 0 ? Math.min(100, Math.round((totalMinutes / maxMinutes) * 100)) : 0;
-        return { name: `${emp.first_name} ${emp.last_name}`, rate };
+        return { name: `${emp.first_name} ${emp.last_name}`, rate, totalMinutes, maxMinutes };
     }).sort((a: any, b: any) => b.rate - a.rate);
 
     // ─── 11. Coupon Redemption Rate ──────────────────────────────────────
@@ -272,7 +287,9 @@ export async function GET(request: NextRequest) {
         data: {
             // KPIs
             totalRevenue,
+            prevTotalRevenue,
             totalBookings,
+            prevTotalBookings,
             newCustomersThisMonth,
             newCustomersLastMonth,
             avgTransactionValue,
