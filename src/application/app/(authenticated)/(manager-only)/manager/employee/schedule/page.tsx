@@ -28,6 +28,8 @@ import {
   XCircle,
   Search,
   BarChart3,
+  ChevronDown,
+  Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -838,6 +840,103 @@ function MonthlyStatsDialog({
   );
 }
 
+// ─── Massage Filter Dialog ──────────────────────────────────────────────────
+function MassageFilterDialog({
+  open,
+  onClose,
+  massages,
+  currentId,
+  onSelect,
+}: {
+  open: boolean;
+  onClose: () => void;
+  massages: Massage[];
+  currentId: number | 'all';
+  onSelect: (id: number | 'all') => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-xl w-full max-h-[85vh] overflow-hidden flex flex-col p-0 font-sans">
+        <DialogHeader className="px-6 py-4 border-b shrink-0 bg-muted/5 backdrop-blur-sm">
+          <DialogTitle className="font-mitr text-xl flex items-center gap-2">
+            <Filter className="h-5 w-5 text-primary" /> เลือกพนักงานตามทักษะบริการ
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-muted/5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+             <button
+               onClick={() => { onSelect('all'); onClose(); }}
+               className={cn(
+                 "group relative flex flex-col items-start gap-1.5 p-4 rounded-2xl border text-left transition-all duration-200",
+                 currentId === 'all' 
+                   ? "bg-primary/10 border-primary shadow-sm shadow-primary/20 ring-1 ring-primary/20" 
+                   : "bg-background hover:bg-primary/5 hover:border-primary/30 border-border/40"
+               )}
+             >
+               <div className="flex items-center gap-2">
+                 <div className={cn(
+                   "w-2 h-2 rounded-full",
+                   currentId === 'all' ? "bg-primary animate-pulse" : "bg-muted-foreground/30"
+                 )} />
+                 <span className="font-mitr font-medium text-base">บริการทั้งหมด</span>
+               </div>
+               <span className="text-[12px] text-muted-foreground leading-relaxed pl-4">
+                 แสดงพนักงานทุกคนในระบบโดยไม่ระบุประเภทของการนวด
+               </span>
+               {currentId === 'all' && (
+                 <div className="absolute top-3 right-3">
+                   <CheckCircle2 className="h-4 w-4 text-primary" />
+                 </div>
+               )}
+             </button>
+             
+             {massages.map((m) => (
+               <button
+                 key={m.massage_id}
+                 onClick={() => { onSelect(m.massage_id); onClose(); }}
+                 className={cn(
+                   "group relative flex flex-col items-start gap-1.5 p-4 rounded-2xl border text-left transition-all duration-200",
+                   currentId === m.massage_id 
+                     ? "bg-primary/10 border-primary shadow-sm shadow-primary/20 ring-1 ring-primary/20" 
+                     : "bg-background hover:bg-primary/5 hover:border-primary/30 border-border/40"
+                 )}
+               >
+                 <div className="flex items-center gap-2">
+                   <div className={cn(
+                     "w-2 h-2 rounded-full",
+                     currentId === m.massage_id ? "bg-primary animate-pulse" : "bg-primary/20 group-hover:bg-primary/40"
+                   )} />
+                   <span className="font-mitr font-medium text-base">{m.massage_name}</span>
+                 </div>
+                 {m.massage_name_en && (
+                   <span className="text-[12px] text-muted-foreground leading-relaxed pl-4 uppercase tracking-wider font-sans opacity-80">
+                     {m.massage_name_en}
+                   </span>
+                 )}
+                 {currentId === m.massage_id && (
+                   <div className="absolute top-3 right-3">
+                     <CheckCircle2 className="h-4 w-4 text-primary" />
+                   </div>
+                 )}
+               </button>
+             ))}
+          </div>
+        </div>
+        
+        <div className="px-6 py-4 border-t bg-muted/20 flex justify-end items-center gap-4">
+           <p className="text-[11px] text-muted-foreground font-sans italic mr-auto">
+             * การเลือกบริการจะกรองเฉพาะพนักงานที่มี "ทักษะ" นั้นๆ
+           </p>
+           <Button variant="ghost" onClick={onClose} className="rounded-full px-6 font-mitr font-normal hover:bg-primary/5">
+              ปิด
+           </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function WeeklySchedulePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -894,6 +993,9 @@ export default function WeeklySchedulePage() {
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMassageId, setFilterMassageId] = useState<number | 'all'>('all');
+  const [filterStartTime, setFilterStartTime] = useState<string>("");
+  const [filterEndTime, setFilterEndTime] = useState<string>("");
+  const [massageDialogOpen, setMassageDialogOpen] = useState(false);
 
   // Filter employees by search and massage skill
   const filteredEmployees = useMemo(() => {
@@ -913,9 +1015,25 @@ export default function WeeklySchedulePage() {
         skills.some(s => s.employee_id === emp.employee_id && s.massage_id === filterMassageId)
       );
     }
+
+    // Filter by time range (Working hours)
+    if (filterStartTime || filterEndTime) {
+      result = result.filter(emp => {
+        const empSchs = schedules.filter(s => s.employee_id === emp.employee_id);
+        const start = filterStartTime || "00:00";
+        const end = filterEndTime || "23:59";
+        
+        return empSchs.some(sch => {
+          const schStart = sch.start_time.slice(0, 5);
+          const schEnd = sch.end_time.slice(0, 5);
+          // Overlap: StartA < EndB AND StartB < EndA
+          return schStart < end && start < schEnd;
+        });
+      });
+    }
     
     return result;
-  }, [employees, searchQuery, filterMassageId, skills]);
+  }, [employees, searchQuery, filterMassageId, skills, filterStartTime, filterEndTime, schedules]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -1196,21 +1314,44 @@ export default function WeeklySchedulePage() {
                 />
               </div>
               
-              {/* Skill Filter Dropdown */}
-              <select
-                value={filterMassageId}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setFilterMassageId(val === 'all' ? 'all' : Number(val));
-                }}
-                className="w-full h-8 px-3 text-sm bg-background/80 border border-border/40 rounded-lg outline-none font-sans focus:ring-1 focus:ring-primary/40 transition-colors cursor-pointer appearance-none"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px' }}
+              {/* Working Hours Filter */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground font-sans ml-1">เวลาเริ่ม (ตั้งแต่)</span>
+                  <Input 
+                    type="time" 
+                    value={filterStartTime} 
+                    onChange={(e) => setFilterStartTime(e.target.value)}
+                    className="h-8 text-xs font-sans bg-background/80"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground font-sans ml-1">เวลาเลิก (ถึง)</span>
+                  <Input 
+                    type="time" 
+                    value={filterEndTime} 
+                    onChange={(e) => setFilterEndTime(e.target.value)}
+                    className="h-8 text-xs font-sans bg-background/80"
+                  />
+                </div>
+              </div>
+
+              {/* Skill Filter Button (Dialog Trigger) */}
+              <Button
+                variant="outline"
+                onClick={() => setMassageDialogOpen(true)}
+                className="w-full h-9 justify-between font-sans text-xs bg-background/80 border-border/40 hover:bg-primary/5 hover:border-primary/40 transition-all rounded-lg px-3 group"
               >
-                <option value="all">บริการทั้งหมด</option>
-                {massages.map(m => (
-                  <option key={m.massage_id} value={m.massage_id}>{m.massage_name}</option>
-                ))}
-              </select>
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <Filter className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="truncate">
+                    {filterMassageId === 'all' 
+                      ? "เลือกตามบริการ (ทั้งหมด)" 
+                      : (massages.find(m => m.massage_id === filterMassageId)?.massage_name ?? "เลือกบริการ")}
+                  </span>
+                </div>
+                <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+              </Button>
             </div>
           </div>
 
@@ -1449,6 +1590,15 @@ export default function WeeklySchedulePage() {
         employees={employees}
         massages={massages}
         saving={saving}
+      />
+
+      {/* Massage Filter Dialog */}
+      <MassageFilterDialog
+        open={massageDialogOpen}
+        onClose={() => setMassageDialogOpen(false)}
+        massages={massages}
+        currentId={filterMassageId}
+        onSelect={setFilterMassageId}
       />
     </main>
   );
