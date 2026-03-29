@@ -57,6 +57,10 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
                 (!c.expire_dateTime ||
                   new Date(c.expire_dateTime) > new Date()),
             );
+            // Sort coupons by discount percentage (highest first)
+            available.sort((a: any, b: any) => 
+              Number(b.coupon?.discount_percent || 0) - Number(a.coupon?.discount_percent || 0)
+            );
             setCoupons(available);
           }
         })
@@ -113,6 +117,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
             price: s.fromPackage ? 0 : s.massage_price,
             duration: s.duration || 60,
             member_package_id: s.member_package_id || null,
+            real_massage_id: s.real_massage_id || null,
           })),
           payment_method: "package",
           total_price: 0,
@@ -133,14 +138,28 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
             const json = await res.json();
             bookingId = json.data?.id ?? null;
             bookingDetails = json.data?.details ?? null;
+          } else if (res.status === 409) {
+            const json = await res.json();
+            alert(json.error || "ไม่มีพนักงานหรือห้องว่างในช่วงเวลาที่เลือก กรุณาเลือกเวลาอื่น");
+            return;
+          } else {
+            const json = await res.json();
+            alert(json.error || "เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+            return;
           }
         } catch (err) {
           console.error("Booking submission error:", err);
+          alert("เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+          return;
+        }
+
+        if (!bookingId) {
+          alert("เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+          return;
         }
 
         onUpdate({
-          bookingId:
-            bookingId ?? `FJ-${Date.now().toString(36).toUpperCase().slice(-6)}`,
+          bookingId,
           bookingDetails,
           discountAmount: 0,
         });
@@ -204,6 +223,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
           price: s.fromPackage ? 0 : s.massage_price,
           duration: s.duration || 60,
           member_package_id: s.member_package_id || null,
+          real_massage_id: s.real_massage_id || null,
         })),
         payment_method: data.paymentMethod,
         total_price: total,
@@ -224,14 +244,31 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
           const json = await res.json();
           bookingId = json.data?.id ?? null;
           bookingDetails = json.data?.details ?? null;
+        } else if (res.status === 409) {
+          const json = await res.json();
+          alert(json.error || "ไม่มีพนักงานหรือห้องว่างในช่วงเวลาที่เลือก กรุณาเลือกเวลาอื่น");
+          setLoading(false);
+          return;
+        } else {
+          const json = await res.json();
+          alert(json.error || "เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+          setLoading(false);
+          return;
         }
       } catch (err) {
         console.error("Booking submission error:", err);
+        alert("เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+        setLoading(false);
+        return;
+      }
+
+      if (!bookingId) {
+        alert("เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+        return;
       }
 
       onUpdate({
-        bookingId:
-          bookingId ?? `FJ-${Date.now().toString(36).toUpperCase().slice(-6)}`,
+        bookingId,
         bookingDetails,
         discountAmount: discount,
       });
@@ -321,7 +358,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
                 <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-2">
                   <Ticket className="h-3.5 w-3.5" /> ส่วนลด / คูปอง
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 justify-start">
                   {coupons.map((c) => (
                     <button
                       key={c.member_coupon_id}

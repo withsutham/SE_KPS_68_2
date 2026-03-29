@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { ManagerSideMenu } from "@/components/manager/manager-side-menu";
 
 import { Suspense } from "react";
 

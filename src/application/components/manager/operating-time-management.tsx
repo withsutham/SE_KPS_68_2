@@ -1,0 +1,239 @@
+"use client";
+
+import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
+import { Clock, Save, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+type OperatingTime = {
+  operate_time_id: number;
+  open_time: string;
+  close_time: string;
+  create_date: string;
+};
+
+type OperatingTimeFormState = {
+  open_time: string;
+  close_time: string;
+};
+
+const INITIAL_FORM_STATE: OperatingTimeFormState = {
+  open_time: "09:00",
+  close_time: "20:00",
+};
+
+export function OperatingTimeManagement() {
+  const [operatingTime, setOperatingTime] = useState<OperatingTime | null>(null);
+  const [formState, setFormState] = useState<OperatingTimeFormState>(INITIAL_FORM_STATE);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadOperatingTime();
+  }, []);
+
+  async function loadOperatingTime() {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch("/api/operate_time", { cache: "no-store" });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to load operating hours");
+      }
+
+      if (result.data) {
+        setOperatingTime(result.data);
+        // Format TIME string (HH:mm:ss or HH:mm) to HH:mm for input type="time"
+        const formatTime = (timeStr: string) => {
+          return timeStr.split(":").slice(0, 2).join(":");
+        };
+        setFormState({
+          open_time: formatTime(result.data.open_time),
+          close_time: formatTime(result.data.close_time),
+        });
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to load operating hours");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSaving(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const payload = {
+        open_time: formState.open_time,
+        close_time: formState.close_time,
+      };
+
+      if (!payload.open_time || !payload.close_time) {
+        throw new Error("กรุณาระบุเวลาเปิดและเวลาปิด");
+      }
+
+      const response = await fetch("/api/operate_time", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "บันทึกเวลาทำการล้มเหลว");
+      }
+
+      setSuccessMessage("อัปเดตเวลาทำการสำเร็จ");
+      await loadOperatingTime();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to save operating hours");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <main className="flex-1 font-mitr">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 md:px-8 md:py-12">
+        <section className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-card/80 p-8 shadow-xl shadow-primary/5 backdrop-blur-sm">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_hsl(var(--primary)/0.16),_transparent_35%),radial-gradient(circle_at_bottom_right,_hsl(var(--secondary)/0.45),_transparent_35%)]" />
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-sm font-medium uppercase tracking-[0.3em] text-primary/70">คอนโซลผู้จัดการ</p>
+              <h1 className="font-mitr text-3xl text-foreground md:text-4xl">จัดการเวลาทำการ</h1>
+              <p className="text-muted-foreground">กำหนดเวลาเปิด-ปิดของร้านเพื่อให้ลูกค้าสามารถเลือกจองคิวในช่วงเวลาที่ถูกต้อง</p>
+            </div>
+            <Button variant="outline" onClick={() => void loadOperatingTime()} disabled={isLoading} className="w-full sm:w-auto">
+              <RefreshCw className={isLoading ? "animate-spin" : ""} />
+              รีเฟรช
+            </Button>
+          </div>
+        </section>
+
+        {(errorMessage || successMessage) && (
+          <div
+            className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm animate-in fade-in slide-in-from-top-2 duration-300 ${errorMessage
+                ? "border-destructive/30 bg-destructive/10 text-destructive"
+                : "border-primary/20 bg-primary/10 text-foreground"
+              }`}
+          >
+            {errorMessage ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4 text-primary" />}
+            {errorMessage ?? successMessage}
+          </div>
+        )}
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          <Card className="overflow-hidden border-border/60 bg-card/80 shadow-lg shadow-primary/5 backdrop-blur-sm">
+            <CardHeader className="border-b border-border/60 bg-muted/30">
+              <CardTitle className="font-medium text-2xl flex items-center gap-2">
+                <Clock className="h-6 w-6 text-primary" />
+                ตั้งค่าเวลาทำการปัจจุบัน
+              </CardTitle>
+              <CardDescription>ปรับปรุงเวลาเปิดและปิดของร้าน</CardDescription>
+            </CardHeader>
+            <CardContent className="p-8">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="open_time" className="text-base">เวลาเปิดร้าน</Label>
+                    <div className="relative">
+                      <Input
+                        id="open_time"
+                        type="time"
+                        value={formState.open_time}
+                        onChange={(event) => setFormState((current) => ({ ...current, open_time: event.target.value }))}
+                        className="h-12 text-lg focus:ring-primary"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="close_time" className="text-base">เวลาปิดร้าน</Label>
+                    <div className="relative">
+                      <Input
+                        id="close_time"
+                        type="time"
+                        value={formState.close_time}
+                        onChange={(event) => setFormState((current) => ({ ...current, close_time: event.target.value }))}
+                        className="h-12 text-lg focus:ring-primary"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <Button type="submit" disabled={isSaving || isLoading} className="w-full h-12 text-lg font-medium shadow-lg shadow-primary/20 transition-all hover:shadow-primary/30">
+                    {isSaving ? (
+                      <>
+                        <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                        กำลังบันทึก...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-5 w-5" />
+                        บันทึกการตั้งค่า
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 bg-card/80 shadow-lg shadow-primary/5 backdrop-blur-sm">
+            <CardHeader className="border-b border-border/60 bg-muted/30">
+              <CardTitle className="font-medium text-2xl">ข้อมูลสรุป</CardTitle>
+              <CardDescription>สถานะเวลาทำการในปัจจุบัน</CardDescription>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/50 border border-border/40">
+                <span className="text-muted-foreground">เวลาเปิดปัจจุบัน:</span>
+                <span className="text-2xl font-semibold text-primary">{operatingTime ? operatingTime.open_time.split(":").slice(0, 2).join(":") : "ยังไม่ได้กำหนด"}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/50 border border-border/40">
+                <span className="text-muted-foreground">เวลาปิดปัจจุบัน:</span>
+                <span className="text-2xl font-semibold text-primary">{operatingTime ? operatingTime.close_time.split(":").slice(0, 2).join(":") : "ยังไม่ได้กำหนด"}</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                <p className="text-sm text-muted-foreground mb-1">แก้ไขล่าสุดเมื่อ:</p>
+                <p className="font-medium">
+                  {operatingTime 
+                    ? new Date(operatingTime.create_date).toLocaleString("th-TH", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "ไม่มีข้อมูล"}
+                </p>
+              </div>
+              <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-800/80">
+                  การเปลี่ยนแปลงเวลาทำการจะมีผลต่อการจองคิวใหม่ทันที โปรดตรวจสอบให้แน่ใจว่าได้แจ้งพนักงานให้ทราบถึงการเปลี่ยนแปลง
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </main>
+  );
+}

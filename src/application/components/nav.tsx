@@ -11,7 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NavScrollLink } from "@/components/nav-scroll-link";
@@ -19,6 +20,7 @@ import { NavScrollLink } from "@/components/nav-scroll-link";
 export async function Nav() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
   let isTherapist = false;
   if (user) {
     const adminSupabase = await createAdminClient();
@@ -106,11 +108,9 @@ async function NavLinkGroup() {
           ดูบริการนวด
         </NavScrollLink>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3">
+          <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost" }), "flex items-center gap-1 hover:text-primary transition-colors focus-visible:ring-0 text-foreground/80 font-mitr font-normal h-10 px-3")}>
               <span className="text-sm">การจอง</span>
               <ChevronDown className="h-4 w-4 opacity-50 ml-0.5" />
-            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-52 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
             <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
@@ -139,11 +139,6 @@ async function NavLinkGroup() {
         </Button>
       </>
     );
-  }
-
-  // manager, shop_owner — can manage employees, bookings, packages, coupons and see dashboard
-  if (role === "manager" || role === "shop_owner") {
-    return null;
   }
 
   // therapist — no extra links in top nav as they use the sidebar
@@ -176,17 +171,11 @@ async function MobileNavMenu() {
     role = profile?.user_type ?? null;
   }
 
-  if (role === "manager" || role === "shop_owner") {
-    return null;
-  }
-
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-10 w-10 text-foreground/80 hover:text-primary">
+      <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-10 w-10 text-foreground/80 hover:text-primary")}>
           <Menu className="h-5 w-5" />
           <span className="sr-only">เมนูนำทาง</span>
-        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
         {role !== "therapist" && (

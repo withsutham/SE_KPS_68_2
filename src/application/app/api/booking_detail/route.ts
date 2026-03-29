@@ -19,6 +19,12 @@ export async function GET(request: NextRequest) {
         const startOfDay = `${dateStr}T00:00:00+07:00`;
         const endOfDay = `${dateStr}T23:59:59+07:00`;
         query = query.gte("massage_start_dateTime", startOfDay).lt("massage_start_dateTime", endOfDay);
+    } else {
+        const startDate = url.searchParams.get("start_date");
+        const endDate = url.searchParams.get("end_date");
+        if (startDate && endDate) {
+            query = query.gte("massage_start_dateTime", startDate).lte("massage_start_dateTime", endDate);
+        }
     }
 
     const { data, error } = await query;

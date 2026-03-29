@@ -8,7 +8,8 @@ function autoAssignResources(
   endTime: Date,
   skills: any[] | null,
   rooms: any[] | null,
-  localBookings: any[]
+  localBookings: any[],
+  leaveRecords: any[] | null
 ): { employeeId: number | null; roomId: number | null } {
   let assignedEmployeeId: number | null = null;
   let assignedRoomId: number | null = null;
@@ -20,6 +21,17 @@ function autoAssignResources(
       .map((s) => s.employee_id) || [];
 
   for (const empId of skilledEmployees) {
+    // Check if employee is on leave during the booking time
+    const isOnLeave = leaveRecords?.some(
+      (leave: any) =>
+        leave.employee_id === empId &&
+        leave.approval_status === "approved" &&
+        new Date(leave.start_datetime) < endTime &&
+        new Date(leave.end_datetime) > startTime
+    );
+    if (isOnLeave) continue;
+
+    // Check if employee has overlapping booking
     const isOverlapping = localBookings.some(
       (b: any) =>
         b.employee_id === empId &&
@@ -73,12 +85,82 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const supabase = await createAdminClient();
 
+    const rollbackBooking = async (bookingId: number) => {
+      const { error } = await supabase.from("booking").delete().eq("booking_id", bookingId);
+      if (error) {
+        console.error("booking rollback error:", error.message);
+      }
+    };
+
+    // Input validation
+    if (!body.customer_name || body.customer_name.trim() === "") {
+      return NextResponse.json(
+        { success: false, error: "กรุณากรอกชื่อลูกค้า", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+    if (!body.customer_phone || body.customer_phone.trim() === "") {
+      return NextResponse.json(
+        { success: false, error: "กรุณากรอกเบอร์โทรศัพท์", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+    if (!body.booking_datetime) {
+      return NextResponse.json(
+        { success: false, error: "กรุณาเลือกวันและเวลานวด", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+    if (!body.services || !Array.isArray(body.services) || body.services.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "กรุณาเลือกบริการอย่างน้อย 1 รายการ", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+
+    if (body.member_coupon_id) {
+      if (!body.customer_id) {
+        return NextResponse.json(
+          { success: false, error: "ไม่พบข้อมูลลูกค้าสำหรับการใช้คูปอง", code: "VALIDATION_ERROR" },
+          { status: 400 }
+        );
+      }
+
+      const { data: couponData, error: couponLookupError } = await supabase
+        .from("member_coupon")
+        .select("member_coupon_id, customer_id, is_used, expire_dateTime")
+        .eq("member_coupon_id", body.member_coupon_id)
+        .eq("customer_id", body.customer_id)
+        .single();
+
+      if (couponLookupError || !couponData) {
+        return NextResponse.json(
+          { success: false, error: "ไม่พบคูปองที่เลือกหรือไม่ได้เป็นของผู้ใช้", code: "INVALID_COUPON" },
+          { status: 400 }
+        );
+      }
+
+      if (couponData.is_used) {
+        return NextResponse.json(
+          { success: false, error: "คูปองนี้ถูกใช้งานแล้ว", code: "COUPON_ALREADY_USED" },
+          { status: 400 }
+        );
+      }
+
+      if (couponData.expire_dateTime && new Date(couponData.expire_dateTime) <= new Date()) {
+        return NextResponse.json(
+          { success: false, error: "คูปองหมดอายุแล้ว", code: "COUPON_EXPIRED" },
+          { status: 400 }
+        );
+      }
+    }
+
     // 1. Create booking
     const bookingPayload: Record<string, any> = {
       customer_name: body.customer_name,
       customer_phone: body.customer_phone,
       customer_email: body.customer_email || null,
-      booking_dateTime: body.booking_datetime,
+      booking_dateTime: new Date().toISOString(),
       total_price: body.total_price || 0,
       payment_status: "pending", // Waiting for manager to verify deposit slip
     };
@@ -116,20 +198,30 @@ export async function POST(request: NextRequest) {
       const dateStr = startDateTime.toLocaleDateString("en-CA"); // 'YYYY-MM-DD'
 
       // Auto-assignment Prep: Fetch all relevant data for the day
-      const [{ data: existingBookings }, { data: skills }, { data: rooms }] =
-        await Promise.all([
-          supabase
-            .from("booking_detail")
-            .select(
-              "employee_id, room_id, massage_start_dateTime, massage_end_dateTime",
-            )
-            .gte("massage_start_dateTime", `${dateStr}T00:00:00+07:00`)
-            .lt("massage_start_dateTime", `${dateStr}T23:59:59+07:00`),
-          supabase
-            .from("therapist_massage_skill")
-            .select("employee_id, massage_id"),
-          supabase.from("room_massage").select("room_id, massage_id, capacity"),
-        ]);
+      const [
+        { data: existingBookings },
+        { data: skills },
+        { data: rooms },
+        { data: leaveRecords },
+      ] = await Promise.all([
+        supabase
+          .from("booking_detail")
+          .select(
+            "employee_id, room_id, massage_start_dateTime, massage_end_dateTime",
+          )
+          .gte("massage_start_dateTime", `${dateStr}T00:00:00+07:00`)
+          .lt("massage_start_dateTime", `${dateStr}T23:59:59+07:00`),
+        supabase
+          .from("therapist_massage_skill")
+          .select("employee_id, massage_id"),
+        supabase.from("room_massage").select("room_id, massage_id, capacity"),
+        supabase
+          .from("leave_record")
+          .select("employee_id, start_datetime, end_datetime, approval_status")
+          .eq("approval_status", "approved")
+          .lt("start_datetime", `${dateStr}T23:59:59+07:00`)
+          .gt("end_datetime", `${dateStr}T00:00:00+07:00`),
+      ]);
 
       let currentStartTime = new Date(startDateTime);
       const localBookings = existingBookings ? [...existingBookings] : [];
@@ -174,10 +266,23 @@ export async function POST(request: NextRequest) {
             endDateTime,
             skills,
             rooms,
-            localBookings
+            localBookings,
+            leaveRecords
           );
           assignedEmployeeId = assignment.employeeId;
           assignedRoomId = assignment.roomId;
+
+          if (assignedEmployeeId === null || assignedRoomId === null) {
+            await rollbackBooking(bookingId);
+            return NextResponse.json(
+              {
+                success: false,
+                error: "ไม่มีพนักงานหรือห้องว่างในช่วงเวลาที่เลือก กรุณาเลือกเวลาอื่น",
+                code: "NO_AVAILABLE_RESOURCES",
+              },
+              { status: 409 }
+            );
+          }
           
           // Use the real massage_id for storage
           massageId = realMassageId;
@@ -214,10 +319,23 @@ export async function POST(request: NextRequest) {
             endDateTime,
             skills,
             rooms,
-            localBookings
+            localBookings,
+            leaveRecords
           );
           assignedEmployeeId = assignment.employeeId;
           assignedRoomId = assignment.roomId;
+
+          if (assignedEmployeeId === null || assignedRoomId === null) {
+            await rollbackBooking(bookingId);
+            return NextResponse.json(
+              {
+                success: false,
+                error: "ไม่มีพนักงานหรือห้องว่างในช่วงเวลาที่เลือก กรุณาเลือกเวลาอื่น",
+                code: "NO_AVAILABLE_RESOURCES",
+              },
+              { status: 409 }
+            );
+          }
 
           const payload = {
             booking_id: bookingId,
@@ -252,6 +370,11 @@ export async function POST(request: NextRequest) {
           "booking POST error (booking_detail table):",
           detailsError.message,
         );
+        await rollbackBooking(bookingId);
+        return NextResponse.json(
+          { success: false, error: "ไม่สามารถบันทึกรายการจองได้" },
+          { status: 500 }
+        );
       }
     }
 
@@ -277,6 +400,11 @@ export async function POST(request: NextRequest) {
         "booking POST error (payment table):",
         paymentError.message,
       );
+      await rollbackBooking(bookingId);
+      return NextResponse.json(
+        { success: false, error: "ไม่สามารถบันทึกการชำระเงินได้" },
+        { status: 500 }
+      );
     }
 
     if (body.member_coupon_id) {
@@ -293,6 +421,11 @@ export async function POST(request: NextRequest) {
           "booking POST error (member_coupon table):",
           couponError.message,
         );
+        await rollbackBooking(bookingId);
+        return NextResponse.json(
+          { success: false, error: "ไม่สามารถอัปเดตคูปองได้" },
+          { status: 500 }
+        );
       }
     }
 
@@ -307,6 +440,24 @@ export async function POST(request: NextRequest) {
         console.error(
           "booking POST error (member_package table):",
           packageError.message,
+        );
+
+        if (body.member_coupon_id) {
+          const { error: couponRollbackError } = await supabase
+            .from("member_coupon")
+            .update({ is_used: false, booking_id: null })
+            .eq("member_coupon_id", body.member_coupon_id)
+            .eq("booking_id", bookingId);
+
+          if (couponRollbackError) {
+            console.error("member_coupon rollback error:", couponRollbackError.message);
+          }
+        }
+
+        await rollbackBooking(bookingId);
+        return NextResponse.json(
+          { success: false, error: "ไม่สามารถอัปเดตสถานะแพ็กเกจได้" },
+          { status: 500 }
         );
       }
     }

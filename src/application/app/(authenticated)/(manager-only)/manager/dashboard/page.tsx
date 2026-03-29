@@ -16,6 +16,8 @@ import {
 import {
     LineChart,
     Line,
+    AreaChart,
+    Area,
     BarChart,
     Bar,
     XAxis,
@@ -32,7 +34,9 @@ import { cn } from "@/lib/utils";
 
 interface DashboardData {
     totalRevenue: number;
+    prevTotalRevenue: number;
     totalBookings: number;
+    prevTotalBookings: number;
     newCustomersThisMonth: number;
     newCustomersLastMonth: number;
     avgTransactionValue: number;
@@ -40,9 +44,9 @@ interface DashboardData {
     revenueByDay: { date: string; revenue: number }[];
     popularServices: { name: string; count: number }[];
     peakHours: { hour: string; count: number }[];
-    roomUsage: { name: string; rate: number }[];
-    therapistUtilization: { name: string; rate: number }[];
-    couponRedemption: { total: number; used: number; rate: number };
+    roomUsage: { name: string; rate: number; totalMinutes: number; maxMinutes: number }[];
+    therapistUtilization: { name: string; rate: number; totalMinutes: number; maxMinutes: number }[];
+    couponRedemption: { total: number; used: number; rate: number; details: { name: string, total: number, used: number }[] };
     packageSalesUsage: { name: string; sold: number; used: number }[];
 }
 
@@ -50,14 +54,19 @@ interface DashboardData {
 
 function formatCurrency(amount: number) {
     return `฿${amount.toLocaleString("th-TH", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     })}`;
 }
 
 function formatDateTH(iso: string) {
     const d = new Date(iso);
     return `${d.getDate()}/${d.getMonth() + 1}`;
+}
+
+function calculateGrowth(current: number, previous: number) {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
 }
 
 // ─── Preset Date Ranges ────────────────────────────────────────────────────────
@@ -77,10 +86,11 @@ function getPresetRange(preset: Preset): { from: string; to: string } {
     }
     if (preset === "30d") {
         const from = new Date(now);
-        from.setDate(now.getDate() - 29);
+        from.setDate(now.getDate() - 29); // Last 30 days including today
         return { from: from.toLocaleDateString("en-CA"), to: toStr };
     }
     if (preset === "month") {
+        // Start of current month
         const from = new Date(now.getFullYear(), now.getMonth(), 1);
         return { from: from.toLocaleDateString("en-CA"), to: toStr };
     }
@@ -93,8 +103,8 @@ function getPresetRange(preset: Preset): { from: string; to: string } {
 
 const PRESET_LABELS: { key: Preset; label: string }[] = [
     { key: "today", label: "วันนี้" },
-    { key: "7d", label: "7 วัน" },
-    { key: "30d", label: "30 วัน" },
+    { key: "7d", label: "7 วันล่าสุด" },
+    { key: "30d", label: "30 วันล่าสุด" },
     { key: "month", label: "เดือนนี้" },
     { key: "year", label: "ปีนี้" },
 ];
@@ -155,46 +165,111 @@ function SectionCard({
 function HorizontalBar({
     label,
     rate,
-    color = "bg-primary",
+    totalMinutes,
+    maxMinutes,
 }: {
     label: string;
     rate: number;
-    color?: string;
+    totalMinutes: number;
+    maxMinutes: number;
 }) {
     const pct = Math.max(0, Math.min(100, rate));
     const barColor =
         pct >= 75
-            ? "bg-emerald-500"
+            ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
             : pct >= 40
-                ? "bg-blue-500"
-                : "bg-amber-500";
+                ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]"
+                : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]";
+
+    const hours = (totalMinutes / 60).toFixed(1);
+    const totalHours = (maxMinutes / 60).toFixed(0);
 
     return (
-        <div className="flex items-center gap-3">
-            <p className="text-xs font-sans text-foreground/80 w-28 shrink-0 truncate">{label}</p>
-            <div className="flex-1 h-2 rounded-full bg-muted/60">
-                <div
-                    className={cn("h-2 rounded-full transition-all duration-700", barColor)}
-                    style={{ width: `${pct}%` }}
-                />
+        <div className="flex flex-col gap-1.5 group">
+            <div className="flex justify-between items-center px-0.5">
+                <p className="text-xs font-medium font-sans text-foreground/80 truncate max-w-[120px]">
+                    {label}
+                </p>
+                <p className="text-[10px] font-sans text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                    {hours} / {totalHours} ชม.
+                </p>
             </div>
-            <p className="text-xs font-sans text-muted-foreground w-9 text-right shrink-0">
-                {pct}%
-            </p>
+            <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 rounded-full bg-muted/40 overflow-hidden">
+                    <div
+                        className={cn("h-full rounded-full transition-all duration-1000 ease-out", barColor)}
+                        style={{ width: `${pct}%` }}
+                    />
+                </div>
+                <p className="text-[11px] font-bold font-sans text-foreground/70 w-8 text-right shrink-0">
+                    {pct}%
+                </p>
+            </div>
+        </div>
+    );
+}
+
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
+
+function KPICard({
+    label,
+    value,
+    growth,
+    icon: Icon,
+    iconColor,
+    iconBg,
+    sub,
+}: {
+    label: string;
+    value: string;
+    growth?: number;
+    icon: any;
+    iconColor: string;
+    iconBg: string;
+    sub?: string;
+}) {
+    return (
+        <div className="group relative rounded-2xl border border-white/10 bg-card/40 backdrop-blur-md p-4 flex flex-col gap-2 transition-all hover:scale-[1.02] hover:bg-card/60 hover:border-white/20 hover:shadow-xl hover:shadow-primary/5">
+            <div className="flex justify-between items-start">
+                <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center border", iconBg)}>
+                    <Icon className={cn("h-4.5 w-4.5", iconColor)} />
+                </div>
+                {growth !== undefined && (
+                    <div className={cn(
+                        "flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold font-sans",
+                        growth >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+                    )}>
+                        {growth >= 0 ? "+" : ""}{growth}%
+                    </div>
+                )}
+            </div>
+            <div>
+                <p className="text-[11px] text-muted-foreground font-sans font-medium uppercase tracking-wider mb-1">
+                    {label}
+                </p>
+                <p className="text-xl font-bold font-mitr text-foreground leading-none tracking-tight">
+                    {value}
+                </p>
+            </div>
+            {sub && (
+                <p className="text-[10px] text-muted-foreground font-sans line-clamp-1 opacity-80">
+                    {sub}
+                </p>
+            )}
         </div>
     );
 }
 
 // ─── Coupon Ring ──────────────────────────────────────────────────────────────
 
-function CouponRing({ rate, used, total }: { rate: number; used: number; total: number }) {
+function CouponRing({ rate, used, total, compact = false }: { rate: number; used: number; total: number; compact?: boolean }) {
     const radius = 44;
     const circ = 2 * Math.PI * radius;
     const dash = (rate / 100) * circ;
 
     return (
-        <div className="flex flex-col items-center gap-3">
-            <div className="relative h-28 w-28">
+        <div className="flex flex-col items-center gap-2">
+            <div className={cn("relative", compact ? "h-16 w-16" : "h-28 w-28")}>
                 <svg viewBox="0 0 100 100" className="rotate-[-90deg]">
                     <circle
                         cx="50"
@@ -202,7 +277,7 @@ function CouponRing({ rate, used, total }: { rate: number; used: number; total: 
                         r={radius}
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="8"
+                        strokeWidth={compact ? "12" : "8"}
                         className="text-muted/30"
                     />
                     <circle
@@ -211,21 +286,23 @@ function CouponRing({ rate, used, total }: { rate: number; used: number; total: 
                         r={radius}
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="8"
+                        strokeWidth={compact ? "12" : "8"}
                         strokeDasharray={`${dash} ${circ - dash}`}
                         strokeLinecap="round"
                         className="text-violet-500 transition-all duration-700"
                     />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <p className="text-2xl font-bold font-mitr text-foreground">{rate}%</p>
+                    <p className={cn("font-bold font-mitr text-foreground", compact ? "text-[11px]" : "text-2xl")}>{rate}%</p>
                 </div>
             </div>
-            <div className="text-center">
-                <p className="text-xs text-muted-foreground font-sans">
-                    ใช้แล้ว {used} จาก {total} ใบ
-                </p>
-            </div>
+            {!compact && (
+                <div className="text-center">
+                    <p className="text-xs text-muted-foreground font-sans">
+                        ใช้แล้ว {used} จาก {total} ใบ
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
@@ -235,15 +312,23 @@ function CouponRing({ rate, used, total }: { rate: number; used: number; total: 
 function CustomTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
     return (
-        <div className="bg-card border border-border/50 rounded-xl px-3 py-2 text-xs shadow-lg">
-            <p className="font-medium text-foreground mb-1 font-mitr">{label}</p>
-            {payload.map((entry: any, i: number) => (
-                <p key={i} style={{ color: entry.color }} className="font-sans">
-                    {entry.name}: {typeof entry.value === "number" && entry.name?.includes("รายได้")
-                        ? formatCurrency(entry.value)
-                        : entry.value}
-                </p>
-            ))}
+        <div className="bg-card/95 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-2xl min-w-[120px]">
+            <p className="font-bold text-foreground mb-2 font-mitr text-sm border-b border-white/5 pb-1">{label}</p>
+            <div className="flex flex-col gap-1.5">
+                {payload.map((entry: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-1.5">
+                            <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                            <span className="text-muted-foreground font-sans text-[11px] font-medium">{entry.name}</span>
+                        </div>
+                        <span className="font-bold font-sans text-[11px] text-foreground">
+                            {typeof entry.value === "number" && (entry.name?.includes("รายได้") || entry.dataKey === "revenue")
+                                ? formatCurrency(entry.value)
+                                : entry.value.toLocaleString("th-TH")}
+                        </span>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
@@ -288,18 +373,16 @@ export default function ManagerDashboardPage() {
             {
                 label: "รายได้รวม",
                 value: formatCurrency(data.totalRevenue),
+                growth: calculateGrowth(data.totalRevenue, data.prevTotalRevenue),
                 icon: TrendingUp,
-                gradient: "from-emerald-500/20 to-emerald-600/5",
-                border: "border-emerald-500/20",
                 iconColor: "text-emerald-500",
                 iconBg: "bg-emerald-500/10 border-emerald-500/20",
             },
             {
-                label: "การจองทั้งหมด",
+                label: "การจอง",
                 value: data.totalBookings.toLocaleString("th-TH"),
+                growth: calculateGrowth(data.totalBookings, data.prevTotalBookings),
                 icon: Calendar,
-                gradient: "from-blue-500/20 to-blue-600/5",
-                border: "border-blue-500/20",
                 iconColor: "text-blue-500",
                 iconBg: "bg-blue-500/10 border-blue-500/20",
             },
@@ -310,8 +393,6 @@ export default function ManagerDashboardPage() {
                     ? `เดือนก่อน ${data.newCustomersLastMonth} คน`
                     : "เดือนก่อนไม่มีลูกค้าใหม่",
                 icon: UserPlus,
-                gradient: "from-violet-500/20 to-violet-600/5",
-                border: "border-violet-500/20",
                 iconColor: "text-violet-500",
                 iconBg: "bg-violet-500/10 border-violet-500/20",
             },
@@ -320,21 +401,17 @@ export default function ManagerDashboardPage() {
                 value: formatCurrency(data.avgTransactionValue),
                 sub: "ในเดือนนี้",
                 icon: Receipt,
-                gradient: "from-amber-500/20 to-amber-600/5",
-                border: "border-amber-500/20",
                 iconColor: "text-amber-500",
                 iconBg: "bg-amber-500/10 border-amber-500/20",
             },
             {
-                label: "หมอนวดพร้อมวันนี้",
+                label: "พร้อมทำงาน",
                 value: data.availableTherapists.length.toLocaleString("th-TH"),
                 sub: data.availableTherapists.length > 0
-                    ? data.availableTherapists.map((t) => t.name).slice(0, 3).join(", ") +
-                    (data.availableTherapists.length > 3 ? ` +${data.availableTherapists.length - 3}` : "")
-                    : "ไม่มีหมอนวดประจำวันนี้",
+                    ? data.availableTherapists.map((t) => t.name).slice(0, 2).join(", ") +
+                    (data.availableTherapists.length > 2 ? ` +${data.availableTherapists.length - 2}` : "")
+                    : "ไม่มีหมอนวดวันนี้",
                 icon: UserCheck,
-                gradient: "from-teal-500/20 to-teal-600/5",
-                border: "border-teal-500/20",
                 iconColor: "text-teal-500",
                 iconBg: "bg-teal-500/10 border-teal-500/20",
             },
@@ -351,24 +428,21 @@ export default function ManagerDashboardPage() {
 
             <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pt-8 pb-24">
                 {/* ── Header ──────────────────────────────────────────────────── */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
-                        <LayoutDashboard className="h-7 w-7 text-primary" />
+                <div className="text-center mb-10">
+                    <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 border border-primary/20 mb-4 shadow-inner shadow-primary/20">
+                        <LayoutDashboard className="h-8 w-8 text-primary" />
                     </div>
-                    <p className="text-xs font-medium tracking-widest text-primary/60 uppercase font-sans mb-2">
-                        ผู้จัดการ · Manager
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-primary/70 uppercase font-sans mb-2">
+                        System Overview · แดชบอร์ดผู้จัดการ
                     </p>
-                    <h1 className="text-3xl md:text-4xl font-medium font-mitr text-foreground">
-                        แดชบอร์ด
+                    <h1 className="text-3xl md:text-4xl font-bold font-mitr text-foreground tracking-tight">
+                        สรุปผลการดำเนินงาน
                     </h1>
-                    <p className="text-muted-foreground mt-2 font-sans text-sm">
-                        ภาพรวมร้านและสถิติสำคัญ
-                    </p>
                 </div>
 
                 {/* ── Date Range Picker ───────────────────────────────────────── */}
-                <div className="flex flex-col items-center gap-3 mb-8">
-                    <div className="flex flex-wrap items-center gap-2 justify-center">
+                <div className="flex flex-col items-center gap-3 mb-10">
+                    <div className="flex flex-wrap items-center gap-2 justify-center p-1.5 bg-card/40 backdrop-blur-md rounded-2xl border border-border/40 shadow-sm">
                         {PRESET_LABELS.map((p) => (
                             <button
                                 key={p.key}
@@ -377,10 +451,10 @@ export default function ManagerDashboardPage() {
                                     setShowCustom(false);
                                 }}
                                 className={cn(
-                                    "px-4 py-1.5 rounded-full text-sm font-sans border transition-all",
+                                    "px-4 py-1.5 rounded-xl text-xs font-bold font-sans transition-all",
                                     preset === p.key && !showCustom
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-card/60 border-border/40 text-muted-foreground hover:text-foreground hover:border-border"
+                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                                 )}
                             >
                                 {p.label}
@@ -392,50 +466,62 @@ export default function ManagerDashboardPage() {
                                 setShowCustom((v) => !v);
                             }}
                             className={cn(
-                                "px-4 py-1.5 rounded-full text-sm font-sans border transition-all flex items-center gap-1",
+                                "px-4 py-1.5 rounded-xl text-xs font-bold font-sans transition-all flex items-center gap-1.5",
                                 preset === "custom"
-                                    ? "bg-primary text-primary-foreground border-primary"
-                                    : "bg-card/60 border-border/40 text-muted-foreground hover:text-foreground hover:border-border"
+                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                             )}
                         >
                             กำหนดเอง
-                            <ChevronDown className="h-3 w-3" />
+                            <ChevronDown className={cn("h-3 w-3 transition-transform", showCustom && "rotate-180")} />
                         </button>
+                        <div className="w-px h-4 bg-border/40 mx-1" />
                         <button
                             onClick={fetchData}
                             disabled={loading}
-                            className="h-8 w-8 rounded-full border border-border/40 bg-card/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
+                            className="h-8 w-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
                         >
-                            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+                            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
                         </button>
                     </div>
 
                     {showCustom && (
-                        <div className="flex items-center gap-3 flex-wrap justify-center">
-                            <input
-                                type="date"
-                                value={customFrom}
-                                onChange={(e) => setCustomFrom(e.target.value)}
-                                className="rounded-xl border border-border/50 bg-muted/30 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 font-sans"
-                            />
-                            <span className="text-muted-foreground text-sm font-sans">ถึง</span>
-                            <input
-                                type="date"
-                                value={customTo}
-                                onChange={(e) => setCustomTo(e.target.value)}
-                                className="rounded-xl border border-border/50 bg-muted/30 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 font-sans"
-                            />
-                            <Button size="sm" className="rounded-full font-sans" onClick={fetchData}>
-                                ดูข้อมูล
+                        <div className="flex items-center gap-3 flex-wrap justify-center p-4 bg-card/40 backdrop-blur-md rounded-2xl border border-border/40 shadow-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-bold text-muted-foreground px-1 uppercase tracking-wider">เริ่มต้น</label>
+                                <input
+                                    type="date"
+                                    value={customFrom}
+                                    onChange={(e) => setCustomFrom(e.target.value)}
+                                    className="rounded-xl border border-border/50 bg-muted/30 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 font-sans"
+                                />
+                            </div>
+                            <span className="text-muted-foreground text-sm font-sans mt-4">→</span>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-bold text-muted-foreground px-1 uppercase tracking-wider">สิ้นสุด</label>
+                                <input
+                                    type="date"
+                                    value={customTo}
+                                    onChange={(e) => setCustomTo(e.target.value)}
+                                    className="rounded-xl border border-border/50 bg-muted/30 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 font-sans"
+                                />
+                            </div>
+                            <Button size="sm" className="rounded-xl font-bold font-sans mt-4 px-6" onClick={fetchData}>
+                                ตกลง
                             </Button>
                         </div>
                     )}
                 </div>
 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-32 text-muted-foreground gap-3">
-                        <Loader2 className="h-7 w-7 animate-spin" />
-                        <span className="text-sm font-sans">กำลังโหลดข้อมูล...</span>
+                    <div className="flex flex-col items-center justify-center py-32 text-muted-foreground gap-4">
+                        <div className="relative">
+                            <div className="h-12 w-12 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="h-6 w-6 rounded-full bg-primary/10" />
+                            </div>
+                        </div>
+                        <span className="text-sm font-medium font-sans tracking-wide">กำลังประมวลผลข้อมูล...</span>
                     </div>
                 ) : !data ? (
                     <div className="flex flex-col items-center justify-center py-32 text-muted-foreground gap-3">
@@ -446,41 +532,16 @@ export default function ManagerDashboardPage() {
                         </Button>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-8">
                         {/* ── ① KPI Cards ─────────────────────────────────────────── */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                             {kpiCards.map((card) => (
-                                <div
-                                    key={card.label}
-                                    className={cn(
-                                        "rounded-2xl border bg-gradient-to-br p-4 flex flex-col gap-2",
-                                        card.border,
-                                        card.gradient
-                                    )}
-                                >
-                                    <div
-                                        className={cn(
-                                            "h-8 w-8 rounded-xl flex items-center justify-center border",
-                                            card.iconBg
-                                        )}
-                                    >
-                                        <card.icon className={cn("h-4 w-4", card.iconColor)} />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground font-sans">{card.label}</p>
-                                    <p className="text-lg font-bold font-mitr text-foreground leading-tight">
-                                        {card.value}
-                                    </p>
-                                    {card.sub && (
-                                        <p className="text-[11px] text-muted-foreground font-sans leading-tight">
-                                            {card.sub}
-                                        </p>
-                                    )}
-                                </div>
+                                <KPICard key={card.label} {...card} />
                             ))}
                         </div>
 
                         {/* ── ② Charts Row 1 ─────────────────────────────────────── */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* 2.1 Revenue Trend */}
                             <SectionCard
                                 title="แนวโน้มรายได้"
@@ -490,14 +551,20 @@ export default function ManagerDashboardPage() {
                                 {data.revenueByDay.length === 0 ? (
                                     <EmptyState message="ยังไม่มีข้อมูลรายได้ในช่วงเวลานี้" />
                                 ) : (
-                                    <ResponsiveContainer width="100%" height={200}>
-                                        <LineChart data={data.revenueByDay.map((d) => ({ ...d, date: formatDateTH(d.date) }))}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
-                                            <XAxis dataKey="date" tick={{ fontSize: 11, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} />
-                                            <YAxis tick={{ fontSize: 11, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} tickFormatter={(v) => `฿${(v / 1000).toFixed(0)}k`} />
+                                    <ResponsiveContainer width="100%" height={220}>
+                                        <AreaChart data={data.revenueByDay.map((d) => ({ ...d, date: formatDateTH(d.date) }))}>
+                                            <defs>
+                                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.2} vertical={false} />
+                                            <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} dy={10} />
+                                            <YAxis tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} tickFormatter={(v) => `฿${(v / 1000).toFixed(0)}k`} />
                                             <Tooltip content={<CustomTooltip />} />
-                                            <Line type="monotone" dataKey="revenue" name="รายได้" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                                        </LineChart>
+                                            <Area type="monotone" dataKey="revenue" name="รายได้" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                                        </AreaChart>
                                     </ResponsiveContainer>
                                 )}
                             </SectionCard>
@@ -513,13 +580,13 @@ export default function ManagerDashboardPage() {
                                 {data.popularServices.length === 0 ? (
                                     <EmptyState message="ยังไม่มีข้อมูลการจองบริการในช่วงเวลานี้" />
                                 ) : (
-                                    <ResponsiveContainer width="100%" height={200}>
-                                        <BarChart data={data.popularServices} layout="vertical">
-                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} horizontal={false} />
-                                            <XAxis type="number" tick={{ fontSize: 11, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} />
-                                            <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} width={90} />
+                                    <ResponsiveContainer width="100%" height={220}>
+                                        <BarChart data={data.popularServices} layout="vertical" margin={{ left: 10 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.3} horizontal={false} />
+                                            <XAxis type="number" tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                            <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} width={100} />
                                             <Tooltip content={<CustomTooltip />} />
-                                            <Bar dataKey="count" name="จำนวน" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                                            <Bar dataKey="count" name="จำนวน" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 )}
@@ -527,7 +594,7 @@ export default function ManagerDashboardPage() {
                         </div>
 
                         {/* ── ② Charts Row 2 ─────────────────────────────────────── */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* 2.3 Peak Hours */}
                             <SectionCard
                                 title="ชั่วโมงยอดนิยม"
@@ -539,13 +606,13 @@ export default function ManagerDashboardPage() {
                                 {data.peakHours.every((h) => h.count === 0) ? (
                                     <EmptyState message="ยังไม่มีข้อมูลในช่วงเวลานี้" />
                                 ) : (
-                                    <ResponsiveContainer width="100%" height={200}>
+                                    <ResponsiveContainer width="100%" height={220}>
                                         <BarChart data={data.peakHours}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} vertical={false} />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.3} vertical={false} />
                                             <XAxis dataKey="hour" tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} />
-                                            <YAxis tick={{ fontSize: 11, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                            <YAxis tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} allowDecimals={false} />
                                             <Tooltip content={<CustomTooltip />} />
-                                            <Bar dataKey="count" name="จำนวน" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                                            <Bar dataKey="count" name="จำนวน" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={25} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 )}
@@ -562,15 +629,15 @@ export default function ManagerDashboardPage() {
                                 {data.packageSalesUsage.length === 0 ? (
                                     <EmptyState message="ยังไม่มีข้อมูลแพ็กเกจ" />
                                 ) : (
-                                    <ResponsiveContainer width="100%" height={200}>
-                                        <BarChart data={data.packageSalesUsage}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} vertical={false} />
-                                            <XAxis dataKey="name" tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} />
-                                            <YAxis tick={{ fontSize: 11, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <ResponsiveContainer width="100%" height={220}>
+                                        <BarChart data={data.packageSalesUsage} layout="vertical" margin={{ left: 10 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.3} horizontal={false} />
+                                            <XAxis type="number" tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                            <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} width={100} />
                                             <Tooltip content={<CustomTooltip />} />
-                                            <Legend wrapperStyle={{ fontSize: 11, fontFamily: "sans-serif" }} />
-                                            <Bar dataKey="sold" name="ขายได้" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                                            <Bar dataKey="used" name="ใช้แล้ว" fill="#c4b5fd" radius={[4, 4, 0, 0]} />
+                                            <Legend wrapperStyle={{ fontSize: 10, fontFamily: "sans-serif", paddingTop: 10 }} />
+                                            <Bar dataKey="sold" name="ขายได้" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={12} />
+                                            <Bar dataKey="used" name="ใช้แล้ว" fill="#c4b5fd" radius={[0, 4, 4, 0]} barSize={12} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 )}
@@ -578,11 +645,11 @@ export default function ManagerDashboardPage() {
                         </div>
 
                         {/* ── ② Charts Row 3 ─────────────────────────────────────── */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             {/* 2.4 Room Usage */}
                             <SectionCard
                                 title="อัตราการใช้ห้อง"
-                                subtitle="ช่วงเวลาที่เลือก"
+                                subtitle="อ้างอิงจากเวลาเปิดร้าน 10 ชม./วัน"
                                 icon={Calendar}
                                 iconColor="text-teal-500"
                                 iconBg="bg-teal-500/10 border-teal-500/20"
@@ -590,9 +657,15 @@ export default function ManagerDashboardPage() {
                                 {data.roomUsage.length === 0 ? (
                                     <EmptyState message="ยังไม่มีห้อง" />
                                 ) : (
-                                    <div className="flex flex-col gap-3">
+                                    <div className="flex flex-col gap-5 py-2">
                                         {data.roomUsage.map((r) => (
-                                            <HorizontalBar key={r.name} label={r.name} rate={r.rate} />
+                                            <HorizontalBar
+                                                key={r.name}
+                                                label={r.name}
+                                                rate={r.rate}
+                                                totalMinutes={r.totalMinutes}
+                                                maxMinutes={r.maxMinutes}
+                                            />
                                         ))}
                                     </div>
                                 )}
@@ -601,16 +674,22 @@ export default function ManagerDashboardPage() {
                             {/* 2.5 Therapist Utilization */}
                             <SectionCard
                                 title="อัตราการใช้งานหมอนวด"
-                                subtitle="ช่วงเวลาที่เลือก"
+                                subtitle="อ้างอิงจากเวลาทำงาน 8 ชม./วัน"
                                 icon={UserCheck}
                                 iconColor="text-primary"
                             >
                                 {data.therapistUtilization.length === 0 ? (
                                     <EmptyState message="ยังไม่มีข้อมูลหมอนวด" />
                                 ) : (
-                                    <div className="flex flex-col gap-3">
-                                        {data.therapistUtilization.map((t) => (
-                                            <HorizontalBar key={t.name} label={t.name} rate={t.rate} />
+                                    <div className="flex flex-col gap-5 py-2">
+                                        {data.therapistUtilization.slice(0, 6).map((t) => (
+                                            <HorizontalBar
+                                                key={t.name}
+                                                label={t.name}
+                                                rate={t.rate}
+                                                totalMinutes={t.totalMinutes}
+                                                maxMinutes={t.maxMinutes}
+                                            />
                                         ))}
                                     </div>
                                 )}
@@ -619,7 +698,7 @@ export default function ManagerDashboardPage() {
                             {/* 2.6 Coupon Redemption */}
                             <SectionCard
                                 title="อัตราแลกคูปอง"
-                                subtitle="คูปองทั้งหมดในระบบ"
+                                subtitle="แยกตามประเภทคูปอง"
                                 icon={Receipt}
                                 iconColor="text-violet-500"
                                 iconBg="bg-violet-500/10 border-violet-500/20"
@@ -627,12 +706,41 @@ export default function ManagerDashboardPage() {
                                 {data.couponRedemption.total === 0 ? (
                                     <EmptyState message="ยังไม่มีคูปองในระบบ" />
                                 ) : (
-                                    <div className="flex justify-center py-2">
-                                        <CouponRing
-                                            rate={data.couponRedemption.rate}
-                                            used={data.couponRedemption.used}
-                                            total={data.couponRedemption.total}
-                                        />
+                                    <div className="flex flex-col gap-6 py-2">
+                                        <div className="grid grid-cols-1 gap-6 max-h-[220px] overflow-y-auto pr-2 scrollbar-thin">
+                                            {data.couponRedemption.details.map((c, i) => (
+                                                <div key={i} className="flex items-center gap-4 bg-muted/20 p-3 rounded-xl border border-border/30">
+                                                    <div className="shrink-0 h-16 w-16">
+                                                        <CouponRing 
+                                                            rate={c.total > 0 ? Math.round((c.used / c.total) * 100) : 0} 
+                                                            used={c.used} 
+                                                            total={c.total} 
+                                                            compact
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold font-mitr truncate text-foreground">{c.name}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                                                <div 
+                                                                    className="h-full bg-violet-500 rounded-full" 
+                                                                    style={{ width: `${c.total > 0 ? (c.used / c.total) * 100 : 0}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-[10px] font-bold font-sans text-muted-foreground whitespace-nowrap">
+                                                                {c.used}/{c.total}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="pt-2 border-t border-border/30">
+                                            <div className="flex justify-between items-center text-[10px] font-bold font-sans text-muted-foreground uppercase tracking-wider">
+                                                <span>ภาพรวมทั้งหมด</span>
+                                                <span className="text-violet-500">{data.couponRedemption.rate}%</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </SectionCard>

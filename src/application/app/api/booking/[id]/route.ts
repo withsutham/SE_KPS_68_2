@@ -5,63 +5,53 @@ export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    try {
-        const { id } = await params;
-        if (!id) {
-            return NextResponse.json({ success: false, error: "ID parameter is required" }, { status: 400 });
-        }
+    const { id } = await params;
+    const supabase = await createAdminClient();
 
-        const supabase = await createAdminClient();
-        const primaryKey = "booking_id";
-        
-        const { data, error } = await supabase
-            .from("booking")
-            .select("*")
-            .eq(primaryKey, id)
-            .single();
+    const { data, error } = await supabase
+        .from("booking")
+        .select(`
+            *,
+            customer:customer_id (*),
+            booking_detail (*, massage (*), employee (*), room (*)),
+            payment (*)
+        `)
+        .eq("booking_id", id)
+        .single();
 
-        if (error) {
-            console.error("booking GET by ID error:", error.message);
-            return NextResponse.json({ success: false, error: error.message }, { status: 400 });
-        }
-
-        return NextResponse.json({ success: true, data }, { status: 200 });
-    } catch (err: any) {
-        console.error("booking GET by ID exception:", err.message);
-        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    if (error) {
+        console.error("booking GET single error:", error.message);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
+
+    return NextResponse.json({ success: true, data }, { status: 200 });
 }
 
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
-        const { id } = await params;
-        if (!id) {
-            return NextResponse.json({ success: false, error: "ID parameter is required" }, { status: 400 });
-        }
-
         const body = await request.json();
         const supabase = await createAdminClient();
-        const primaryKey = "booking_id";
 
         const { data, error } = await supabase
             .from("booking")
             .update(body)
-            .eq(primaryKey, id)
+            .eq("booking_id", id)
             .select()
             .single();
 
         if (error) {
             console.error("booking PUT error:", error.message);
-            return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
         }
 
         return NextResponse.json({ success: true, data }, { status: 200 });
     } catch (err: any) {
         console.error("booking PUT exception:", err.message);
-        return NextResponse.json({ success: false, error: "Invalid JSON body or internal error" }, { status: 500 });
+        return NextResponse.json({ success: false, error: "Invalid JSON body or internal error" }, { status: 400 });
     }
 }
 
@@ -69,28 +59,18 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    try {
-        const { id } = await params;
-        if (!id) {
-            return NextResponse.json({ success: false, error: "ID parameter is required" }, { status: 400 });
-        }
+    const { id } = await params;
+    const supabase = await createAdminClient();
 
-        const supabase = await createAdminClient();
-        const primaryKey = "booking_id";
+    const { error } = await supabase
+        .from("booking")
+        .delete()
+        .eq("booking_id", id);
 
-        const { error } = await supabase
-            .from("booking")
-            .delete()
-            .eq(primaryKey, id);
-
-        if (error) {
-            console.error("booking DELETE error:", error.message);
-            return NextResponse.json({ success: false, error: error.message }, { status: 400 });
-        }
-
-        return NextResponse.json({ success: true, message: "booking deleted successfully" }, { status: 200 });
-    } catch (err: any) {
-        console.error("booking DELETE exception:", err.message);
-        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    if (error) {
+        console.error("booking DELETE error:", error.message);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
+
+    return NextResponse.json({ success: true, message: "Booking deleted successfully" }, { status: 200 });
 }
