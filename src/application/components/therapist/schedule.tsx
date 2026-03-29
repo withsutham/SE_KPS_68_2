@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -16,20 +16,13 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
   // วันที่สำหรับสัปดาห์ที่กำลังแสดง (ค่าเริ่มต้นคือวันนี้)
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // Drag to scroll state
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
   const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
-  const times = [
-    '08:00 - 09:00',
-    '09:00 - 10:00',
-    '10:00 - 11:00',
-    '11:00 - 12:00',
-    '13:00 - 14:00',
-    '14:00 - 15:00',
-    '15:00 - 16:00',
-    '16:00 - 17:00',
-    '17:00 - 18:00',
-    '18:00 - 19:00',
-    '19:00 - 20:00'
-  ];
 
   // คำนวณวันอาทิตย์ของสัปดาห์ปัจจุบัน
   const startOfWeek = useMemo(() => {
@@ -118,12 +111,64 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
       });
   }, [initialBookings, startOfWeek, endOfWeek, days]);
 
+  // สร้าง time slots แบบ Dynamic ให้ขยายตามชั่วโมงของนัดหมายที่ดึกที่สุด
+  const times = useMemo(() => {
+    let maxHour = 20; // Default end hour: 20:00 (08:00 - 20:00)
+    
+    appointments.forEach((app) => {
+      let endHr = app.endDate.getHours();
+      // ถ้านาทีมากกว่า 0 ให้ปัดชั่วโมงขึ้นเพื่อให้ครอบคลุม
+      if (app.endDate.getMinutes() > 0) {
+        endHr += 1;
+      }
+      if (endHr > maxHour) {
+        maxHour = endHr;
+      }
+    });
+
+    const generatedTimes = [];
+    // สร้างช่วงเวลาเริ่มตั้งแต่ 08.00 น. ไปจนถึง maxHour โดยข้ามช่วง 12.00-13.00
+    for (let h = 8; h < maxHour; h++) {
+      if (h === 12) continue; // Skip Noon
+      const startH = h.toString().padStart(2, '0');
+      const endH = (h + 1).toString().padStart(2, '0');
+      generatedTimes.push(`${startH}:00 - ${endH}:00`);
+    }
+    return generatedTimes;
+  }, [appointments]);
+
   // รูปแบบการแสดงผลช่วงวันที่
   const formatDateRange = () => {
     const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
     const startStr = startOfWeek.toLocaleDateString('th-TH', options);
     const endStr = endOfWeek.toLocaleDateString('th-TH', { ...options, year: 'numeric' });
     return `${startStr} - ${endStr}`;
+  };
+
+  // ---------------------------------
+  // Mouse Drag to Scroll Event Handlers
+  // ---------------------------------
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+
+  const onMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const onMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5; // ความเร็วในการเลื่อน
+    scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
   return (
@@ -170,11 +215,18 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border-2 border-[#62846E] bg-white shadow-md">
+      <div 
+        ref={scrollRef}
+        onMouseDown={onMouseDown}
+        onMouseLeave={onMouseLeave}
+        onMouseUp={onMouseUp}
+        onMouseMove={onMouseMove}
+        className={`overflow-x-auto rounded-xl border-2 border-[#62846E] bg-white shadow-md [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+      >
         <table className="w-max min-w-full border-collapse table-fixed">
           <thead>
-            <tr className="bg-[#fbfaf9]">
-              <th className="border-b-2 border-r-2 border-[#62846E] p-4 w-36 min-w-[9rem] sticky left-0 z-20 bg-[#fbfaf9] overflow-hidden">
+            <tr className="bg-[#fbfaf9] select-none">
+              <th className="border-b-2 border-r-2 border-[#62846E] p-4 w-36 min-w-[9rem] bg-[#fbfaf9] relative overflow-hidden">
                 <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" preserveAspectRatio="none">
                   <line x1="0" y1="0" x2="100%" y2="100%" stroke="#62846E" strokeWidth="1" />
                 </svg>
@@ -193,7 +245,7 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
               let skipCount = 0;
               return (
                 <tr key={day} className="h-28 group">
-                  <td className="border-b border-r-2 border-[#62846E] bg-[#fbfaf9] text-center sticky left-0 z-10 transition-colors group-hover:bg-[#f5f4f2]">
+                  <td className="border-b border-r-2 border-[#62846E] bg-[#fbfaf9] text-center transition-colors group-hover:bg-[#f5f4f2] select-none">
                     <span className="px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all bg-[#62846E]/10 text-[#62846E] border border-transparent">
                       {day}
                     </span>
@@ -262,14 +314,14 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
                           <div className="h-full w-full relative block px-1.5 py-1.5">
                             <div 
                               style={{ width: `${widthPercent}%`, marginLeft: `${marginLeftPercent}%` }}
-                              className={`h-full min-h-[90px] p-2 rounded-lg ${appointment.color} flex flex-col justify-start items-start shadow-sm border border-white/50 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden z-10`}
+                              className={`h-full min-h-[90px] p-2 rounded-lg ${appointment.color} flex flex-col justify-start items-start shadow-sm border border-white/50 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden z-10 select-none`}
                             >
-                              <p className="text-[12px] font-bold leading-tight truncate w-full">{appointment.service}</p>
-                              <p className="text-[10px] mt-0.5 font-medium opacity-90 truncate w-full text-left">{appointment.time}</p>
-                              <p className="text-[10px] mt-1 text-gray-600 bg-white/40 px-1 py-0.5 rounded italic truncate w-full">
+                              <p className="text-[12px] font-bold leading-tight truncate w-full pointer-events-none">{appointment.service}</p>
+                              <p className="text-[10px] mt-0.5 font-medium opacity-90 truncate w-full text-left pointer-events-none">{appointment.time}</p>
+                              <p className="text-[10px] mt-1 text-gray-600 bg-white/40 px-1 py-0.5 rounded italic truncate w-full pointer-events-none">
                                 ลูกค้า: {appointment.customer}
                               </p>
-                              <div className="mt-auto pt-1 w-full">
+                              <div className="mt-auto pt-1 w-full pointer-events-none">
                                 <span className="inline-block text-[10px] font-bold border border-white/60 bg-white/30 px-1.5 py-0.5 rounded-md truncate max-w-full">
                                   {appointment.room}
                                 </span>
@@ -293,9 +345,8 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
         </table>
       </div>
       <div className="flex justify-between items-center px-2">
-        <p className="text-xs text-gray-400 font-medium tracking-tight">แสดงตารางงานสำหรับปี {new Date().getFullYear() + 543}</p>
         <p className="text-right text-[10px] text-gray-300 italic uppercase font-bold tracking-widest">Wellness Center System</p>
       </div>
     </div>
   );
-}
+}
