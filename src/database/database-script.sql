@@ -62,6 +62,7 @@ CREATE TABLE employee (
     last_name TEXT NOT NULL,
     phone_number TEXT,
     work_since DATE,
+    image_src TEXT,
     profile_id UUID REFERENCES profiles(profile_id) ON DELETE SET NULL
 );
 
