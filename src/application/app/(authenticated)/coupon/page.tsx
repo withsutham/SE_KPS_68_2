@@ -46,10 +46,17 @@ export default function CouponPage() {
   useEffect(() => {
     setCurrentPage(1);
     setRowsPerPage(activeTab === "history" ? "10" : "9");
-    if (activeTab === "my-coupons" && (sortBy === "newest" || sortBy === "expiring_soon")) {
+  }, [activeTab]);
+
+  // Normalize sort option when switching tabs
+  useEffect(() => {
+    if (
+      activeTab === "my-coupons" &&
+      (sortBy === "newest" || sortBy === "expiring_soon")
+    ) {
       setSortBy("discount_desc");
     }
-  }, [activeTab, sortBy]);
+  }, [activeTab]);
   const [alertMessage, setAlertMessage] = useState<{
     message: string;
     type: "success" | "error";
