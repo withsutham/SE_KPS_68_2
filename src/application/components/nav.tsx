@@ -129,24 +129,11 @@ async function NavLinkGroup() {
           </Link>
         </Button>
 
-        <div className="relative overflow-visible">
-          <div
-            role="note"
-            aria-label="โปรโมชั่นคุ้มกว่า"
-            className="absolute -top-4 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary text-primary-foreground text-[9px] rounded-xl shadow-md whitespace-nowrap font-bold leading-none"
-          >
-            คุ้มกว่า
-            <div
-              aria-hidden="true"
-              className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45"
-            />
-          </div>
-          <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-            <Link href="/package" className="text-sm">
-              แพ็กเกจ
-            </Link>
-          </Button>
-        </div>
+        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
+          <Link href="/package" className="text-sm">
+            แพ็กเกจ
+          </Link>
+        </Button>
       </>
     );
   }
