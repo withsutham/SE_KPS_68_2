@@ -398,6 +398,17 @@ export async function GET(request: NextRequest) {
         });
     }
 
+    // 3. Pending Leave Requests Alert
+    const pendingLeaves = allLeaves.filter((l: any) => l.approval_status === "pending").length;
+    if (pendingLeaves > 0) {
+        notifications.push({
+            id: "pending-leaves",
+            type: "warning",
+            message: `มีคำขอลา ${pendingLeaves} รายการที่รอการอนุมัติ`,
+            link: "/manager/employee/schedule" // Assuming this is where manager approves leaves
+        });
+    }
+
     return NextResponse.json({
         success: true,
         data: {
