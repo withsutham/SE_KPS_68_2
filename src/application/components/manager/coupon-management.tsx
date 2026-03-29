@@ -123,6 +123,12 @@ function toIsoOrNull(value: string) {
   return parsed.toISOString();
 }
 
+function getNowLocalDateTime() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
 function matchesRange(coupon: ViewCoupon, dateFrom: string, dateTo: string) {
   if (!dateFrom && !dateTo) return true;
   const start = coupon.startsAt?.getTime() ?? coupon.endsAt?.getTime();
@@ -200,6 +206,7 @@ export function CouponManagement() {
   const [dateTo, setDateTo] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState<RowsPerPage>("10");
   const [currentPage, setCurrentPage] = useState(1);
+  const minCollectDeadline = getNowLocalDateTime();
 
   useEffect(() => {
     void loadCoupons();
@@ -264,6 +271,12 @@ export function CouponManagement() {
       if (!discountText) throw new Error("กรุณากรอกเปอร์เซ็นต์ส่วนลด");
       if (Number.isNaN(discount_percent) || discount_percent < 0 || discount_percent > 100) {
         throw new Error("เปอร์เซ็นต์ส่วนลดต้องอยู่ระหว่าง 0 ถึง 100");
+      }
+      if (form.collect_deadline) {
+        const collectDeadline = new Date(form.collect_deadline);
+        if (collectDeadline.getTime() < Date.now()) {
+          throw new Error("วันสิ้นสุดคูปองต้องเป็นวันนี้หรือวันถัดไป");
+        }
       }
       const payload = {
         coupon_name,
@@ -436,6 +449,7 @@ export function CouponManagement() {
                     id="collect_deadline"
                     type="datetime-local"
                     value={form.collect_deadline}
+                    min={minCollectDeadline}
                     onChange={(event) => setForm((current) => ({ ...current, collect_deadline: event.target.value }))}
                     className="h-11 bg-background/75 font-sans"
                   />

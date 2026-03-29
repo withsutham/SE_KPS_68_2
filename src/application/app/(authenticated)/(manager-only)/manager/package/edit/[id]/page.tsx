@@ -53,6 +53,12 @@ function toIsoOrNull(value: string) {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+function getNowLocalDateTime() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
 export default function EditPackagePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -64,10 +70,13 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
   const [packagePrice, setPackagePrice] = useState("");
   const [startDateTime, setStartDateTime] = useState("");
   const [endDateTime, setEndDateTime] = useState("");
+  const [initialStartDateTime, setInitialStartDateTime] = useState("");
+  const [initialEndDateTime, setInitialEndDateTime] = useState("");
   const [availableMassages, setAvailableMassages] = useState<Massage[]>([]);
   const [selectedMassages, setSelectedMassages] = useState<SelectedMassage[]>([]);
   const [massageSearchTerm, setMassageSearchTerm] = useState("");
   const [images, setImages] = useState<ImageUploaderItem[]>([]);
+  const minDateTime = getNowLocalDateTime();
 
   useEffect(() => {
     async function fetchInitialData() {
@@ -94,8 +103,12 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
         const pkg = packageJson.data as PackageRecord;
         setPackageName(pkg.package_name ?? "");
         setPackagePrice(String(pkg.package_price ?? ""));
-        setStartDateTime(toLocalInput(pkg.campaign_start_datetime));
-        setEndDateTime(toLocalInput(pkg.campaign_end_datetime));
+        const loadedStartDateTime = toLocalInput(pkg.campaign_start_datetime);
+        const loadedEndDateTime = toLocalInput(pkg.campaign_end_datetime);
+        setStartDateTime(loadedStartDateTime);
+        setEndDateTime(loadedEndDateTime);
+        setInitialStartDateTime(loadedStartDateTime);
+        setInitialEndDateTime(loadedEndDateTime);
         setImages(
           pkg.image_src
             ? [{ id: pkg.image_src, name: pkg.package_name || "รูปแพ็กเกจ", url: pkg.image_src }]
@@ -175,6 +188,33 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
     setSubmitting(true);
 
     try {
+      const now = new Date();
+      const startDateValue = startDateTime ? new Date(startDateTime) : null;
+      const endDateValue = endDateTime ? new Date(endDateTime) : null;
+
+      if (
+        startDateValue &&
+        startDateValue.getTime() < now.getTime() &&
+        startDateTime !== initialStartDateTime
+      ) {
+        alert("วันเริ่มแคมเปญต้องเป็นวันนี้หรือวันถัดไป");
+        return;
+      }
+
+      if (
+        endDateValue &&
+        endDateValue.getTime() < now.getTime() &&
+        endDateTime !== initialEndDateTime
+      ) {
+        alert("วันสิ้นสุดแคมเปญต้องเป็นวันนี้หรือวันถัดไป");
+        return;
+      }
+
+      if (startDateValue && endDateValue && endDateValue.getTime() < startDateValue.getTime()) {
+        alert("วันสิ้นสุดแคมเปญต้องไม่น้อยกว่าวันเริ่มแคมเปญ");
+        return;
+      }
+
       const packagePayload = {
         package_name: packageName.trim(),
         package_price: Number(packagePrice),
@@ -317,6 +357,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                     id="startDateTime"
                     type="datetime-local"
                     value={startDateTime}
+                    min={initialStartDateTime && initialStartDateTime < minDateTime ? initialStartDateTime : minDateTime}
                     onChange={(event) => setStartDateTime(event.target.value)}
                   />
                 </div>
@@ -326,6 +367,11 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                     id="endDateTime"
                     type="datetime-local"
                     value={endDateTime}
+                    min={
+                      initialEndDateTime && initialEndDateTime < minDateTime
+                        ? initialEndDateTime
+                        : startDateTime || minDateTime
+                    }
                     onChange={(event) => setEndDateTime(event.target.value)}
                   />
                 </div>

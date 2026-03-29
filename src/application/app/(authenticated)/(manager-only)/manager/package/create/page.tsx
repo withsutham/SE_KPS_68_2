@@ -32,6 +32,12 @@ function toIsoOrNull(value: string) {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+function getNowLocalDateTime() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
 export default function CreatePackagePage() {
   const router = useRouter();
 
@@ -46,6 +52,7 @@ export default function CreatePackagePage() {
   const [selectedMassages, setSelectedMassages] = useState<SelectedMassage[]>([]);
   const [massageSearchTerm, setMassageSearchTerm] = useState("");
   const [images, setImages] = useState<ImageUploaderItem[]>([]);
+  const minDateTime = getNowLocalDateTime();
 
   useEffect(() => {
     void fetchMassages();
@@ -121,6 +128,25 @@ export default function CreatePackagePage() {
     setSubmitting(true);
 
     try {
+      const now = new Date();
+      const startDateValue = startDateTime ? new Date(startDateTime) : null;
+      const endDateValue = endDateTime ? new Date(endDateTime) : null;
+
+      if (startDateValue && startDateValue.getTime() < now.getTime()) {
+        alert("วันเริ่มแคมเปญต้องเป็นวันนี้หรือวันถัดไป");
+        return;
+      }
+
+      if (endDateValue && endDateValue.getTime() < now.getTime()) {
+        alert("วันสิ้นสุดแคมเปญต้องเป็นวันนี้หรือวันถัดไป");
+        return;
+      }
+
+      if (startDateValue && endDateValue && endDateValue.getTime() < startDateValue.getTime()) {
+        alert("วันสิ้นสุดแคมเปญต้องไม่น้อยกว่าวันเริ่มแคมเปญ");
+        return;
+      }
+
       const packagePayload = {
         package_name: packageName.trim(),
         package_price: Number(packagePrice),
@@ -251,6 +277,7 @@ export default function CreatePackagePage() {
                     id="startDateTime"
                     type="datetime-local"
                     value={startDateTime}
+                    min={minDateTime}
                     onChange={(event) => setStartDateTime(event.target.value)}
                   />
                 </div>
@@ -260,6 +287,7 @@ export default function CreatePackagePage() {
                     id="endDateTime"
                     type="datetime-local"
                     value={endDateTime}
+                    min={startDateTime || minDateTime}
                     onChange={(event) => setEndDateTime(event.target.value)}
                   />
                 </div>
