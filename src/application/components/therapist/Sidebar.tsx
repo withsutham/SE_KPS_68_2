@@ -24,12 +24,12 @@ export default function Sidebar({ employee }: SidebarProps) {
   return (
     <>
       {/* Sidebar สำหรับหน้าจอ Desktop (md และขึ้นไป) */}
-      <aside className="hidden md:flex w-20 lg:w-64 bg-[#fbfaf9] border-r border-slate-100 flex-col items-center py-6 gap-8 sticky top-0 h-screen transition-all">
+      <aside className="hidden md:flex w-20 lg:w-64 bg-[#fbfaf9] dark:bg-[#161c18] border-r border-slate-100 dark:border-white/10 flex-col items-center py-6 gap-8 sticky top-0 h-screen transition-all">
         {/* Profile Section at Top - Horizontal Layout */}
         <div className="flex items-center lg:w-full lg:px-4 gap-3">
           <div className="relative h-10 w-10 shrink-0">
             {employee?.image_src ? (
-              <div className="h-10 w-10 rounded-xl overflow-hidden border-2 border-white shadow-sm relative">
+              <div className="h-10 w-10 rounded-xl overflow-hidden border-2 border-white dark:border-[#2b3530] shadow-sm relative">
                 <Image
                   src={employee.image_src}
                   alt="Profile"
@@ -38,15 +38,15 @@ export default function Sidebar({ employee }: SidebarProps) {
                 />
               </div>
             ) : (
-              <div className="h-10 w-10 rounded-xl bg-[#62846E]/10 border-2 border-white shadow-sm flex items-center justify-center text-[#62846E]">
+              <div className="h-10 w-10 rounded-xl bg-[#62846E]/10 border-2 border-white dark:border-[#2b3530] shadow-sm flex items-center justify-center text-[#62846E]">
                 <User size={20} />
               </div>
             )}
-            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
+            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 border-2 border-white dark:border-[#2b3530] rounded-full shadow-sm"></div>
           </div>
           
           <div className="hidden lg:block min-w-0">
-            <p className="text-sm font-bold text-slate-800 truncate">
+            <p className="text-sm font-bold text-slate-800 dark:text-gray-100 truncate">
               {employee ? `${employee.first_name} ${employee.last_name || ''}` : '...'}
             </p>
             <p className="text-[9px] text-[#62846E] font-bold uppercase tracking-wider">Therapist</p>
@@ -61,8 +61,8 @@ export default function Sidebar({ employee }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive
-                  ? 'bg-[#62846E] text-white shadow-md shadow-green-100'
-                  : 'text-gray-400 hover:bg-gray-50 hover:text-[#62846E]'
+                  ? 'bg-[#62846E] text-white shadow-md'
+                  : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-[#62846E] dark:hover:text-[#62846E]'
                   }`}
               >
                 {item.icon}
@@ -76,7 +76,7 @@ export default function Sidebar({ employee }: SidebarProps) {
       </aside>
 
       {/* Navigation สำหรับหน้าจอ Mobile (เล็กกว่า md) */}
-      <nav className="md:hidden fixed bottom-6 left-6 right-6 bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl px-6 py-3 flex justify-between items-center z-50 animate-in slide-in-from-bottom-10 duration-700">
+      <nav className="md:hidden fixed bottom-6 left-6 right-6 bg-white/80 dark:bg-[#1b231e]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl rounded-3xl px-6 py-3 flex justify-between items-center z-50 animate-in slide-in-from-bottom-10 duration-700">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
           return (

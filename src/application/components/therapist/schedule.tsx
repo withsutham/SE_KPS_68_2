@@ -174,13 +174,13 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
   return (
     <div className="space-y-6">
       {/* ส่วนควบคุมความเปลี่ยนของสัปดาห์ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1b231e] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-[#2b3530] transition-colors">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-[#62846E]/10 rounded-lg">
             <CalendarIcon className="h-5 w-5 text-[#62846E]" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-gray-700">ช่วงวันที่แสดง</h2>
+            <h2 className="text-sm font-bold text-gray-700 dark:text-gray-200">ช่วงวันที่แสดง</h2>
             <p className="text-lg font-bold text-[#62846E]">{formatDateRange()}</p>
           </div>
         </div>
@@ -190,16 +190,16 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
             variant="outline" 
             size="sm" 
             onClick={goToToday}
-            className="hover:bg-gray-50 border-gray-200"
+            className="hover:bg-gray-50 dark:hover:bg-white/5 border-gray-200 dark:border-white/10 dark:text-gray-200"
           >
             วันนี้
           </Button>
-          <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-100">
+          <div className="flex bg-gray-50 dark:bg-[#161c18] p-1 rounded-lg border border-gray-100 dark:border-[#2b3530]">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => navigateWeek(-1)}
-              className="h-8 w-8 hover:bg-white hover:shadow-sm"
+              className="h-8 w-8 hover:bg-white dark:hover:bg-[#1b231e] hover:shadow-sm text-slate-700 dark:text-gray-300"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -207,7 +207,7 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
               variant="ghost" 
               size="icon" 
               onClick={() => navigateWeek(1)}
-              className="h-8 w-8 hover:bg-white hover:shadow-sm"
+              className="h-8 w-8 hover:bg-white dark:hover:bg-[#1b231e] hover:shadow-sm text-slate-700 dark:text-gray-300"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -221,12 +221,12 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
         onMouseLeave={onMouseLeave}
         onMouseUp={onMouseUp}
         onMouseMove={onMouseMove}
-        className={`overflow-x-auto rounded-xl border-2 border-[#62846E] bg-white shadow-md [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+        className={`overflow-x-auto rounded-xl border-2 border-[#62846E] dark:border-[#2b3530] bg-white dark:bg-[#1b231e] shadow-md [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
       >
         <table className="w-max min-w-full border-collapse table-fixed">
           <thead>
-            <tr className="bg-[#fbfaf9] select-none">
-              <th className="border-b-2 border-r-2 border-[#62846E] p-4 w-36 min-w-[9rem] bg-[#fbfaf9] relative overflow-hidden">
+            <tr className="bg-[#fbfaf9] dark:bg-[#1c2621] select-none">
+              <th className="border-b-2 border-r-2 border-[#62846E] dark:border-[#2b3530] p-4 w-36 min-w-[9rem] bg-[#fbfaf9] dark:bg-[#1c2621] relative overflow-hidden">
                 <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" preserveAspectRatio="none">
                   <line x1="0" y1="0" x2="100%" y2="100%" stroke="#62846E" strokeWidth="1" />
                 </svg>
@@ -234,7 +234,7 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
                 <div className="text-[11px] font-bold absolute bottom-2 left-2 text-[#62846E] uppercase">วัน</div>
               </th>
               {times.map((time) => (
-                <th key={time} className="border-b-2 border-r border-[#62846E] p-3 w-48 min-w-[12rem] text-[11px] font-bold text-[#62846E] uppercase tracking-wider text-center">
+                <th key={time} className="border-b-2 border-r border-[#62846E] dark:border-[#2b3530] p-3 w-48 min-w-[12rem] text-[11px] font-bold text-[#62846E] uppercase tracking-wider text-center">
                   {time}
                 </th>
               ))}
@@ -245,7 +245,7 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
               let skipCount = 0;
               return (
                 <tr key={day} className="h-28 group">
-                  <td className="border-b border-r-2 border-[#62846E] bg-[#fbfaf9] text-center transition-colors group-hover:bg-[#f5f4f2] select-none">
+                  <td className="border-b border-r-2 border-[#62846E] dark:border-[#2b3530] bg-[#fbfaf9] dark:bg-[#1c2621] text-center transition-colors group-hover:bg-[#f5f4f2] dark:group-hover:bg-[#202b25] select-none">
                     <span className="px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all bg-[#62846E]/10 text-[#62846E] border border-transparent">
                       {day}
                     </span>
@@ -309,16 +309,16 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
                         <td 
                           key={time} 
                           colSpan={colSpan} 
-                          className="border-b border-r border-gray-100 p-0 transition-colors group-hover:bg-gray-50/50"
+                          className="border-b border-r border-gray-100 dark:border-white/5 p-0 transition-colors group-hover:bg-gray-50/50 dark:group-hover:bg-white/5"
                         >
                           <div className="h-full w-full relative block px-1.5 py-1.5">
                             <div 
                               style={{ width: `${widthPercent}%`, marginLeft: `${marginLeftPercent}%` }}
-                              className={`h-full min-h-[90px] p-2 rounded-lg ${appointment.color} flex flex-col justify-start items-start shadow-sm border border-white/50 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden z-10 select-none`}
+                              className={`h-full min-h-[90px] p-2 rounded-lg ${appointment.color} flex flex-col justify-start items-start shadow-sm border border-white/50 dark:border-white/10 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden z-10 select-none`}
                             >
                               <p className="text-[12px] font-bold leading-tight truncate w-full pointer-events-none">{appointment.service}</p>
                               <p className="text-[10px] mt-0.5 font-medium opacity-90 truncate w-full text-left pointer-events-none">{appointment.time}</p>
-                              <p className="text-[10px] mt-1 text-gray-600 bg-white/40 px-1 py-0.5 rounded italic truncate w-full pointer-events-none">
+                              <p className="text-[10px] mt-1 text-gray-700/80 bg-white/50 dark:bg-black/10 px-1 py-0.5 rounded italic truncate w-full pointer-events-none">
                                 ลูกค้า: {appointment.customer}
                               </p>
                               <div className="mt-auto pt-1 w-full pointer-events-none">
@@ -333,7 +333,7 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
                     }
 
                     return (
-                      <td key={time} className="border-b border-r border-gray-100 p-1.5 transition-colors group-hover:bg-gray-50/50">
+                      <td key={time} className="border-b border-r border-gray-100 dark:border-white/5 p-1.5 transition-colors group-hover:bg-gray-50/50 dark:group-hover:bg-white/5">
                         {/* Empty cell */}
                       </td>
                     );

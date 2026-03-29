@@ -57,46 +57,46 @@ export default function Leave() {
         <>
             <header className="flex flex-col items-center justify-center text-center gap-2 mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">ยื่นคำขอลา</h1>
-                    <p className="text-gray-500 text-sm">ข้อมูลการลาและการทำงานของคุณ</p>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-gray-100">ยื่นคำขอลา</h1>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">ข้อมูลการลาและการทำงานของคุณ</p>
                 </div>
             </header>
 
             <div className="max-w-2xl mx-auto space-y-6">
                 <div className="space-y-6">
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-white space-y-6">
+                    <div className="bg-white dark:bg-[#1b231e] p-8 rounded-3xl shadow-sm border border-white dark:border-[#2b3530] space-y-6 transition-colors">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">วันที่เริ่มต้น</label>
+                                <label className="text-sm font-bold text-slate-700 dark:text-gray-200">วันที่เริ่มต้น</label>
                                 <div className="relative">
-                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
                                     <input
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                         min={today}
-                                        className="w-full pl-10 p-3 rounded-xl border border-gray-100 bg-gray-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#62846E]/20 transition-all font-medium appearance-none"
+                                        className="w-full pl-10 p-3 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-[#161c18] dark:text-gray-100 text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#62846E]/20 transition-all font-medium appearance-none"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">วันที่สิ้นสุด</label>
+                                <label className="text-sm font-bold text-slate-700 dark:text-gray-200">วันที่สิ้นสุด</label>
                                 <div className="relative">
-                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
                                     <input
                                         type="date"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
                                         min={startDate}
-                                        className="w-full pl-10 p-3 rounded-xl border border-gray-100 bg-gray-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#62846E]/20 transition-all font-medium appearance-none"
+                                        className="w-full pl-10 p-3 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-[#161c18] dark:text-gray-100 text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#62846E]/20 transition-all font-medium appearance-none"
                                     />
                                 </div>
                             </div>
                         </div>
 
                         {totalDays > 0 && (
-                            <div className="flex items-center gap-2 p-4 bg-[#62846E]/5 rounded-2xl border border-[#62846E]/10">
+                            <div className="flex items-center gap-2 p-4 bg-[#62846E]/5 dark:bg-[#62846E]/10 rounded-2xl border border-[#62846E]/10 dark:border-[#62846E]/20">
                                 <CalendarDays className="text-[#62846E]" size={20} />
                                 <span className="text-sm font-bold text-[#62846E]">
                                     รวมจำนวนวันลา: {totalDays} วัน
@@ -105,19 +105,19 @@ export default function Leave() {
                         )}
 
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700">เหตุผลการลา</label>
+                            <label className="text-sm font-bold text-slate-700 dark:text-gray-200">เหตุผลการลา</label>
                             <textarea
                                 rows={4}
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 placeholder="ระบุเหตุผลในการลาของคุณ..."
-                                className="w-full p-4 rounded-xl border border-gray-100 bg-gray-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#62846E]/20 transition-all resize-none"
+                                className="w-full p-4 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-[#161c18] dark:text-gray-100 text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#62846E]/20 transition-all resize-none"
                             ></textarea>
                         </div>
 
                         <div className="flex gap-4 pt-4">
                             {success ? (
-                                <div className="flex-1 bg-green-500 text-white py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-green-100 font-bold animate-pulse">
+                                <div className="flex-1 bg-green-500 text-white py-4 rounded-2xl flex items-center justify-center gap-3 font-bold animate-pulse shadow-lg md:shadow-none">
                                     <CheckCircle2 size={18} />
                                     ส่งคำขอสำเร็จ! กำลังไปที่หน้าประวัติ...
                                 </div>
@@ -126,14 +126,14 @@ export default function Leave() {
                                     <button
                                         onClick={handleSubmit}
                                         disabled={submitting}
-                                        className="flex-1 bg-[#62846E] text-white py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-green-100 hover:scale-[1.02] disabled:opacity-50 disabled:scale-100 transition-all font-bold"
+                                        className="flex-1 bg-[#62846E] text-white py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg hover:scale-[1.02] disabled:opacity-50 disabled:scale-100 transition-all font-bold"
                                     >
                                         {submitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                                         {submitting ? 'กำลังส่งคำขอ...' : 'ส่งคำขอลา'}
                                     </button>
                                     <Link
                                         href="/therapist"
-                                        className="px-8 bg-gray-50 text-gray-400 py-4 rounded-2xl font-bold hover:bg-gray-100 transition-colors flex items-center justify-center"
+                                        className="px-8 bg-gray-50 dark:bg-white/5 text-gray-400 py-4 rounded-2xl font-bold hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center"
                                     >
                                         ยกเลิก
                                     </Link>
@@ -143,9 +143,9 @@ export default function Leave() {
                     </div>
                 </div>
 
-                <div className="bg-[#62846E]/5 p-6 rounded-3xl border border-[#62846E]/10">
+                <div className="bg-[#62846E]/5 dark:bg-[#62846E]/10 p-6 rounded-3xl border border-[#62846E]/10 dark:border-[#62846E]/20">
                     <h4 className="text-[#62846E] font-bold text-sm mb-2 text-center">ข้อควรรู้</h4>
-                    <p className="text-[#62846E]/70 text-xs leading-relaxed text-center">
+                    <p className="text-[#62846E]/70 dark:text-[#62846E]/90 text-xs leading-relaxed text-center">
                         การยื่นคำขอลาควรแจ้งล่วงหน้าอย่างน้อย 3 วันทำการ (ยกเว้นกรณีฉุกเฉิน) และต้องได้รับการอนุมัติจากหัวหน้าแผนกก่อนจึงจะถือว่าการลาเสร็จสมบูรณ์
                     </p>
                 </div>

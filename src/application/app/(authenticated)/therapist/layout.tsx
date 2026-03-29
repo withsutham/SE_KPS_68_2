@@ -16,7 +16,7 @@ export default async function TherapistLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#fbfaf9]">
+    <div className="flex min-h-screen bg-[#fbfaf9] dark:bg-[#161c18] text-slate-800 dark:text-gray-100 transition-colors duration-300">
       {/* Sidebar จะถูกโหลดแค่ครั้งเดียวที่นี่แบบ Server Component */}
       <Sidebar employee={employee} />
 
