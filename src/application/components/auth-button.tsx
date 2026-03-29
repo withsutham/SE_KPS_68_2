@@ -7,7 +7,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { ChevronDown, User } from "lucide-react";
@@ -70,14 +69,9 @@ export async function AuthButton() {
               โปรไฟล์ของฉัน
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <div className="w-full">
-              <LogoutButton />
-            </div>
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <LogoutButton />
     </div>
   ) : (
     <div className="flex gap-2 items-center">
