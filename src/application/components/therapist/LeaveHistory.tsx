@@ -290,7 +290,7 @@ export default function LeaveHistoryClient({ initialRecords }: { initialRecords:
                             <button 
                                 onClick={handleDelete}
                                 disabled={editLoading}
-                                className="w-full py-4 rounded-2xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-100 hover:scale-[1.02] disabled:scale-100 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm"
+                                className="w-full py-4 rounded-2xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg hover:scale-[1.02] disabled:scale-100 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm"
                             >
                                 {editLoading ? <Loader2 size={18} className="animate-spin" /> : 'ยืนยันลบข้อมูล'}
                             </button>
