@@ -57,6 +57,10 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
                 (!c.expire_dateTime ||
                   new Date(c.expire_dateTime) > new Date()),
             );
+            // Sort coupons by discount percentage (highest first)
+            available.sort((a: any, b: any) => 
+              Number(b.coupon?.discount_percent || 0) - Number(a.coupon?.discount_percent || 0)
+            );
             setCoupons(available);
           }
         })
@@ -321,7 +325,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
                 <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-2">
                   <Ticket className="h-3.5 w-3.5" /> ส่วนลด / คูปอง
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 justify-start">
                   {coupons.map((c) => (
                     <button
                       key={c.member_coupon_id}
