@@ -1,317 +1,441 @@
 "use client";
 
+import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ImagePlus, Package2, Sparkles } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { ImageUploader, type ImageUploaderItem } from "@/components/ui/ImageUploader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { usePathname, useRouter } from "next/navigation";
+import { uploadMassageImage } from "@/lib/upload-massage-image";
 
-interface Massage {
-    massage_id: string;
-    massage_name: string;
-    massage_price: number;
-    massage_time: number;
+type Massage = {
+  massage_id: string;
+  massage_name: string;
+  massage_price: number;
+  massage_time: number;
+};
+
+type SelectedMassage = Massage & {
+  uniqueId: string;
+};
+
+function createUniqueId() {
+  return Math.random().toString(36).slice(2, 9);
 }
 
-interface SelectedMassage extends Massage {
-    uniqueId: string; // for React keys when allowing duplicates
+function toIsoOrNull(value: string) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
 export default function CreatePackagePage() {
-    const router = useRouter();
-    const pathname = usePathname();
-    const [loading, setLoading] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
 
-    // Form inputs
-    const [packageName, setPackageName] = useState("");
-    const [packagePrice, setPackagePrice] = useState("");
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [packageName, setPackageName] = useState("");
+  const [packagePrice, setPackagePrice] = useState("");
+  const [startDateTime, setStartDateTime] = useState("");
+  const [endDateTime, setEndDateTime] = useState("");
+  const [availableMassages, setAvailableMassages] = useState<Massage[]>([]);
+  const [selectedMassages, setSelectedMassages] = useState<SelectedMassage[]>([]);
+  const [massageSearchTerm, setMassageSearchTerm] = useState("");
+  const [images, setImages] = useState<ImageUploaderItem[]>([]);
 
-    // Massages
-    const [availableMassages, setAvailableMassages] = useState<Massage[]>([]);
-    const [selectedMassages, setSelectedMassages] = useState<SelectedMassage[]>([]);
-    const [massageSearchTerm, setMassageSearchTerm] = useState("");
+  useEffect(() => {
+    void fetchMassages();
+  }, []);
 
-    useEffect(() => {
-        setSubmitting(false);
-        fetchMassages();
-    }, []);
+  async function fetchMassages() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/massage", { cache: "no-store" });
+      const json = await res.json();
 
-    useEffect(() => {
-        setMassageSearchTerm("");
-    }, [pathname]);
+      if (json.success) {
+        setAvailableMassages(json.data || []);
+      } else {
+        console.error("Failed to fetch massages:", json.error);
+      }
+    } catch (error) {
+      console.error("Error fetching massages:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    async function fetchMassages() {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/massage");
-            const json = await res.json();
-            if (json.success) {
-                setAvailableMassages(json.data || []);
-            } else {
-                console.error("Failed to fetch massages:", json.error);
-            }
-        } catch (error) {
-            console.error("Error fetching massages:", error);
-        } finally {
-            setLoading(false);
+  function addMassageToPackage(massage: Massage) {
+    const newSelection: SelectedMassage = {
+      ...massage,
+      uniqueId: createUniqueId(),
+    };
+    setSelectedMassages((current) => [...current, newSelection]);
+  }
+
+  function removeMassageFromPackage(uniqueId: string) {
+    setSelectedMassages((current) => current.filter((massage) => massage.uniqueId !== uniqueId));
+  }
+
+  async function handleFilesSelected(files: File[]) {
+    const file = files[0];
+    if (!file) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    const temporaryId = `local-${Date.now()}`;
+    setUploadError(null);
+    setImages([{ id: temporaryId, name: file.name, url: previewUrl, isUploading: true }]);
+
+    try {
+      const publicUrl = await uploadMassageImage(file);
+      URL.revokeObjectURL(previewUrl);
+      setImages([{ id: publicUrl, name: file.name, url: publicUrl }]);
+    } catch (error) {
+      URL.revokeObjectURL(previewUrl);
+      setImages([]);
+      setUploadError(error instanceof Error ? error.message : "Failed to upload image");
+    }
+  }
+
+  function handleRemoveImage(imageId: string) {
+    setImages((current) => {
+      const target = current.find((image) => image.id === imageId);
+      if (target?.url.startsWith("blob:")) URL.revokeObjectURL(target.url);
+      return current.filter((image) => image.id !== imageId);
+    });
+    setUploadError(null);
+  }
+
+  async function handleSavePackage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (images.some((image) => image.isUploading)) {
+      setUploadError("Please wait for the image upload to finish.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const packagePayload = {
+        package_name: packageName.trim(),
+        package_price: Number(packagePrice),
+        image_src: images[0]?.url || null,
+        campaign_start_datetime: toIsoOrNull(startDateTime),
+        campaign_end_datetime: toIsoOrNull(endDateTime),
+      };
+
+      const packageRes = await fetch("/api/package", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(packagePayload),
+      });
+      const packageJson = await packageRes.json();
+
+      if (!packageRes.ok || !packageJson.success) {
+        alert(`Create package failed: ${packageJson.error ?? "Unknown error"}`);
+        return;
+      }
+
+      const newPackageId = packageJson.data.package_id;
+
+      if (selectedMassages.length > 0) {
+        const detailsPayload = selectedMassages.map((massage) => ({
+          package_id: newPackageId,
+          massage_id: massage.massage_id,
+        }));
+
+        const detailsRes = await fetch("/api/package_detail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(detailsPayload),
+        });
+
+        if (!detailsRes.ok) {
+          const detailsJson = await detailsRes.json().catch(() => ({}));
+          alert(`Package created, but adding massages failed: ${detailsJson.error ?? "Unknown error"}`);
+          return;
         }
+      }
+
+      router.push("/manager/package");
+    } catch (error) {
+      console.error("Error saving package:", error);
+      alert("Error while saving package");
+    } finally {
+      setSubmitting(false);
     }
+  }
 
-    function addMassageToPackage(massage: Massage) {
-        const newSelection: SelectedMassage = {
-            ...massage,
-            uniqueId: Math.random().toString(36).substring(2, 9)
-        };
-        setSelectedMassages([...selectedMassages, newSelection]);
-    }
+  const totalTime = selectedMassages.reduce((sum, massage) => sum + massage.massage_time, 0);
+  const totalPriceOfMassages = selectedMassages.reduce((sum, massage) => sum + massage.massage_price, 0);
+  const normalizedMassageSearchTerm = massageSearchTerm.trim().toLowerCase();
+  const filteredAvailableMassages = availableMassages.filter((massage) =>
+    massage.massage_name.toLowerCase().includes(normalizedMassageSearchTerm),
+  );
 
-    function removeMassageFromPackage(uniqueId: string) {
-        setSelectedMassages(selectedMassages.filter(m => m.uniqueId !== uniqueId));
-    }
+  return (
+    <main className="relative flex-1 w-full font-mitr">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -right-32 -top-28 h-[420px] w-[420px] rounded-full bg-primary/6 blur-3xl" />
+        <div className="absolute bottom-0 left-[-12rem] h-[360px] w-[360px] rounded-full bg-secondary/40 blur-3xl" />
+      </div>
 
-    // Calculations
-    const totalTime = selectedMassages.reduce((sum, m) => sum + m.massage_time, 0);
-    const totalPriceOfMassages = selectedMassages.reduce((sum, m) => sum + m.massage_price, 0);
-    const normalizedMassageSearchTerm = massageSearchTerm.trim().toLowerCase();
-    const filteredAvailableMassages = availableMassages.filter((massage) =>
-        massage.massage_name.toLowerCase().includes(normalizedMassageSearchTerm),
-    );
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 md:px-8 md:py-10">
+        <header className="text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
+            <Sparkles className="h-7 w-7 text-primary" />
+          </div>
+          <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">
+            Manager Console
+          </p>
+          <h1 className="text-3xl text-foreground md:text-4xl">Create Package</h1>
+        </header>
 
-    async function handleSavePackage(e: React.FormEvent) {
-        e.preventDefault();
-        setSubmitting(true);
+        <section className="overflow-hidden rounded-2xl border border-border/40 bg-card/45 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur-sm">
+          <div className="border-b border-border/40 px-5 py-4 md:px-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
+                  <ImagePlus className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl text-foreground">Package Details</h2>
+                  <p className="font-sans text-sm text-muted-foreground">
+                    Add package information, campaign timing, and one cover image.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                className="rounded-full font-sans"
+                onClick={() => router.push("/manager/package")}
+              >
+                Back to list
+              </Button>
+            </div>
+          </div>
 
-        try {
-            // 1. Create Package
-            const packagePayload = {
-                package_name: packageName,
-                package_price: Number(packagePrice),
-                campaign_start_datetime: startDate || null,
-                campaign_end_datetime: endDate || null,
-            };
+          <div className="p-5 md:p-6">
+            <form onSubmit={handleSavePackage} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="packageName">Package name</Label>
+                <Input
+                  id="packageName"
+                  value={packageName}
+                  onChange={(event) => setPackageName(event.target.value)}
+                  placeholder="Premium Spa Package"
+                  required
+                />
+              </div>
 
-            const packageRes = await fetch("/api/package", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(packagePayload),
-            });
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="packagePrice">Price (THB)</Label>
+                  <Input
+                    id="packagePrice"
+                    type="number"
+                    min="0"
+                    value={packagePrice}
+                    onChange={(event) => setPackagePrice(event.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="startDateTime">Campaign start</Label>
+                  <Input
+                    id="startDateTime"
+                    type="datetime-local"
+                    value={startDateTime}
+                    onChange={(event) => setStartDateTime(event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDateTime">Campaign end</Label>
+                  <Input
+                    id="endDateTime"
+                    type="datetime-local"
+                    value={endDateTime}
+                    onChange={(event) => setEndDateTime(event.target.value)}
+                  />
+                </div>
+              </div>
 
-            const packageJson = await packageRes.json();
+              <div className="rounded-2xl border border-border/40 bg-muted/20 px-4 py-3 font-sans text-sm text-muted-foreground">
+                Individual service value: THB {totalPriceOfMassages.toLocaleString()} | Total duration:{" "}
+                {totalTime} minutes
+              </div>
 
-            if (!packageRes.ok || !packageJson.success) {
-                alert("เกิดข้อผิดพลาดในการสร้างแพ็กเกจ: " + (packageJson.error || "ข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
-                setSubmitting(false);
-                return;
-            }
+              <div className="space-y-3">
+                <Label>Image</Label>
+                <ImageUploader
+                  images={images}
+                  maxFiles={1}
+                  disabled={submitting}
+                  onFilesSelected={handleFilesSelected}
+                  onRemove={handleRemoveImage}
+                />
+                {uploadError && (
+                  <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 font-sans text-sm text-destructive">
+                    {uploadError}
+                  </p>
+                )}
+              </div>
 
-            const newPackageId = packageJson.data.package_id;
-
-            // 2. Create Package Details
-            if (selectedMassages.length > 0) {
-                // Prepare details payload
-                // The API needs to handle array inserts, or we insert individually.
-                // Assuming standard supabase insert accepts arrays
-                const detailsPayload = selectedMassages.map((sm) => ({
-                    package_id: newPackageId,
-                    massage_id: sm.massage_id
-                }));
-
-                const detailsRes = await fetch("/api/package_detail", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(detailsPayload),
-                });
-
-                if (!detailsRes.ok) {
-                    // Note: If this fails, package is created but empty. 
-                    // Production ready code would use transactions via Supabase RPC.
-                    console.error("Failed to insert package details");
-                }
-            }
-
-            // Success, back to list
-            router.push("/manager/package");
-
-        } catch (error) {
-            console.error("Error saving package:", error);
-            alert("เกิดข้อผิดพลาดที่ไม่คาดคิด");
-        } finally {
-            setSubmitting(false);
-        }
-    }
-
-    return (
-        <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 p-8 font-mitr">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">สร้างแพ็กเกจใหม่</h1>
-                <Button variant="outline" onClick={() => router.push("/manager/package")}>
-                    กลับไปหน้ารายการ
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full font-sans"
+                  onClick={() => router.push("/manager/package")}
+                  disabled={submitting}
+                >
+                  Cancel
                 </Button>
+                <Button
+                  type="submit"
+                  className="rounded-full px-5 font-sans"
+                  disabled={submitting || selectedMassages.length === 0}
+                >
+                  {submitting ? "Saving..." : "Create Package"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
+          <section className="overflow-hidden rounded-2xl border border-emerald-500/15 bg-emerald-500/10 shadow-[0_20px_60px_-24px_rgba(16,185,129,0.35)]">
+            <div className="border-b border-emerald-500/15 px-5 py-4 md:px-6">
+              <h2 className="text-xl text-emerald-950">Selected Massages</h2>
+              <p className="font-sans text-sm text-emerald-800/80">
+                Review the services included in this package before saving.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left Column: Form Info */}
-                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 h-fit min-w-0">
-                    <h3 className="text-xl font-semibold mb-6">รายละเอียดแพ็กเกจ</h3>
-
-                    <form id="create-package-form" onSubmit={handleSavePackage} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="packageName">ชื่อแพ็กเกจ</Label>
-                            <Input
-                                id="packageName"
-                                placeholder="เช่น พรีเมียมสปา 2 ชั่วโมง"
-                                value={packageName}
-                                onChange={(e) => setPackageName(e.target.value)}
-                                required
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="packagePrice">ราคาขายแพ็กเกจ (บาท)</Label>
-                            <Input
-                                id="packagePrice"
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                value={packagePrice}
-                                onChange={(e) => setPackagePrice(e.target.value)}
-                                required
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                                คำแนะนำ: ราคารวมของบริการนวดแบบเดี่ยวคือ ฿{totalPriceOfMassages.toLocaleString()}
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="startDate">วันที่เริ่มต้นแคมเปญ</Label>
-                                <Input
-                                    id="startDate"
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="endDate">วันที่สิ้นสุดแคมเปญ</Label>
-                                <Input
-                                    id="endDate"
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex justify-start gap-4 pt-4">
-                            <Button type="button" variant="outline" onClick={() => router.push("/manager/package")} disabled={submitting}>
-                                ยกเลิก
-                            </Button>
-                            <Button
-                                type="submit"
-                                form="create-package-form"
-                                className="min-w-[150px]"
-                                disabled={submitting || selectedMassages.length === 0}
-                            >
-                                {submitting ? "กำลังบันทึก..." : "บันทึกแพ็กเกจ"}
-                            </Button>
-                        </div>
-                    </form>
+            <div className="space-y-4 p-5 md:p-6">
+              {selectedMassages.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-emerald-500/20 bg-white/60 px-4 py-10 text-center font-sans text-sm text-emerald-900/70">
+                  No massages selected yet.
                 </div>
-
-                {/* Right Column: Massage Selection */}
-                <div className="flex min-w-0 flex-col gap-6">
-                    {/* Selected Massages Summary */}
-                    <div className="bg-emerald-50 p-6 rounded-lg shadow-sm border border-emerald-100 min-w-0">
-                        <h3 className="text-lg font-semibold text-emerald-800 mb-4">บริการนวดที่รวมอยู่ในแพ็กเกจ</h3>
-
-                        {selectedMassages.length === 0 ? (
-                            <p className="text-emerald-600/60 italic text-sm text-center py-4 bg-white/50 rounded-md">
-                                ยังไม่ได้เพิ่มบริการนวด กรุณาเลือกจากรายการด้านล่าง
+              ) : (
+                <>
+                  <ul className="space-y-2">
+                    {selectedMassages.map((massage, index) => (
+                      <li
+                        key={massage.uniqueId}
+                        className="flex items-center justify-between rounded-2xl border border-emerald-500/10 bg-white/80 p-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
+                            {index + 1}
+                          </span>
+                          <div>
+                            <p className="text-sm font-medium text-emerald-950">
+                              {massage.massage_name}
                             </p>
-                        ) : (
-                            <>
-                                <ul className="space-y-2 mb-4 max-h-[300px] overflow-y-auto pr-2">
-                                    {selectedMassages.map((sm, idx) => (
-                                        <li key={sm.uniqueId} className="flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-emerald-100/50">
-                                            <div className="flex items-center gap-3">
-                                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center">
-                                                    {idx + 1}
-                                                </span>
-                                                <div>
-                                                    <p className="font-medium text-emerald-950">{sm.massage_name}</p>
-                                                    <p className="text-xs text-emerald-600">{sm.massage_time} นาที | ฿{sm.massage_price}</p>
-                                                </div>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => removeMassageFromPackage(sm.uniqueId)}
-                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                            >
-                                                ✕
-                                            </Button>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <div className="border-t border-emerald-200 pt-4 flex justify-between items-end">
-                                    <div className="text-emerald-800">
-                                        <p className="text-sm">ระยะเวลารวม:</p>
-                                        <p className="text-2xl font-bold">{totalTime} <span className="text-base font-normal">นาที</span></p>
-                                    </div>
-                                    <div className="text-emerald-800 text-right">
-                                        <p className="text-sm">มูลค่ารวมแบบเดี่ยว:</p>
-                                        <p className="text-2xl font-bold">฿{totalPriceOfMassages.toLocaleString()}</p>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Available Massages to Pick */}
-                    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 min-w-0">
-                        <div className="flex min-w-0 flex-col gap-4 mb-4">
-                            <h3 className="text-xl font-semibold">บริการนวดที่มีอยู่</h3>
-                            <Input
-                                value={massageSearchTerm}
-                                onChange={(e) => setMassageSearchTerm(e.target.value)}
-                                placeholder="ค้นหาชื่อบริการนวด"
-                                className="w-full min-w-0 font-mitr"
-                            />
+                            <p className="font-sans text-xs text-emerald-800/70">
+                              {massage.massage_time} min | THB {massage.massage_price.toLocaleString()}
+                            </p>
+                          </div>
                         </div>
-                        {loading ? (
-                            <p className="text-gray-500 text-center py-4 font-mitr">กำลังโหลด...</p>
-                        ) : filteredAvailableMassages.length === 0 ? (
-                            <p className="text-gray-500 text-center py-4 font-mitr">ไม่พบบริการนวดที่ตรงกับการค้นหา</p>
-                        ) : (
-                            <div className="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
-                                {filteredAvailableMassages.map((massage) => (
-                                    <div key={massage.massage_id} className="flex min-w-0 justify-between items-center p-3 border rounded-lg hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors">
-                                        <div className="min-w-0">
-                                            <p className="font-medium text-sm">{massage.massage_name}</p>
-                                            <p className="text-xs text-gray-500">{massage.massage_time} นาที | ฿{massage.massage_price}</p>
-                                        </div>
-                                        <Button
-                                            size="sm"
-                                            variant="secondary"
-                                            onClick={() => addMassageToPackage(massage)}
-                                            className="font-mitr"
-                                        >
-                                            + เพิ่ม
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:bg-red-50 hover:text-red-700"
+                          onClick={() => removeMassageFromPackage(massage.uniqueId)}
+                        >
+                          Remove
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="grid grid-cols-2 gap-4 border-t border-emerald-500/15 pt-4">
+                    <div>
+                      <p className="font-sans text-sm text-emerald-800/70">Total duration</p>
+                      <p className="text-2xl text-emerald-950">{totalTime} min</p>
                     </div>
+                    <div className="text-right">
+                      <p className="font-sans text-sm text-emerald-800/70">Service value</p>
+                      <p className="text-2xl text-emerald-950">
+                        THB {totalPriceOfMassages.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+
+          <section className="overflow-hidden rounded-2xl border border-border/40 bg-card/45 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur-sm">
+            <div className="border-b border-border/40 px-5 py-4 md:px-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
+                  <Package2 className="h-5 w-5 text-primary" />
                 </div>
+                <div>
+                  <h2 className="text-xl text-foreground">Available Massages</h2>
+                  <p className="font-sans text-sm text-muted-foreground">
+                    Search and add services to build the package.
+                  </p>
+                </div>
+              </div>
             </div>
 
+            <div className="space-y-4 p-5 md:p-6">
+              <Input
+                value={massageSearchTerm}
+                onChange={(event) => setMassageSearchTerm(event.target.value)}
+                placeholder="Search massage name"
+                className="font-sans"
+              />
+
+              {loading ? (
+                <p className="py-6 text-center font-sans text-sm text-muted-foreground">
+                  Loading massages...
+                </p>
+              ) : filteredAvailableMassages.length === 0 ? (
+                <p className="py-6 text-center font-sans text-sm text-muted-foreground">
+                  No matching massages found.
+                </p>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {filteredAvailableMassages.map((massage) => (
+                    <div
+                      key={massage.massage_id}
+                      className="flex items-center justify-between rounded-2xl border border-border/50 bg-background/75 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {massage.massage_name}
+                        </p>
+                        <p className="font-sans text-xs text-muted-foreground">
+                          {massage.massage_time} min | THB {massage.massage_price.toLocaleString()}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="rounded-full font-sans"
+                        onClick={() => addMassageToPackage(massage)}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
         </div>
-    );
+      </div>
+    </main>
+  );
 }
