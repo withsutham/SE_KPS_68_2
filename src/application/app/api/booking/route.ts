@@ -26,8 +26,8 @@ function autoAssignResources(
       (leave: any) =>
         leave.employee_id === empId &&
         leave.approval_status === "approved" &&
-        new Date(leave.start_dateTime) < endTime &&
-        new Date(leave.end_dateTime) > startTime
+        new Date(leave.start_datetime) < endTime &&
+        new Date(leave.end_datetime) > startTime
     );
     if (isOnLeave) continue;
 
@@ -217,10 +217,10 @@ export async function POST(request: NextRequest) {
         supabase.from("room_massage").select("room_id, massage_id, capacity"),
         supabase
           .from("leave_record")
-          .select("employee_id, start_dateTime, end_dateTime, approval_status")
+          .select("employee_id, start_datetime, end_datetime, approval_status")
           .eq("approval_status", "approved")
-          .lt("start_dateTime", `${dateStr}T23:59:59+07:00`)
-          .gt("end_dateTime", `${dateStr}T00:00:00+07:00`),
+          .lt("start_datetime", `${dateStr}T23:59:59+07:00`)
+          .gt("end_datetime", `${dateStr}T00:00:00+07:00`),
       ]);
 
       let currentStartTime = new Date(startDateTime);
