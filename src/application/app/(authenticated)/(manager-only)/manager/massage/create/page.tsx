@@ -36,7 +36,7 @@ export default function CreateMassagePage() {
     } catch (error) {
       URL.revokeObjectURL(previewUrl);
       setImages([]);
-      setUploadError(error instanceof Error ? error.message : "Failed to upload image");
+      setUploadError(error instanceof Error ? error.message : "อัปโหลดรูปภาพไม่สำเร็จ");
     }
   }
 
@@ -52,7 +52,7 @@ export default function CreateMassagePage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (images.some((image) => image.isUploading)) {
-      setUploadError("Please wait for the image upload to finish.");
+      setUploadError("กรุณารอให้อัปโหลดรูปภาพเสร็จก่อน");
       return;
     }
 
@@ -73,14 +73,14 @@ export default function CreateMassagePage() {
       const json = await res.json();
 
       if (!res.ok || !json.success) {
-        alert(`Create massage failed: ${json.error ?? "Unknown error"}`);
+        alert(`สร้างบริการนวดไม่สำเร็จ: ${json.error ?? "ไม่ทราบสาเหตุ"}`);
         return;
       }
 
       router.push("/manager/massage");
     } catch (error) {
       console.error("Error creating massage:", error);
-      alert("Error while creating massage");
+      alert("เกิดข้อผิดพลาดระหว่างสร้างบริการนวด");
     } finally {
       setSubmitting(false);
     }
@@ -98,8 +98,8 @@ export default function CreateMassagePage() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
             <Sparkles className="h-7 w-7 text-primary" />
           </div>
-          <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">Manager Console</p>
-          <h1 className="text-3xl text-foreground md:text-4xl">Create Massage</h1>
+          <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">ผู้จัดการ · Manager</p>
+          <h1 className="text-3xl text-foreground md:text-4xl">สร้างบริการนวด</h1>
         </header>
 
         <section className="overflow-hidden rounded-2xl border border-border/40 bg-card/45 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur-sm">
@@ -110,12 +110,12 @@ export default function CreateMassagePage() {
                   <ImagePlus className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl text-foreground">Massage Details</h2>
-                  <p className="font-sans text-sm text-muted-foreground">Add service details and upload one cover image.</p>
+                  <h2 className="text-xl text-foreground">รายละเอียดบริการนวด</h2>
+                  <p className="font-sans text-sm text-muted-foreground">กรอกรายละเอียดบริการและอัปโหลดรูปภาพหน้าปก 1 รูป</p>
                 </div>
               </div>
               <Button variant="outline" className="rounded-full font-sans" onClick={() => router.push("/manager/massage")}>
-                Back to list
+                กลับไปหน้ารายการ
               </Button>
             </div>
           </div>
@@ -123,33 +123,33 @@ export default function CreateMassagePage() {
           <div className="p-5 md:p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="massageName">Massage name</Label>
+                <Label htmlFor="massageName">ชื่อบริการนวด</Label>
                 <Input id="massageName" value={massageName} onChange={(e) => setMassageName(e.target.value)} required />
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="massagePrice">Price (THB)</Label>
+                  <Label htmlFor="massagePrice">ราคา (บาท)</Label>
                   <Input id="massagePrice" type="number" min="0" value={massagePrice} onChange={(e) => setMassagePrice(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="massageTime">Duration (minutes)</Label>
+                  <Label htmlFor="massageTime">ระยะเวลา (นาที)</Label>
                   <Input id="massageTime" type="number" min="1" value={massageTime} onChange={(e) => setMassageTime(e.target.value)} required />
                 </div>
               </div>
 
               <div className="space-y-3">
-                <Label>Image</Label>
+                <Label>รูปภาพ</Label>
                 <ImageUploader images={images} maxFiles={1} disabled={submitting} onFilesSelected={handleFilesSelected} onRemove={handleRemoveImage} />
                 {uploadError && <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 font-sans text-sm text-destructive">{uploadError}</p>}
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" className="rounded-full font-sans" onClick={() => router.push("/manager/massage")} disabled={submitting}>
-                  Cancel
+                  ยกเลิก
                 </Button>
                 <Button type="submit" className="rounded-full px-5 font-sans" disabled={submitting}>
-                  {submitting ? "Saving..." : "Create Massage"}
+                  {submitting ? "กำลังบันทึก..." : "สร้างบริการนวด"}
                 </Button>
               </div>
             </form>

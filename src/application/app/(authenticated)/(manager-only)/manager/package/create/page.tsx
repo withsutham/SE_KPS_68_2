@@ -97,7 +97,7 @@ export default function CreatePackagePage() {
     } catch (error) {
       URL.revokeObjectURL(previewUrl);
       setImages([]);
-      setUploadError(error instanceof Error ? error.message : "Failed to upload image");
+      setUploadError(error instanceof Error ? error.message : "อัปโหลดรูปภาพไม่สำเร็จ");
     }
   }
 
@@ -114,7 +114,7 @@ export default function CreatePackagePage() {
     event.preventDefault();
 
     if (images.some((image) => image.isUploading)) {
-      setUploadError("Please wait for the image upload to finish.");
+      setUploadError("กรุณารอให้อัปโหลดรูปภาพเสร็จก่อน");
       return;
     }
 
@@ -137,7 +137,7 @@ export default function CreatePackagePage() {
       const packageJson = await packageRes.json();
 
       if (!packageRes.ok || !packageJson.success) {
-        alert(`Create package failed: ${packageJson.error ?? "Unknown error"}`);
+        alert(`สร้างแพ็กเกจไม่สำเร็จ: ${packageJson.error ?? "ไม่ทราบสาเหตุ"}`);
         return;
       }
 
@@ -157,7 +157,7 @@ export default function CreatePackagePage() {
 
         if (!detailsRes.ok) {
           const detailsJson = await detailsRes.json().catch(() => ({}));
-          alert(`Package created, but adding massages failed: ${detailsJson.error ?? "Unknown error"}`);
+          alert(`สร้างแพ็กเกจแล้ว แต่เพิ่มบริการนวดไม่สำเร็จ: ${detailsJson.error ?? "ไม่ทราบสาเหตุ"}`);
           return;
         }
       }
@@ -165,7 +165,7 @@ export default function CreatePackagePage() {
       router.push("/manager/package");
     } catch (error) {
       console.error("Error saving package:", error);
-      alert("Error while saving package");
+      alert("เกิดข้อผิดพลาดระหว่างบันทึกแพ็กเกจ");
     } finally {
       setSubmitting(false);
     }
@@ -191,9 +191,9 @@ export default function CreatePackagePage() {
             <Sparkles className="h-7 w-7 text-primary" />
           </div>
           <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">
-            Manager Console
+            ผู้จัดการ · Manager
           </p>
-          <h1 className="text-3xl text-foreground md:text-4xl">Create Package</h1>
+          <h1 className="text-3xl text-foreground md:text-4xl">สร้างแพ็กเกจ</h1>
         </header>
 
         <section className="overflow-hidden rounded-2xl border border-border/40 bg-card/45 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur-sm">
@@ -204,9 +204,9 @@ export default function CreatePackagePage() {
                   <ImagePlus className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl text-foreground">Package Details</h2>
+                  <h2 className="text-xl text-foreground">รายละเอียดแพ็กเกจ</h2>
                   <p className="font-sans text-sm text-muted-foreground">
-                    Add package information, campaign timing, and one cover image.
+                    กรอกข้อมูลแพ็กเกจ ช่วงเวลาแคมเปญ และอัปโหลดรูปภาพหน้าปก 1 รูป
                   </p>
                 </div>
               </div>
@@ -215,7 +215,7 @@ export default function CreatePackagePage() {
                 className="rounded-full font-sans"
                 onClick={() => router.push("/manager/package")}
               >
-                Back to list
+                กลับไปหน้ารายการ
               </Button>
             </div>
           </div>
@@ -223,19 +223,19 @@ export default function CreatePackagePage() {
           <div className="p-5 md:p-6">
             <form onSubmit={handleSavePackage} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="packageName">Package name</Label>
+                <Label htmlFor="packageName">ชื่อแพ็กเกจ</Label>
                 <Input
                   id="packageName"
                   value={packageName}
                   onChange={(event) => setPackageName(event.target.value)}
-                  placeholder="Premium Spa Package"
+                  placeholder="แพ็กเกจนวดพรีเมียม"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="packagePrice">Price (THB)</Label>
+                  <Label htmlFor="packagePrice">ราคา (บาท)</Label>
                   <Input
                     id="packagePrice"
                     type="number"
@@ -246,7 +246,7 @@ export default function CreatePackagePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="startDateTime">Campaign start</Label>
+                  <Label htmlFor="startDateTime">วันเริ่มแคมเปญ</Label>
                   <Input
                     id="startDateTime"
                     type="datetime-local"
@@ -255,7 +255,7 @@ export default function CreatePackagePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endDateTime">Campaign end</Label>
+                  <Label htmlFor="endDateTime">วันสิ้นสุดแคมเปญ</Label>
                   <Input
                     id="endDateTime"
                     type="datetime-local"
@@ -266,12 +266,12 @@ export default function CreatePackagePage() {
               </div>
 
               <div className="rounded-2xl border border-border/40 bg-muted/20 px-4 py-3 font-sans text-sm text-muted-foreground">
-                Individual service value: THB {totalPriceOfMassages.toLocaleString()} | Total duration:{" "}
-                {totalTime} minutes
+                มูลค่าบริการรวม: ฿{totalPriceOfMassages.toLocaleString("th-TH")} | ระยะเวลารวม:{" "}
+                {totalTime} นาที
               </div>
 
               <div className="space-y-3">
-                <Label>Image</Label>
+                <Label>รูปภาพ</Label>
                 <ImageUploader
                   images={images}
                   maxFiles={1}
@@ -294,14 +294,14 @@ export default function CreatePackagePage() {
                   onClick={() => router.push("/manager/package")}
                   disabled={submitting}
                 >
-                  Cancel
+                  ยกเลิก
                 </Button>
                 <Button
                   type="submit"
                   className="rounded-full px-5 font-sans"
                   disabled={submitting || selectedMassages.length === 0}
                 >
-                  {submitting ? "Saving..." : "Create Package"}
+                  {submitting ? "กำลังบันทึก..." : "สร้างแพ็กเกจ"}
                 </Button>
               </div>
             </form>
@@ -311,16 +311,16 @@ export default function CreatePackagePage() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
           <section className="overflow-hidden rounded-2xl border border-emerald-500/15 bg-emerald-500/10 shadow-[0_20px_60px_-24px_rgba(16,185,129,0.35)]">
             <div className="border-b border-emerald-500/15 px-5 py-4 md:px-6">
-              <h2 className="text-xl text-emerald-950">Selected Massages</h2>
+              <h2 className="text-xl text-emerald-950">บริการนวดที่เลือก</h2>
               <p className="font-sans text-sm text-emerald-800/80">
-                Review the services included in this package before saving.
+                ตรวจสอบรายการบริการที่รวมในแพ็กเกจก่อนบันทึก
               </p>
             </div>
 
             <div className="space-y-4 p-5 md:p-6">
               {selectedMassages.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-emerald-500/20 bg-white/60 px-4 py-10 text-center font-sans text-sm text-emerald-900/70">
-                  No massages selected yet.
+                  ยังไม่ได้เลือกบริการนวด
                 </div>
               ) : (
                 <>
@@ -339,7 +339,7 @@ export default function CreatePackagePage() {
                               {massage.massage_name}
                             </p>
                             <p className="font-sans text-xs text-emerald-800/70">
-                              {massage.massage_time} min | THB {massage.massage_price.toLocaleString()}
+                              {massage.massage_time} นาที | ฿{massage.massage_price.toLocaleString("th-TH")}
                             </p>
                           </div>
                         </div>
@@ -350,7 +350,7 @@ export default function CreatePackagePage() {
                           className="text-red-500 hover:bg-red-50 hover:text-red-700"
                           onClick={() => removeMassageFromPackage(massage.uniqueId)}
                         >
-                          Remove
+                          นำออก
                         </Button>
                       </li>
                     ))}
@@ -358,13 +358,13 @@ export default function CreatePackagePage() {
 
                   <div className="grid grid-cols-2 gap-4 border-t border-emerald-500/15 pt-4">
                     <div>
-                      <p className="font-sans text-sm text-emerald-800/70">Total duration</p>
-                      <p className="text-2xl text-emerald-950">{totalTime} min</p>
+                      <p className="font-sans text-sm text-emerald-800/70">ระยะเวลารวม</p>
+                      <p className="text-2xl text-emerald-950">{totalTime} นาที</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-sans text-sm text-emerald-800/70">Service value</p>
+                      <p className="font-sans text-sm text-emerald-800/70">มูลค่าบริการรวม</p>
                       <p className="text-2xl text-emerald-950">
-                        THB {totalPriceOfMassages.toLocaleString()}
+                        ฿{totalPriceOfMassages.toLocaleString("th-TH")}
                       </p>
                     </div>
                   </div>
@@ -380,9 +380,9 @@ export default function CreatePackagePage() {
                   <Package2 className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl text-foreground">Available Massages</h2>
+                  <h2 className="text-xl text-foreground">บริการนวดที่มีอยู่</h2>
                   <p className="font-sans text-sm text-muted-foreground">
-                    Search and add services to build the package.
+                    ค้นหาและเลือกบริการนวดเพื่อจัดแพ็กเกจ
                   </p>
                 </div>
               </div>
@@ -392,17 +392,17 @@ export default function CreatePackagePage() {
               <Input
                 value={massageSearchTerm}
                 onChange={(event) => setMassageSearchTerm(event.target.value)}
-                placeholder="Search massage name"
+                placeholder="ค้นหาชื่อบริการนวด"
                 className="font-sans"
               />
 
               {loading ? (
                 <p className="py-6 text-center font-sans text-sm text-muted-foreground">
-                  Loading massages...
+                  กำลังโหลดบริการนวด...
                 </p>
               ) : filteredAvailableMassages.length === 0 ? (
                 <p className="py-6 text-center font-sans text-sm text-muted-foreground">
-                  No matching massages found.
+                  ไม่พบบริการนวดที่ตรงกับการค้นหา
                 </p>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2">
@@ -416,7 +416,7 @@ export default function CreatePackagePage() {
                           {massage.massage_name}
                         </p>
                         <p className="font-sans text-xs text-muted-foreground">
-                          {massage.massage_time} min | THB {massage.massage_price.toLocaleString()}
+                          {massage.massage_time} นาที | ฿{massage.massage_price.toLocaleString("th-TH")}
                         </p>
                       </div>
                       <Button
@@ -426,7 +426,7 @@ export default function CreatePackagePage() {
                         className="rounded-full font-sans"
                         onClick={() => addMassageToPackage(massage)}
                       >
-                        Add
+                        เพิ่ม
                       </Button>
                     </div>
                   ))}

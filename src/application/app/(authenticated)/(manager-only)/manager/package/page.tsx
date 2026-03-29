@@ -104,9 +104,9 @@ function formatCampaignPeriod(startsAt: Date | null, endsAt: Date | null) {
   if (startsAt && endsAt) {
     return `${formatCampaignDateTime(startsAt)} - ${formatCampaignDateTime(endsAt)}`;
   }
-  if (startsAt) return `${formatCampaignDateTime(startsAt)} - No end date`;
-  if (endsAt) return `Immediate - ${formatCampaignDateTime(endsAt)}`;
-  return "No campaign period";
+  if (startsAt) return `${formatCampaignDateTime(startsAt)} - ไม่กำหนดวันสิ้นสุด`;
+  if (endsAt) return `เริ่มทันที - ${formatCampaignDateTime(endsAt)}`;
+  return "ไม่กำหนดช่วงเวลา";
 }
 
 function matchesDateRange(pkg: ViewPackage, dateFrom: string, dateTo: string) {
@@ -126,6 +126,8 @@ function matchesDateRange(pkg: ViewPackage, dateFrom: string, dateTo: string) {
 }
 
 function StatusBadge({ status }: { status: PackageStatus }) {
+  const label =
+    status === "Active" ? "กำลังใช้งาน" : status === "Upcoming" ? "กำลังจะเริ่ม" : "หมดอายุ";
   return (
     <Badge
       variant="outline"
@@ -134,7 +136,7 @@ function StatusBadge({ status }: { status: PackageStatus }) {
         STATUS_STYLE[status],
       )}
     >
-      {status}
+      {label}
     </Badge>
   );
 }
@@ -177,7 +179,7 @@ export default function PackagePage() {
   }
 
   async function deletePackage(id: string) {
-    if (!confirm("Delete this package?")) return;
+    if (!confirm("ต้องการลบแพ็กเกจนี้ใช่หรือไม่?")) return;
 
     try {
       const res = await fetch(`/api/package/${id}`, {
@@ -188,7 +190,7 @@ export default function PackagePage() {
         await fetchPackages();
       } else {
         const errorJson = await res.json();
-        alert(`Failed to delete package: ${errorJson.error}`);
+        alert(`ลบแพ็กเกจไม่สำเร็จ: ${errorJson.error}`);
       }
     } catch (error) {
       console.error("Error deleting package:", error);
@@ -275,23 +277,27 @@ export default function PackagePage() {
       </div>
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 md:px-8 md:py-10">
-        <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
+        <header className="flex flex-col gap-4">
+          <div className="text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
+              <Package2 className="h-7 w-7 text-primary" />
+            </div>
             <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">
-              Manager Console
+              ผู้จัดการ · Manager
             </p>
             <h1 className="font-mitr text-3xl text-foreground md:text-4xl">
-              Package Management
+              จัดการแพ็กเกจ
             </h1>
-            <p className="mt-3 max-w-2xl font-sans text-sm text-muted-foreground md:text-base">
-              Manage package campaigns, preview package images, and review package availability
-              in one professional dashboard table.
+            <p className="mx-auto mt-3 max-w-2xl font-sans text-sm text-muted-foreground md:text-base">
+              จัดการแคมเปญแพ็กเกจ ดูภาพตัวอย่าง และตรวจสอบสถานะการใช้งานในมุมมองเดียวแบบแดชบอร์ดผู้จัดการ
             </p>
           </div>
 
-          <Link href="/manager/package/create">
-            <Button className="rounded-full px-5 font-sans">+ Create Package</Button>
-          </Link>
+          <div className="flex justify-center">
+            <Link href="/manager/package/create">
+              <Button className="rounded-full px-5 font-sans">+ สร้างแพ็กเกจ</Button>
+            </Link>
+          </div>
         </header>
 
         <section className="overflow-hidden rounded-2xl border border-border/40 bg-card/45 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur-sm">
@@ -301,10 +307,9 @@ export default function PackagePage() {
                 <Search className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="font-mitr text-xl text-foreground">Package Filters</h2>
+                <h2 className="font-mitr text-xl text-foreground">ตัวกรองแพ็กเกจ</h2>
                 <p className="font-sans text-sm text-muted-foreground">
-                  Search by package or massage name, filter by campaign status, and narrow results
-                  by date range.
+                  ค้นหาด้วยชื่อแพ็กเกจหรือบริการนวด กรองตามสถานะแคมเปญ และจำกัดผลลัพธ์ด้วยช่วงวันที่
                 </p>
               </div>
             </div>
@@ -313,39 +318,39 @@ export default function PackagePage() {
           <div className="p-5 md:p-6">
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_200px_180px_180px_auto] xl:items-end">
               <div className="space-y-2">
-                <Label htmlFor="package-search">Search package name</Label>
+                <Label htmlFor="package-search">ค้นหาชื่อแพ็กเกจ</Label>
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="package-search"
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Search package or massage"
+                    placeholder="ค้นหาแพ็กเกจหรือบริการนวด"
                     className="h-11 bg-background/75 pl-10 font-sans"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>สถานะ</Label>
                 <Select
                   value={statusFilter}
                   onValueChange={(value) => setStatusFilter(value as StatusFilter)}
                 >
                   <SelectTrigger className="h-11 w-full bg-background/75 font-sans">
-                    <SelectValue placeholder="All" />
+                    <SelectValue placeholder="ทั้งหมด" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="upcoming">Upcoming</SelectItem>
-                    <SelectItem value="expired">Expired</SelectItem>
+                    <SelectItem value="all">ทั้งหมด</SelectItem>
+                    <SelectItem value="active">กำลังใช้งาน</SelectItem>
+                    <SelectItem value="upcoming">กำลังจะเริ่ม</SelectItem>
+                    <SelectItem value="expired">หมดอายุ</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="package-date-from">Date from</Label>
+                <Label htmlFor="package-date-from">วันที่เริ่มต้น</Label>
                 <Input
                   id="package-date-from"
                   type="date"
@@ -356,7 +361,7 @@ export default function PackagePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="package-date-to">Date to</Label>
+                <Label htmlFor="package-date-to">วันที่สิ้นสุด</Label>
                 <Input
                   id="package-date-to"
                   type="date"
@@ -373,7 +378,7 @@ export default function PackagePage() {
                 onClick={resetFilters}
               >
                 <FilterX className="h-4 w-4" />
-                Reset Filter
+                รีเซ็ตตัวกรอง
               </Button>
             </div>
           </div>
@@ -387,10 +392,9 @@ export default function PackagePage() {
                   <Package2 className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="font-mitr text-xl text-foreground">Package Table</h2>
+                  <h2 className="font-mitr text-xl text-foreground">ตารางแพ็กเกจ</h2>
                   <p className="font-sans text-sm text-muted-foreground">
-                    Review package images, availability windows, included massages, and campaign
-                    status in one data table.
+                    ดูรูปแพ็กเกจ ช่วงเวลาแคมเปญ รายการบริการที่รวมอยู่ และสถานะทั้งหมดในตารางเดียว
                   </p>
                 </div>
               </div>
@@ -400,25 +404,25 @@ export default function PackagePage() {
                   variant="outline"
                   className="rounded-full border-border/60 bg-background/60 px-3 py-1 font-sans text-xs text-muted-foreground"
                 >
-                  Total {viewPackages.length}
+                  ทั้งหมด {viewPackages.length}
                 </Badge>
                 <Badge
                   variant="outline"
                   className="rounded-full border-emerald-500/20 bg-emerald-500/10 px-3 py-1 font-sans text-xs text-emerald-700 dark:text-emerald-300"
                 >
-                  Active {activeCount}
+                  กำลังใช้งาน {activeCount}
                 </Badge>
                 <Badge
                   variant="outline"
                   className="rounded-full border-blue-500/20 bg-blue-500/10 px-3 py-1 font-sans text-xs text-blue-700 dark:text-blue-300"
                 >
-                  Upcoming {upcomingCount}
+                  กำลังจะเริ่ม {upcomingCount}
                 </Badge>
                 <Badge
                   variant="outline"
                   className="rounded-full border-slate-500/20 bg-slate-500/10 px-3 py-1 font-sans text-xs text-slate-700 dark:text-slate-300"
                 >
-                  Expired {expiredCount}
+                  หมดอายุ {expiredCount}
                 </Badge>
                 <Button
                   type="button"
@@ -428,7 +432,7 @@ export default function PackagePage() {
                   disabled={loading}
                 >
                   <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-                  Refresh
+                  รีเฟรช
                 </Button>
               </div>
             </div>
@@ -436,33 +440,33 @@ export default function PackagePage() {
 
           <div className="overflow-hidden rounded-b-2xl border-t border-border/30 bg-background/55">
             {loading ? (
-              <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <p className="font-sans text-sm text-muted-foreground">Loading packages...</p>
-              </div>
-            ) : filteredPackages.length === 0 ? (
-              <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-                <Package2 className="h-10 w-10 text-primary/50" />
-                <div>
-                  <p className="font-mitr text-base text-foreground">No packages found</p>
-                  <p className="font-sans text-sm text-muted-foreground">
-                    Try adjusting your filters or create a new package.
-                  </p>
+                <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <p className="font-sans text-sm text-muted-foreground">กำลังโหลดแพ็กเกจ...</p>
                 </div>
-              </div>
+              ) : filteredPackages.length === 0 ? (
+                <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+                  <Package2 className="h-10 w-10 text-primary/50" />
+                  <div>
+                    <p className="font-mitr text-base text-foreground">ไม่พบแพ็กเกจ</p>
+                    <p className="font-sans text-sm text-muted-foreground">
+                      ลองปรับตัวกรองหรือสร้างแพ็กเกจใหม่
+                    </p>
+                  </div>
+                </div>
             ) : (
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[1200px] text-left">
                     <thead className="border-b border-border/40 bg-muted/25">
                       <tr className="font-sans text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                        <th className="px-6 py-4 font-semibold">Image</th>
-                        <th className="px-6 py-4 font-semibold">Package</th>
-                        <th className="px-6 py-4 font-semibold">Status</th>
-                        <th className="px-6 py-4 font-semibold">Price</th>
-                        <th className="px-6 py-4 font-semibold">Included Massage</th>
-                        <th className="px-6 py-4 font-semibold">Campaign Period</th>
-                        <th className="px-6 py-4 text-right font-semibold">Actions</th>
+                        <th className="px-6 py-4 font-semibold">รูปภาพ</th>
+                        <th className="px-6 py-4 font-semibold">แพ็กเกจ</th>
+                        <th className="px-6 py-4 font-semibold">สถานะ</th>
+                        <th className="px-6 py-4 font-semibold">ราคา</th>
+                        <th className="px-6 py-4 font-semibold">บริการที่รวม</th>
+                        <th className="px-6 py-4 font-semibold">ช่วงเวลาแคมเปญ</th>
+                        <th className="px-6 py-4 text-right font-semibold">จัดการ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/35">
@@ -482,7 +486,7 @@ export default function PackagePage() {
                                   })
                                 }
                                 className="group block rounded-2xl border border-border/50 bg-background/80 p-1 transition hover:border-primary/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                aria-label={`Preview ${pkg.package_name} image`}
+                                aria-label={`ดูภาพ ${pkg.package_name}`}
                               >
                                 <img
                                   src={pkg.image_src}
@@ -511,7 +515,7 @@ export default function PackagePage() {
                                 </Badge>
                               </div>
                               <p className="font-sans text-xs text-muted-foreground">
-                                {pkg.image_src ? "Click image to preview larger" : "No image uploaded"}
+                                {pkg.image_src ? "กดรูปเพื่อดูภาพขนาดใหญ่" : "ยังไม่มีรูปภาพ"}
                               </p>
                             </div>
                           </td>
@@ -522,10 +526,10 @@ export default function PackagePage() {
 
                           <td className="px-6 py-4 align-top">
                             <p className="font-mitr text-base font-semibold text-emerald-600">
-                              THB {Number(pkg.package_price).toLocaleString()}
+                              ฿{Number(pkg.package_price).toLocaleString("th-TH")}
                             </p>
                             <p className="font-sans text-xs text-muted-foreground">
-                              Package price
+                              ราคาแพ็กเกจ
                             </p>
                           </td>
 
@@ -536,9 +540,9 @@ export default function PackagePage() {
                                   <li key={`${pkg.package_id}-${index}`} className="flex gap-2">
                                     <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/50" />
                                     <span>
-                                      {detail.massage?.massage_name ?? "Unknown massage"}
+                                      {detail.massage?.massage_name ?? "ไม่ทราบชื่อบริการ"}
                                       <span className="ml-1 text-xs text-muted-foreground/80">
-                                        ({detail.massage?.massage_time ?? 0} min)
+                                        ({detail.massage?.massage_time ?? 0} นาที)
                                       </span>
                                     </span>
                                   </li>
@@ -546,7 +550,7 @@ export default function PackagePage() {
                               </ul>
                             ) : (
                               <span className="font-sans text-sm italic text-muted-foreground">
-                                No massages added
+                                ยังไม่ได้เพิ่มบริการนวด
                               </span>
                             )}
                           </td>
@@ -568,7 +572,7 @@ export default function PackagePage() {
                                   className="rounded-full font-sans"
                                 >
                                   <Edit3 className="h-4 w-4" />
-                                  Edit
+                                  แก้ไข
                                 </Button>
                               </Link>
                               <Button
@@ -579,7 +583,7 @@ export default function PackagePage() {
                                 onClick={() => void deletePackage(pkg.package_id)}
                               >
                                 <Trash2 className="h-4 w-4" />
-                                Delete
+                                ลบ
                               </Button>
                             </div>
                           </td>
@@ -599,6 +603,13 @@ export default function PackagePage() {
                   totalPages={totalPages}
                   onPageChange={(nextPage) => setCurrentPage(nextPage)}
                   onRowsPerPageChange={(value) => setRowsPerPage(value as RowsPerPage)}
+                  labels={{
+                    showing: "แสดง",
+                    of: "จาก",
+                    items: "รายการ",
+                    rowsPerPage: "จำนวนต่อหน้า:",
+                    all: "ทั้งหมด",
+                  }}
                 />
               </>
             )}

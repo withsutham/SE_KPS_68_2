@@ -24,6 +24,13 @@ type DataTablePaginationProps = {
   totalPages: number;
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (value: string) => void;
+  labels?: {
+    showing?: string;
+    of?: string;
+    items?: string;
+    rowsPerPage?: string;
+    all?: string;
+  };
 };
 
 function pageWindow(totalPages: number, currentPage: number) {
@@ -42,13 +49,19 @@ export function DataTablePagination({
   totalPages,
   onPageChange,
   onRowsPerPageChange,
+  labels,
 }: DataTablePaginationProps) {
   const pages = pageWindow(totalPages, currentPage);
+  const showingLabel = labels?.showing ?? "Showing";
+  const ofLabel = labels?.of ?? "of";
+  const itemsLabel = labels?.items ?? "items";
+  const rowsPerPageLabel = labels?.rowsPerPage ?? "Rows per page:";
+  const allLabel = labels?.all ?? "All";
 
   return (
     <div className="flex flex-col gap-4 border-t border-border/40 bg-muted/15 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
       <p className="font-sans text-sm text-muted-foreground lg:w-60">
-        Showing {showingFrom}-{showingTo} of {totalItems} items
+        {showingLabel} {showingFrom}-{showingTo} {ofLabel} {totalItems} {itemsLabel}
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-1 lg:flex-1">
@@ -90,7 +103,7 @@ export function DataTablePagination({
       </div>
 
       <div className="flex items-center gap-3 lg:w-60 lg:justify-end">
-        <span className="font-sans text-sm text-muted-foreground">Rows per page:</span>
+        <span className="font-sans text-sm text-muted-foreground">{rowsPerPageLabel}</span>
         <Select value={rowsPerPage} onValueChange={onRowsPerPageChange}>
           <SelectTrigger className="h-9 w-[96px] rounded-full bg-background font-sans">
             <SelectValue placeholder="10" />
@@ -98,7 +111,7 @@ export function DataTablePagination({
           <SelectContent>
             {pageOptions.map((option) => (
               <SelectItem key={option} value={option} className="font-sans">
-                {option === "all" ? "All" : option}
+                {option === "all" ? allLabel : option}
               </SelectItem>
             ))}
           </SelectContent>

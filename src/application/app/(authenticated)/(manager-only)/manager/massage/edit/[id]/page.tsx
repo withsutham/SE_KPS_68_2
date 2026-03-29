@@ -39,7 +39,7 @@ export default function EditMassagePage({ params }: { params: Promise<{ id: stri
         const json = await res.json();
 
         if (!res.ok || !json.success || !json.data) {
-          alert(`Load massage failed: ${json.error ?? "Not found"}`);
+          alert(`โหลดบริการนวดไม่สำเร็จ: ${json.error ?? "ไม่พบข้อมูล"}`);
           router.push("/manager/massage");
           return;
         }
@@ -50,12 +50,12 @@ export default function EditMassagePage({ params }: { params: Promise<{ id: stri
         setMassageTime(String(massage.massage_time ?? ""));
         setImages(
           massage.image_src
-            ? [{ id: massage.image_src, name: massage.massage_name || "Massage image", url: massage.image_src }]
+            ? [{ id: massage.image_src, name: massage.massage_name || "รูปบริการนวด", url: massage.image_src }]
             : [],
         );
       } catch (error) {
         console.error("Error fetching massage:", error);
-        alert("Error while loading massage");
+        alert("เกิดข้อผิดพลาดระหว่างโหลดบริการนวด");
         router.push("/manager/massage");
       } finally {
         setLoading(false);
@@ -81,7 +81,7 @@ export default function EditMassagePage({ params }: { params: Promise<{ id: stri
     } catch (error) {
       URL.revokeObjectURL(previewUrl);
       setImages([]);
-      setUploadError(error instanceof Error ? error.message : "Failed to upload image");
+      setUploadError(error instanceof Error ? error.message : "อัปโหลดรูปภาพไม่สำเร็จ");
     }
   }
 
@@ -97,7 +97,7 @@ export default function EditMassagePage({ params }: { params: Promise<{ id: stri
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (images.some((image) => image.isUploading)) {
-      setUploadError("Please wait for the image upload to finish.");
+      setUploadError("กรุณารอให้อัปโหลดรูปภาพเสร็จก่อน");
       return;
     }
 
@@ -118,21 +118,21 @@ export default function EditMassagePage({ params }: { params: Promise<{ id: stri
       const json = await res.json();
 
       if (!res.ok || !json.success) {
-        alert(`Update massage failed: ${json.error ?? "Unknown error"}`);
+        alert(`อัปเดตบริการนวดไม่สำเร็จ: ${json.error ?? "ไม่ทราบสาเหตุ"}`);
         return;
       }
 
       router.push("/manager/massage");
     } catch (error) {
       console.error("Error updating massage:", error);
-      alert("Error while updating massage");
+      alert("เกิดข้อผิดพลาดระหว่างอัปเดตบริการนวด");
     } finally {
       setSubmitting(false);
     }
   }
 
   if (loading) {
-    return <div className="p-8 text-center font-mitr text-muted-foreground">Loading massage...</div>;
+    return <div className="p-8 text-center font-mitr text-muted-foreground">กำลังโหลดบริการนวด...</div>;
   }
 
   return (
@@ -147,8 +147,8 @@ export default function EditMassagePage({ params }: { params: Promise<{ id: stri
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
             <PencilLine className="h-7 w-7 text-primary" />
           </div>
-          <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">Manager Console</p>
-          <h1 className="text-3xl text-foreground md:text-4xl">Edit Massage</h1>
+          <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">ผู้จัดการ · Manager</p>
+          <h1 className="text-3xl text-foreground md:text-4xl">แก้ไขบริการนวด</h1>
         </header>
 
         <section className="overflow-hidden rounded-2xl border border-border/40 bg-card/45 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur-sm">
@@ -159,12 +159,12 @@ export default function EditMassagePage({ params }: { params: Promise<{ id: stri
                   <ImagePlus className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl text-foreground">Massage Details</h2>
-                  <p className="font-sans text-sm text-muted-foreground">Update service details and replace the cover image if needed.</p>
+                  <h2 className="text-xl text-foreground">รายละเอียดบริการนวด</h2>
+                  <p className="font-sans text-sm text-muted-foreground">แก้ไขข้อมูลบริการและเปลี่ยนรูปภาพหน้าปกได้ตามต้องการ</p>
                 </div>
               </div>
               <Button variant="outline" className="rounded-full font-sans" onClick={() => router.push("/manager/massage")}>
-                Back to list
+                กลับไปหน้ารายการ
               </Button>
             </div>
           </div>
@@ -172,33 +172,33 @@ export default function EditMassagePage({ params }: { params: Promise<{ id: stri
           <div className="p-5 md:p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="massageName">Massage name</Label>
+                <Label htmlFor="massageName">ชื่อบริการนวด</Label>
                 <Input id="massageName" value={massageName} onChange={(e) => setMassageName(e.target.value)} required />
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="massagePrice">Price (THB)</Label>
+                  <Label htmlFor="massagePrice">ราคา (บาท)</Label>
                   <Input id="massagePrice" type="number" min="0" value={massagePrice} onChange={(e) => setMassagePrice(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="massageTime">Duration (minutes)</Label>
+                  <Label htmlFor="massageTime">ระยะเวลา (นาที)</Label>
                   <Input id="massageTime" type="number" min="1" value={massageTime} onChange={(e) => setMassageTime(e.target.value)} required />
                 </div>
               </div>
 
               <div className="space-y-3">
-                <Label>Image</Label>
+                <Label>รูปภาพ</Label>
                 <ImageUploader images={images} maxFiles={1} disabled={submitting} onFilesSelected={handleFilesSelected} onRemove={handleRemoveImage} />
                 {uploadError && <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 font-sans text-sm text-destructive">{uploadError}</p>}
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" className="rounded-full font-sans" onClick={() => router.push("/manager/massage")} disabled={submitting}>
-                  Cancel
+                  ยกเลิก
                 </Button>
                 <Button type="submit" className="rounded-full px-5 font-sans" disabled={submitting}>
-                  {submitting ? "Saving..." : "Save Changes"}
+                  {submitting ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
                 </Button>
               </div>
             </form>

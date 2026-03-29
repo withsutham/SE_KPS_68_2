@@ -86,7 +86,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
         }
 
         if (!packageRes.ok || !packageJson.success || !packageJson.data) {
-          alert(`Load package failed: ${packageJson.error ?? "Not found"}`);
+          alert(`โหลดแพ็กเกจไม่สำเร็จ: ${packageJson.error ?? "ไม่พบข้อมูล"}`);
           router.push("/manager/package");
           return;
         }
@@ -98,7 +98,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
         setEndDateTime(toLocalInput(pkg.campaign_end_datetime));
         setImages(
           pkg.image_src
-            ? [{ id: pkg.image_src, name: pkg.package_name || "Package image", url: pkg.image_src }]
+            ? [{ id: pkg.image_src, name: pkg.package_name || "รูปแพ็กเกจ", url: pkg.image_src }]
             : [],
         );
 
@@ -113,7 +113,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
         setSelectedMassages(loadedMassages);
       } catch (error) {
         console.error("Error fetching initial data:", error);
-        alert("Error while loading package");
+        alert("เกิดข้อผิดพลาดระหว่างโหลดแพ็กเกจ");
         router.push("/manager/package");
       } finally {
         setLoading(false);
@@ -151,7 +151,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
     } catch (error) {
       URL.revokeObjectURL(previewUrl);
       setImages([]);
-      setUploadError(error instanceof Error ? error.message : "Failed to upload image");
+      setUploadError(error instanceof Error ? error.message : "อัปโหลดรูปภาพไม่สำเร็จ");
     }
   }
 
@@ -168,7 +168,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
     event.preventDefault();
 
     if (images.some((image) => image.isUploading)) {
-      setUploadError("Please wait for the image upload to finish.");
+      setUploadError("กรุณารอให้อัปโหลดรูปภาพเสร็จก่อน");
       return;
     }
 
@@ -191,7 +191,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
       const packageJson = await packageRes.json().catch(() => ({}));
 
       if (!packageRes.ok) {
-        alert(`Update package failed: ${packageJson.error ?? "Unknown error"}`);
+        alert(`อัปเดตแพ็กเกจไม่สำเร็จ: ${packageJson.error ?? "ไม่ทราบสาเหตุ"}`);
         return;
       }
 
@@ -201,7 +201,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
       const deleteDetailsJson = await deleteDetailsRes.json().catch(() => ({}));
 
       if (!deleteDetailsRes.ok) {
-        alert(`Failed to refresh package services: ${deleteDetailsJson.error ?? "Unknown error"}`);
+        alert(`รีเซ็ตรายการบริการในแพ็กเกจไม่สำเร็จ: ${deleteDetailsJson.error ?? "ไม่ทราบสาเหตุ"}`);
         return;
       }
 
@@ -219,7 +219,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
         const detailsJson = await detailsRes.json().catch(() => ({}));
 
         if (!detailsRes.ok) {
-          alert(`Failed to update package services: ${detailsJson.error ?? "Unknown error"}`);
+          alert(`อัปเดตรายการบริการในแพ็กเกจไม่สำเร็จ: ${detailsJson.error ?? "ไม่ทราบสาเหตุ"}`);
           return;
         }
       }
@@ -227,7 +227,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
       router.push("/manager/package");
     } catch (error) {
       console.error("Error updating package:", error);
-      alert("Error while updating package");
+      alert("เกิดข้อผิดพลาดระหว่างอัปเดตแพ็กเกจ");
     } finally {
       setSubmitting(false);
     }
@@ -241,7 +241,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
   );
 
   if (loading) {
-    return <div className="p-8 text-center font-mitr text-muted-foreground">Loading package...</div>;
+    return <div className="p-8 text-center font-mitr text-muted-foreground">กำลังโหลดแพ็กเกจ...</div>;
   }
 
   return (
@@ -257,9 +257,9 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
             <PencilLine className="h-7 w-7 text-primary" />
           </div>
           <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">
-            Manager Console
+            ผู้จัดการ · Manager
           </p>
-          <h1 className="text-3xl text-foreground md:text-4xl">Edit Package</h1>
+          <h1 className="text-3xl text-foreground md:text-4xl">แก้ไขแพ็กเกจ</h1>
         </header>
 
         <section className="overflow-hidden rounded-2xl border border-border/40 bg-card/45 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur-sm">
@@ -270,9 +270,9 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                   <ImagePlus className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl text-foreground">Package Details</h2>
+                  <h2 className="text-xl text-foreground">รายละเอียดแพ็กเกจ</h2>
                   <p className="font-sans text-sm text-muted-foreground">
-                    Update package information, campaign timing, and the cover image.
+                    แก้ไขข้อมูลแพ็กเกจ ช่วงเวลาแคมเปญ และรูปภาพหน้าปก
                   </p>
                 </div>
               </div>
@@ -281,7 +281,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                 className="rounded-full font-sans"
                 onClick={() => router.push("/manager/package")}
               >
-                Back to list
+                กลับไปหน้ารายการ
               </Button>
             </div>
           </div>
@@ -289,19 +289,19 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
           <div className="p-5 md:p-6">
             <form onSubmit={handleSavePackage} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="packageName">Package name</Label>
+                <Label htmlFor="packageName">ชื่อแพ็กเกจ</Label>
                 <Input
                   id="packageName"
                   value={packageName}
                   onChange={(event) => setPackageName(event.target.value)}
-                  placeholder="Premium Spa Package"
+                  placeholder="แพ็กเกจนวดพรีเมียม"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="packagePrice">Price (THB)</Label>
+                  <Label htmlFor="packagePrice">ราคา (บาท)</Label>
                   <Input
                     id="packagePrice"
                     type="number"
@@ -312,7 +312,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="startDateTime">Campaign start</Label>
+                  <Label htmlFor="startDateTime">วันเริ่มแคมเปญ</Label>
                   <Input
                     id="startDateTime"
                     type="datetime-local"
@@ -321,7 +321,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endDateTime">Campaign end</Label>
+                  <Label htmlFor="endDateTime">วันสิ้นสุดแคมเปญ</Label>
                   <Input
                     id="endDateTime"
                     type="datetime-local"
@@ -332,12 +332,12 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
               </div>
 
               <div className="rounded-2xl border border-border/40 bg-muted/20 px-4 py-3 font-sans text-sm text-muted-foreground">
-                Individual service value: THB {totalPriceOfMassages.toLocaleString()} | Total duration:{" "}
-                {totalTime} minutes
+                มูลค่าบริการรวม: ฿{totalPriceOfMassages.toLocaleString("th-TH")} | ระยะเวลารวม:{" "}
+                {totalTime} นาที
               </div>
 
               <div className="space-y-3">
-                <Label>Image</Label>
+                <Label>รูปภาพ</Label>
                 <ImageUploader
                   images={images}
                   maxFiles={1}
@@ -360,10 +360,10 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                   onClick={() => router.push("/manager/package")}
                   disabled={submitting}
                 >
-                  Cancel
+                  ยกเลิก
                 </Button>
                 <Button type="submit" className="rounded-full px-5 font-sans" disabled={submitting}>
-                  {submitting ? "Saving..." : "Save Changes"}
+                  {submitting ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
                 </Button>
               </div>
             </form>
@@ -373,16 +373,16 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
           <section className="overflow-hidden rounded-2xl border border-emerald-500/15 bg-emerald-500/10 shadow-[0_20px_60px_-24px_rgba(16,185,129,0.35)]">
             <div className="border-b border-emerald-500/15 px-5 py-4 md:px-6">
-              <h2 className="text-xl text-emerald-950">Selected Massages</h2>
+              <h2 className="text-xl text-emerald-950">บริการนวดที่เลือก</h2>
               <p className="font-sans text-sm text-emerald-800/80">
-                Review the services currently included in this package.
+                ตรวจสอบรายการบริการที่อยู่ในแพ็กเกจนี้
               </p>
             </div>
 
             <div className="space-y-4 p-5 md:p-6">
               {selectedMassages.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-emerald-500/20 bg-white/60 px-4 py-10 text-center font-sans text-sm text-emerald-900/70">
-                  No massages selected yet.
+                  ยังไม่ได้เลือกบริการนวด
                 </div>
               ) : (
                 <>
@@ -401,7 +401,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                               {massage.massage_name}
                             </p>
                             <p className="font-sans text-xs text-emerald-800/70">
-                              {massage.massage_time} min | THB {massage.massage_price.toLocaleString()}
+                              {massage.massage_time} นาที | ฿{massage.massage_price.toLocaleString("th-TH")}
                             </p>
                           </div>
                         </div>
@@ -412,7 +412,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                           className="text-red-500 hover:bg-red-50 hover:text-red-700"
                           onClick={() => removeMassageFromPackage(massage.uniqueId)}
                         >
-                          Remove
+                          นำออก
                         </Button>
                       </li>
                     ))}
@@ -420,13 +420,13 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
 
                   <div className="grid grid-cols-2 gap-4 border-t border-emerald-500/15 pt-4">
                     <div>
-                      <p className="font-sans text-sm text-emerald-800/70">Total duration</p>
-                      <p className="text-2xl text-emerald-950">{totalTime} min</p>
+                      <p className="font-sans text-sm text-emerald-800/70">ระยะเวลารวม</p>
+                      <p className="text-2xl text-emerald-950">{totalTime} นาที</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-sans text-sm text-emerald-800/70">Service value</p>
+                      <p className="font-sans text-sm text-emerald-800/70">มูลค่าบริการรวม</p>
                       <p className="text-2xl text-emerald-950">
-                        THB {totalPriceOfMassages.toLocaleString()}
+                        ฿{totalPriceOfMassages.toLocaleString("th-TH")}
                       </p>
                     </div>
                   </div>
@@ -442,9 +442,9 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                   <Package2 className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl text-foreground">Available Massages</h2>
+                  <h2 className="text-xl text-foreground">บริการนวดที่มีอยู่</h2>
                   <p className="font-sans text-sm text-muted-foreground">
-                    Search and adjust the service list for this package.
+                    ค้นหาและปรับรายการบริการนวดในแพ็กเกจนี้
                   </p>
                 </div>
               </div>
@@ -454,13 +454,13 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
               <Input
                 value={massageSearchTerm}
                 onChange={(event) => setMassageSearchTerm(event.target.value)}
-                placeholder="Search massage name"
+                placeholder="ค้นหาชื่อบริการนวด"
                 className="font-sans"
               />
 
               {filteredAvailableMassages.length === 0 ? (
                 <p className="py-6 text-center font-sans text-sm text-muted-foreground">
-                  No matching massages found.
+                  ไม่พบบริการนวดที่ตรงกับการค้นหา
                 </p>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2">
@@ -474,7 +474,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                           {massage.massage_name}
                         </p>
                         <p className="font-sans text-xs text-muted-foreground">
-                          {massage.massage_time} min | THB {massage.massage_price.toLocaleString()}
+                          {massage.massage_time} นาที | ฿{massage.massage_price.toLocaleString("th-TH")}
                         </p>
                       </div>
                       <Button
@@ -484,7 +484,7 @@ export default function EditPackagePage({ params }: { params: Promise<{ id: stri
                         className="rounded-full font-sans"
                         onClick={() => addMassageToPackage(massage)}
                       >
-                        Add
+                        เพิ่ม
                       </Button>
                     </div>
                   ))}

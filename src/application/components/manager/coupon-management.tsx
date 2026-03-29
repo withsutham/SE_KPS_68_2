@@ -99,14 +99,13 @@ function getStatus(coupon: Coupon, now = new Date()): CouponStatus {
 }
 
 function formatDateTime(date: Date | null) {
-  if (!date) return "Not set";
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  if (!date) return "ไม่กำหนด";
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear() + 543;
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${day}/${month}/${year}, ${hours}:${minutes}`;
 }
 
 function toLocalInput(value?: string | null) {
@@ -171,6 +170,7 @@ function Panel({
 }
 
 function StatusChip({ status }: { status: CouponStatus }) {
+  const label = status === "Active" ? "กำลังใช้งาน" : "หมดอายุ";
   return (
     <Badge
       variant="outline"
@@ -179,7 +179,7 @@ function StatusChip({ status }: { status: CouponStatus }) {
         STATUS_STYLE[status],
       )}
     >
-      {status}
+      {label}
     </Badge>
   );
 }
@@ -215,10 +215,10 @@ export function CouponManagement() {
     try {
       const response = await fetch("/api/coupon?show_all=true", { cache: "no-store" });
       const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.error || "Failed to load coupons");
+      if (!response.ok || !result.success) throw new Error(result.error || "โหลดคูปองไม่สำเร็จ");
       setCoupons(Array.isArray(result.data) ? result.data : []);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to load coupons");
+      setErrorMessage(error instanceof Error ? error.message : "โหลดคูปองไม่สำเร็จ");
     } finally {
       setIsLoading(false);
     }
@@ -260,10 +260,10 @@ export function CouponManagement() {
       const coupon_name = form.coupon_name.trim();
       const discountText = form.discount_percent.trim();
       const discount_percent = Number(discountText);
-      if (!coupon_name) throw new Error("Coupon name is required");
-      if (!discountText) throw new Error("Discount percentage is required");
+      if (!coupon_name) throw new Error("กรุณากรอกชื่อคูปอง");
+      if (!discountText) throw new Error("กรุณากรอกเปอร์เซ็นต์ส่วนลด");
       if (Number.isNaN(discount_percent) || discount_percent < 0 || discount_percent > 100) {
-        throw new Error("Discount percentage must be between 0 and 100");
+        throw new Error("เปอร์เซ็นต์ส่วนลดต้องอยู่ระหว่าง 0 ถึง 100");
       }
       const payload = {
         coupon_name,
@@ -277,31 +277,31 @@ export function CouponManagement() {
         body: JSON.stringify(payload),
       });
       const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.error || "Failed to save coupon");
-      setSuccessMessage(editingCoupon ? "Coupon updated successfully" : "Coupon created successfully");
+      if (!response.ok || !result.success) throw new Error(result.error || "บันทึกคูปองไม่สำเร็จ");
+      setSuccessMessage(editingCoupon ? "อัปเดตคูปองเรียบร้อยแล้ว" : "สร้างคูปองเรียบร้อยแล้ว");
       resetForm();
       await loadCoupons();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to save coupon");
+      setErrorMessage(error instanceof Error ? error.message : "บันทึกคูปองไม่สำเร็จ");
     } finally {
       setIsSaving(false);
     }
   }
 
   async function handleDelete(coupon: Coupon) {
-    if (!window.confirm(`Delete coupon "${coupon.coupon_name}"?`)) return;
+    if (!window.confirm(`ต้องการลบคูปอง "${coupon.coupon_name}" ใช่หรือไม่?`)) return;
     setDeleteId(coupon.coupon_id);
     setErrorMessage(null);
     setSuccessMessage(null);
     try {
       const response = await fetch(`/api/coupon/${coupon.coupon_id}`, { method: "DELETE" });
       const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.error || "Failed to delete coupon");
+      if (!response.ok || !result.success) throw new Error(result.error || "ลบคูปองไม่สำเร็จ");
       if (editingCoupon?.coupon_id === coupon.coupon_id) resetForm();
-      setSuccessMessage("Coupon deleted successfully");
+      setSuccessMessage("ลบคูปองเรียบร้อยแล้ว");
       await loadCoupons();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to delete coupon");
+      setErrorMessage(error instanceof Error ? error.message : "ลบคูปองไม่สำเร็จ");
     } finally {
       setDeleteId(null);
     }
@@ -363,10 +363,10 @@ export function CouponManagement() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
             <TicketPercent className="h-7 w-7 text-primary" />
           </div>
-          <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">Manager Console</p>
-          <h1 className="font-mitr text-3xl text-foreground md:text-4xl">Coupon Management</h1>
+          <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">ผู้จัดการ · Manager</p>
+          <h1 className="font-mitr text-3xl text-foreground md:text-4xl">จัดการคูปอง</h1>
           <p className="mx-auto mt-3 max-w-2xl font-sans text-sm text-muted-foreground md:text-base">
-            A manager-style dashboard for creating coupons, filtering records, and keeping expired items visible.
+            สร้างคูปอง กรองข้อมูล และติดตามคูปองที่หมดอายุแล้วได้ในมุมมองเดียวแบบแดชบอร์ดผู้จัดการ
           </p>
         </header>
 
@@ -385,8 +385,8 @@ export function CouponManagement() {
 
         <div ref={formRef}>
           <Panel
-            title="Create Coupon"
-            subtitle="Insert coupon data immediately at the top of the page, or load a row here to edit it."
+            title="สร้างคูปอง"
+            subtitle="กรอกข้อมูลคูปองได้ทันทีด้านบน หรือเลือกแถวจากตารางเพื่อแก้ไข"
             icon={Tag}
             actions={
               <Badge
@@ -398,25 +398,25 @@ export function CouponManagement() {
                     : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
                 )}
               >
-                {editingCoupon ? `Editing #${editingCoupon.coupon_id}` : "Ready to publish"}
+                {editingCoupon ? `กำลังแก้ไข #${editingCoupon.coupon_id}` : "พร้อมใช้งาน"}
               </Badge>
             }
           >
             <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_220px_240px]">
                 <div className="space-y-2">
-                  <Label htmlFor="coupon_name">Coupon name</Label>
+                  <Label htmlFor="coupon_name">ชื่อคูปอง</Label>
                   <Input
                     id="coupon_name"
                     value={form.coupon_name}
                     onChange={(event) => setForm((current) => ({ ...current, coupon_name: event.target.value }))}
-                    placeholder="Summer Wellness 15%"
+                    placeholder="คูปองนวดผ่อนคลาย 15%"
                     className="h-11 bg-background/75 font-sans"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="discount_percent">Discount %</Label>
+                  <Label htmlFor="discount_percent">ส่วนลด (%)</Label>
                   <Input
                     id="discount_percent"
                     type="number"
@@ -431,7 +431,7 @@ export function CouponManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="collect_deadline">Collect deadline</Label>
+                  <Label htmlFor="collect_deadline">วันสิ้นสุดคูปอง</Label>
                   <Input
                     id="collect_deadline"
                     type="datetime-local"
@@ -444,32 +444,32 @@ export function CouponManagement() {
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">รายละเอียด</Label>
                   <textarea
                     id="description"
                     rows={4}
                     value={form.description}
                     onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-                    placeholder="Add campaign details or coupon notes."
+                    placeholder="เพิ่มรายละเอียดแคมเปญหรือหมายเหตุของคูปอง"
                     className="flex min-h-[120px] w-full rounded-xl border border-border/60 bg-background/75 px-3 py-2.5 font-sans text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                   />
                 </div>
                 <div className="flex flex-wrap gap-2 xl:justify-end">
                   {editingCoupon && (
                     <Button type="button" variant="outline" className="rounded-full font-sans" onClick={resetForm}>
-                      Cancel edit
+                      ยกเลิกการแก้ไข
                     </Button>
                   )}
                   <Button type="button" variant="outline" className="rounded-full font-sans" onClick={resetForm}>
-                    Clear form
+                    ล้างฟอร์ม
                   </Button>
                   <Button type="submit" disabled={isSaving} className="rounded-full px-5 font-sans">
                     {isSaving ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Saving...
+                        กำลังบันทึก...
                       </>
-                    ) : editingCoupon ? "Update Coupon" : "Create Coupon"}
+                    ) : editingCoupon ? "บันทึกการแก้ไข" : "สร้างคูปอง"}
                   </Button>
                 </div>
               </div>
@@ -478,7 +478,7 @@ export function CouponManagement() {
         </div>
         <div>
           <Panel
-            title="Coupon Filters"
+            title="ตัวกรองคูปอง"
             subtitle=""
             icon={Search}
           >
@@ -489,29 +489,29 @@ export function CouponManagement() {
   grid-cols-[1fr_1fr_1fr_auto]
 ">
                 <div className="space-y-2">
-                  <Label htmlFor="coupon-search">Search by coupon name</Label>
+                  <Label htmlFor="coupon-search">ค้นหาชื่อคูปอง</Label>
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="coupon-search"
                       value={searchQuery}
                       onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder="Search coupons"
+                      placeholder="ค้นหาคูปอง"
                       className="h-11 bg-background/75 pl-10 font-sans"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Status</Label>
+                  <Label>สถานะ</Label>
                   <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
                     <SelectTrigger className="h-11 w-full bg-background/75 font-sans">
-                      <SelectValue placeholder="All" />
+                      <SelectValue placeholder="ทั้งหมด" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="all">ทั้งหมด</SelectItem>
+                      <SelectItem value="active">กำลังใช้งาน</SelectItem>
                       {/* <SelectItem value="upcoming">Upcoming</SelectItem> */}
-                      <SelectItem value="expired">Expired</SelectItem>
+                      <SelectItem value="expired">หมดอายุ</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -526,7 +526,7 @@ export function CouponManagement() {
                   />
                 </div> */}
                 <div className="space-y-2">
-                  <Label htmlFor="date-to">Date to</Label>
+                  <Label htmlFor="date-to">วันที่สิ้นสุด</Label>
                   <Input
                     id="date-to"
                     type="date"
@@ -538,34 +538,34 @@ export function CouponManagement() {
               </div>
               <Button type="button" variant="outline" className="h-11 rounded-full px-4 font-sans" onClick={resetFilters}>
                 <FilterX className="h-4 w-4" />
-                Reset Filter
+                รีเซ็ตตัวกรอง
               </Button>
             </div>
           </Panel>
         </div>
         <div>
           <Panel
-            title="Coupon Table"
+            title="ตารางคูปอง"
             subtitle=""
             // subtitle="Active, upcoming, and expired coupons are shown together in one modern data table."
             icon={CalendarClock}
             actions={
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="rounded-full border-border/60 bg-background/60 px-3 py-1 font-sans text-xs text-muted-foreground">
-                  Total {viewCoupons.length}
+                  ทั้งหมด {viewCoupons.length}
                 </Badge>
                 <Badge variant="outline" className="rounded-full border-emerald-500/20 bg-emerald-500/10 px-3 py-1 font-sans text-xs text-emerald-700 dark:text-emerald-300">
-                  Active {activeCount}
+                  กำลังใช้งาน {activeCount}
                 </Badge>
                 {/* <Badge variant="outline" className="rounded-full border-blue-500/20 bg-blue-500/10 px-3 py-1 font-sans text-xs text-blue-700 dark:text-blue-300">
                   {/* Upcoming {upcomingCount} }
                 </Badge> */}
                 <Badge variant="outline" className="rounded-full border-slate-500/20 bg-slate-500/10 px-3 py-1 font-sans text-xs text-slate-700 dark:text-slate-300">
-                  Expired {expiredCount}
+                  หมดอายุ {expiredCount}
                 </Badge>
                 <Button type="button" variant="outline" className="rounded-full font-sans" onClick={() => void loadCoupons()} disabled={isLoading}>
                   <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-                  Refresh
+                  รีเฟรช
                 </Button>
               </div>
             }
@@ -574,14 +574,14 @@ export function CouponManagement() {
               {isLoading ? (
                 <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <p className="font-sans text-sm text-muted-foreground">Loading coupons...</p>
+                  <p className="font-sans text-sm text-muted-foreground">กำลังโหลดคูปอง...</p>
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
                   <Tag className="h-10 w-10 text-primary/50" />
                   <div>
-                    <p className="font-mitr text-base text-foreground">No coupons found</p>
-                    <p className="font-sans text-sm text-muted-foreground">Try adjusting your filters or create a new coupon above.</p>
+                    <p className="font-mitr text-base text-foreground">ไม่พบคูปอง</p>
+                    <p className="font-sans text-sm text-muted-foreground">ลองปรับตัวกรองหรือสร้างคูปองใหม่ด้านบน</p>
                   </div>
                 </div>
               ) : (
@@ -590,12 +590,12 @@ export function CouponManagement() {
                     <table className="w-full min-w-[980px] text-left">
                       <thead className="border-b border-border/40 bg-muted/25">
                         <tr className="font-sans text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                          <th className="px-6 py-4 font-semibold">Coupon</th>
-                          <th className="px-6 py-4 font-semibold">Status</th>
-                          <th className="px-6 py-4 font-semibold">Discount</th>
-                          <th className="px-6 py-4 font-semibold">Availability</th>
-                          <th className="px-6 py-4 font-semibold">Description</th>
-                          <th className="px-6 py-4 text-right font-semibold">Actions</th>
+                          <th className="px-6 py-4 font-semibold">คูปอง</th>
+                          <th className="px-6 py-4 font-semibold">สถานะ</th>
+                          <th className="px-6 py-4 font-semibold">ส่วนลด</th>
+                          <th className="px-6 py-4 font-semibold">ช่วงเวลาใช้งาน</th>
+                          <th className="px-6 py-4 font-semibold">รายละเอียด</th>
+                          <th className="px-6 py-4 text-right font-semibold">จัดการ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/35">
@@ -619,22 +619,22 @@ export function CouponManagement() {
                             </td>
                             <td className="px-6 py-4 align-top">
                               <p className="font-mitr text-base text-foreground">{Number(coupon.discount_percent).toFixed(2)}%</p>
-                              <p className="font-sans text-xs text-muted-foreground">Percentage discount</p>
+                              <p className="font-sans text-xs text-muted-foreground">ส่วนลดเป็นเปอร์เซ็นต์</p>
                             </td>
                             <td className="px-6 py-4 align-top">
                               <div className="space-y-1 font-sans text-sm">
-                                <p>{coupon.startsAt ? `Starts ${formatDateTime(coupon.startsAt)}` : "Starts immediately"}</p>
-                                <p className="text-muted-foreground">{coupon.endsAt ? `Ends ${formatDateTime(coupon.endsAt)}` : "No expiry date"}</p>
+                                <p>{coupon.startsAt ? `เริ่ม ${formatDateTime(coupon.startsAt)}` : "เริ่มใช้งานทันที"}</p>
+                                <p className="text-muted-foreground">{coupon.endsAt ? `สิ้นสุด ${formatDateTime(coupon.endsAt)}` : "ไม่กำหนดวันหมดอายุ"}</p>
                               </div>
                             </td>
                             <td className="max-w-[320px] px-6 py-4 align-top">
-                              <p className="font-sans text-sm leading-6 text-muted-foreground">{coupon.description?.trim() || "No description provided."}</p>
+                              <p className="font-sans text-sm leading-6 text-muted-foreground">{coupon.description?.trim() || "ไม่มีรายละเอียด"}</p>
                             </td>
                             <td className="px-6 py-4 align-top">
                               <div className="flex justify-end gap-2">
                                 <Button type="button" variant="outline" size="sm" className="rounded-full font-sans" onClick={() => openEdit(coupon)}>
                                   <Edit3 className="h-4 w-4" />
-                                  Edit
+                                  แก้ไข
                                 </Button>
                                 <Button
                                   type="button"
@@ -645,7 +645,7 @@ export function CouponManagement() {
                                   disabled={deleteId === coupon.coupon_id}
                                 >
                                   {deleteId === coupon.coupon_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                  {deleteId === coupon.coupon_id ? "Deleting..." : "Delete"}
+                                  {deleteId === coupon.coupon_id ? "กำลังลบ..." : "ลบ"}
                                 </Button>
                               </div>
                             </td>
@@ -664,6 +664,13 @@ export function CouponManagement() {
                     totalPages={totalPages}
                     onPageChange={(nextPage) => setCurrentPage(nextPage)}
                     onRowsPerPageChange={(value) => setRowsPerPage(value as RowsPerPage)}
+                    labels={{
+                      showing: "แสดง",
+                      of: "จาก",
+                      items: "รายการ",
+                      rowsPerPage: "จำนวนต่อหน้า:",
+                      all: "ทั้งหมด",
+                    }}
                   />
                 </>
               )}
