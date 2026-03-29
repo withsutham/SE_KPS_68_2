@@ -2,7 +2,7 @@ import { BookingManagement } from "@/components/manager/booking-management";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "จัดการการจอง | ฟื้นใจ",
+  title: "จัดการการจอง",
   description: "ระบบจัดการรายการจองคิวลูกค้า",
 };
 
