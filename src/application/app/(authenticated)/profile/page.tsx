@@ -232,9 +232,8 @@ function ProfilePageInner() {
             {!isEditing && (
               <Button
                 onClick={handleEdit}
-                variant="outline"
+                className="font-mitr rounded-full px-4 bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-sm"
                 size="sm"
-                className="font-mitr rounded-full px-4"
               >
                 <Edit className="h-4 w-4 mr-2" />
                 แก้ไขข้อมูล
