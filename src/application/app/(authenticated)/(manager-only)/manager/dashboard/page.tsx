@@ -656,7 +656,13 @@ export default function ManagerDashboardPage() {
                                 ) : (
                                     <div className="flex flex-col gap-5 py-2">
                                         {data.roomUsage.map((r) => (
-                                            <HorizontalBar key={r.name} {...r} />
+                                            <HorizontalBar
+                                                key={r.name}
+                                                label={r.name}
+                                                rate={r.rate}
+                                                totalMinutes={r.totalMinutes}
+                                                maxMinutes={r.maxMinutes}
+                                            />
                                         ))}
                                     </div>
                                 )}
@@ -674,7 +680,13 @@ export default function ManagerDashboardPage() {
                                 ) : (
                                     <div className="flex flex-col gap-5 py-2">
                                         {data.therapistUtilization.slice(0, 6).map((t) => (
-                                            <HorizontalBar key={t.name} {...t} />
+                                            <HorizontalBar
+                                                key={t.name}
+                                                label={t.name}
+                                                rate={t.rate}
+                                                totalMinutes={t.totalMinutes}
+                                                maxMinutes={t.maxMinutes}
+                                            />
                                         ))}
                                     </div>
                                 )}
