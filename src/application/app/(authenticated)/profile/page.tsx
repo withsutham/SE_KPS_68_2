@@ -344,7 +344,7 @@ function ProfilePageInner() {
                 </Button>
                 <Button
                   onClick={handleSave}
-                  className="flex-1 font-mitr rounded-full shadow-md"
+                  className="flex-1 font-mitr rounded-full shadow-md bg-emerald-600 hover:bg-emerald-700 text-white border-none"
                   disabled={isSaving}
                 >
                   {isSaving ? (
