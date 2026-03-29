@@ -95,9 +95,12 @@ export function ImageUploader({
       </button>
 
       {images.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="flex flex-wrap justify-center gap-3">
           {images.map((image) => (
-            <div key={image.id} className="overflow-hidden rounded-2xl border border-border/50 bg-card/60">
+            <div
+              key={image.id}
+              className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/50 bg-card/60"
+            >
               <div className="relative aspect-[4/3]">
                 <Image src={image.url} alt={image.name} fill unoptimized className="object-cover" />
                 <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">

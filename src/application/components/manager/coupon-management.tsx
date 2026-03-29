@@ -176,7 +176,7 @@ function Panel({
 }
 
 function StatusChip({ status }: { status: CouponStatus }) {
-  const label = status === "Active" ? "กำลังใช้งาน" : "หมดอายุ";
+  const label = status === "Active" ? "Active" : "Expired";
   return (
     <Badge
       variant="outline"
@@ -519,13 +519,13 @@ export function CouponManagement() {
                   <Label>สถานะ</Label>
                   <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
                     <SelectTrigger className="h-11 w-full bg-background/75 font-sans">
-                      <SelectValue placeholder="ทั้งหมด" />
+                      <SelectValue placeholder="All" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">ทั้งหมด</SelectItem>
-                      <SelectItem value="active">กำลังใช้งาน</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
                       {/* <SelectItem value="upcoming">Upcoming</SelectItem> */}
-                      <SelectItem value="expired">หมดอายุ</SelectItem>
+                      <SelectItem value="expired">Expired</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -569,13 +569,13 @@ export function CouponManagement() {
                   ทั้งหมด {viewCoupons.length}
                 </Badge>
                 <Badge variant="outline" className="rounded-full border-emerald-500/20 bg-emerald-500/10 px-3 py-1 font-sans text-xs text-emerald-700 dark:text-emerald-300">
-                  กำลังใช้งาน {activeCount}
+                  Active {activeCount}
                 </Badge>
                 {/* <Badge variant="outline" className="rounded-full border-blue-500/20 bg-blue-500/10 px-3 py-1 font-sans text-xs text-blue-700 dark:text-blue-300">
                   {/* Upcoming {upcomingCount} }
                 </Badge> */}
                 <Badge variant="outline" className="rounded-full border-slate-500/20 bg-slate-500/10 px-3 py-1 font-sans text-xs text-slate-700 dark:text-slate-300">
-                  หมดอายุ {expiredCount}
+                  Expired {expiredCount}
                 </Badge>
                 <Button type="button" variant="outline" className="rounded-full font-sans" onClick={() => void loadCoupons()} disabled={isLoading}>
                   <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
