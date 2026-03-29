@@ -25,11 +25,18 @@ export function HeroSection() {
                             จองคิวรับบริการ
                         </Button>
                     </Link>
-                    <Link href="/package?tab=discover">
-                        <Button size="lg" variant="outline" className="rounded-full px-12 py-8 text-xl font-medium border-border/50 hover:bg-muted/50 transition-all hover:scale-105 active:scale-95 font-mitr">
-                            เลือกชมแพ็กเกจ
-                        </Button>
-                    </Link>
+                    <div className="relative overflow-visible">
+                        {/* "คุ้มกว่า" promotional badge */}
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-primary text-primary-foreground text-[10px] rounded-xl shadow-lg whitespace-nowrap animate-in fade-in zoom-in duration-300 font-bold">
+                            คุ้มกว่า
+                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45" />
+                        </div>
+                        <Link href="/package?tab=discover">
+                            <Button size="lg" variant="outline" className="rounded-full px-12 py-8 text-xl font-medium border-border/50 hover:bg-muted/50 transition-all hover:scale-105 active:scale-95 font-mitr">
+                                เลือกชมแพ็กเกจ
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             </div>
         </section>
