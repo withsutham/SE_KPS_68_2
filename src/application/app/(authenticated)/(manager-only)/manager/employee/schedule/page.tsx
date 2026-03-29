@@ -303,15 +303,16 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
     l => l.employee_id === employee.employee_id && l.approval_status === "approved"
   );
   const myBookings = bookings.filter(b => b.employee_id === employee.employee_id);
-  const hasLeaveCollision = approvedLeaves.some(leave => {
-    const leaveStart = new Date(leave.start_datetime).getTime();
-    const leaveEnd = new Date(leave.end_datetime).getTime();
-    return myBookings.some(b => {
+  
+  const collisionCount = myBookings.filter(b => {
+    return approvedLeaves.some(leave => {
+      const leaveStart = new Date(leave.start_datetime).getTime();
+      const leaveEnd = new Date(leave.end_datetime).getTime();
       const bStart = new Date(b.massage_start_dateTime).getTime();
       const bEnd = new Date(b.massage_end_dateTime).getTime();
       return bStart < leaveEnd && bEnd > leaveStart;
     });
-  });
+  }).length;
 
   return (
     <div
@@ -325,7 +326,7 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
       )}
     >
       <div className="flex items-center gap-3">
-        <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden relative">
           {employee.image_url ? (
             <img src={employee.image_url} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
           ) : (
@@ -333,9 +334,16 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium font-mitr truncate">
-            {employee.first_name} {employee.last_name}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-medium font-mitr truncate max-w-[120px]">
+              {employee.first_name} {employee.last_name}
+            </p>
+            {collisionCount > 0 && (
+              <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] font-bold ring-2 ring-background">
+                {collisionCount}
+              </span>
+            )}
+          </div>
         </div>
         <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
       </div>
@@ -1032,8 +1040,29 @@ export default function WeeklySchedulePage() {
       });
     }
     
+    // Sort: Priority to those with leave collisions in this week
+    result = [...result].sort((a, b) => {
+      const getCollisionCount = (emp: Employee) => {
+        const approvedLeaves = leaveRecords.filter(l => l.employee_id === emp.employee_id && l.approval_status === "approved");
+        const myBookings = bookings.filter(b => b.employee_id === emp.employee_id);
+        return myBookings.filter(b => {
+          return approvedLeaves.some(l => {
+            const bStart = new Date(b.massage_start_dateTime).getTime();
+            const bEnd = new Date(b.massage_end_dateTime).getTime();
+            const lStart = new Date(l.start_datetime).getTime();
+            const lEnd = new Date(l.end_datetime).getTime();
+            return bStart < lEnd && bEnd > lStart;
+          });
+        }).length;
+      };
+
+      const countA = getCollisionCount(a);
+      const countB = getCollisionCount(b);
+      return countB - countA; // Descending
+    });
+    
     return result;
-  }, [employees, searchQuery, filterMassageId, skills, filterStartTime, filterEndTime, schedules]);
+  }, [employees, searchQuery, filterMassageId, skills, filterStartTime, filterEndTime, schedules, leaveRecords, bookings]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -1107,6 +1136,7 @@ export default function WeeklySchedulePage() {
         )
       );
       await fetchData();
+      window.dispatchEvent(new Event("schedule-refresh"));
     } catch (err) {
       console.error("Failed to assign employee:", err);
     } finally {
@@ -1127,6 +1157,7 @@ export default function WeeklySchedulePage() {
         )
       );
       await fetchData();
+      window.dispatchEvent(new Event("schedule-refresh"));
       setDetailsDialog({ open: false, slot: null });
     } catch (err) {
       console.error("Failed to unassign employee:", err);
@@ -1288,6 +1319,18 @@ export default function WeeklySchedulePage() {
                   <Users className="h-4 w-4 text-primary" />
                 </div>
                 <h2 className="font-mitr font-medium text-sm">พนักงาน</h2>
+                <div className="flex gap-1 items-center">
+                  {leaveCollisionCount > 0 && (
+                    <span className="shrink-0 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-background">
+                      {leaveCollisionCount}
+                    </span>
+                  )}
+                  {pendingCount > 0 && (
+                    <span className="shrink-0 min-w-5 h-5 px-1 rounded-full bg-yellow-500 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-background">
+                      {pendingCount}
+                    </span>
+                  )}
+                </div>
               </div>
               <span className="text-xs text-muted-foreground font-sans">
                 {employees.length} คน

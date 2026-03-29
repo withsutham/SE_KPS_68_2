@@ -264,9 +264,9 @@ export default function EmployeeManagementPage() {
               </div>
               <h2 className="font-mitr font-medium">รายชื่อพนักงาน</h2>
               {totalPendingLeaves > 0 && (
-                <Badge variant="outline" className="bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800 ml-1 px-1.5 py-0 h-5 text-[10px] font-bold">
+                <span className="shrink-0 min-w-5 px-1.5 h-5 rounded-full bg-yellow-500 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-background ml-1">
                   {totalPendingLeaves}
-                </Badge>
+                </span>
               )}
             </div>
             <EmployeeFormDialog mode="add" massages={massages} onSaved={fetchData} />
@@ -319,11 +319,11 @@ export default function EmployeeManagementPage() {
                        <p className="font-mitr truncate text-[15px]">{emp.first_name} {emp.last_name}</p>
                        <p className="text-xs text-muted-foreground truncate">{emp.phone_number || "ไม่มีเบอร์"}</p>
                      </div>
-                     {empLeaves.length > 0 && (
-                       <span className="shrink-0 h-5 w-5 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center text-[10px] font-bold ring-1 ring-yellow-300">
-                         {empLeaves.length}
-                       </span>
-                     )}
+                      {empLeaves.length > 0 && (
+                        <span className="shrink-0 min-w-5 px-1.5 h-5 rounded-full bg-yellow-500 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-background">
+                          {empLeaves.length}
+                        </span>
+                      )}
                    </div>
                  </button>
                )
@@ -450,12 +450,11 @@ function EmployeeDetailPanel({ employee, schedules, leaveRecords, massages, skil
              onClick={() => setActiveTab('leave')}
              className={cn("flex-1 py-4 text-center transition-colors border-b-2 flex items-center justify-center gap-2", activeTab === 'leave' ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:bg-muted/30")}
            >
-             คำขอลาหยุด 
-             {myLeaves.filter((l: any) => l.approval_status === "pending").length > 0 && (
-                <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs font-bold leading-none ring-1 ring-yellow-300">
-                  {myLeaves.filter((l: any) => l.approval_status === "pending").length}
-                </span>
-             )}
+             คำขอลาหยุด              {myLeaves.filter((l: any) => l.approval_status === "pending").length > 0 && (
+                 <span className="shrink-0 min-w-5 px-1.5 h-5 rounded-full bg-yellow-500 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-background">
+                   {myLeaves.filter((l: any) => l.approval_status === "pending").length}
+                 </span>
+              )}
            </button>
          </div>
 
@@ -899,6 +898,7 @@ function LeaveTabContent({ employee, leaves, onRefresh }: any) {
         body: JSON.stringify({ approval_status: status }),
       });
       onRefresh();
+      window.dispatchEvent(new Event("schedule-refresh"));
     } catch (err) {
       console.error(err);
     } finally {
