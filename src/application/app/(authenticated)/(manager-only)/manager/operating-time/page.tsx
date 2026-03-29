@@ -2,7 +2,7 @@ import { OperatingTimeManagement } from "@/components/manager/operating-time-man
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "จัดการเวลาทำการ | ฟื้นใจ",
+  title: "จัดการเวลาทำการ",
   description: "จัดการเวลาเปิด-ปิดของร้าน",
 };
 
