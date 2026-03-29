@@ -74,11 +74,18 @@ export async function GET(request: NextRequest) {
     });
 
     const filteredBookingIds = new Set(filteredBookings.map((b: any) => b.booking_id));
-    const prevFilteredBookingIds = new Set(prevFilteredBookings.map((b: any) => b.booking_id));
 
     const filteredDetails = allDetails.filter((d: any) => filteredBookingIds.has(d.booking_id));
-    const filteredPayments = allPayments.filter((p: any) => filteredBookingIds.has(p.booking_id));
-    const prevFilteredPayments = allPayments.filter((p: any) => prevFilteredBookingIds.has(p.booking_id));
+    
+    // Filter payments based on payment_date instead of booking_dateTime
+    const filteredPayments = allPayments.filter((p: any) => {
+        const d = new Date(p.payment_date);
+        return d >= fromDate && d <= toDate;
+    });
+    const prevFilteredPayments = allPayments.filter((p: any) => {
+        const d = new Date(p.payment_date);
+        return d >= prevFromDate && d <= prevToDate;
+    });
 
     // ─── 1. KPI: Total Revenue ───────────────────────────────────────────
     const completedPayments = filteredPayments.filter((p: any) => p.payment_status === "completed");
@@ -205,9 +212,28 @@ export async function GET(request: NextRequest) {
     }).sort((a: any, b: any) => b.rate - a.rate);
 
     // ─── 11. Coupon Redemption Rate ──────────────────────────────────────
+    const couponRedemption = allPackages.map(() => { // Dummy map to use same logic style
+        // We actually want to group by coupon_id from allMemberCoupons
+        const couponMap: Record<number, { name: string, used: number, total: number }> = {};
+        allMemberCoupons.forEach((mc: any) => {
+            const cid = mc.coupon_id;
+            if (!couponMap[cid]) {
+                couponMap[cid] = { 
+                    name: mc.coupon?.coupon_name ?? `คูปอง #${cid}`, 
+                    used: 0, 
+                    total: 0 
+                };
+            }
+            couponMap[cid].total++;
+            if (mc.is_used) couponMap[cid].used++;
+        });
+        return Object.values(couponMap);
+    })[0] || [];
+
     const totalCoupons = allMemberCoupons.length;
     const usedCoupons = allMemberCoupons.filter((c: any) => c.is_used).length;
     const couponRedemptionRate = totalCoupons > 0 ? Math.round((usedCoupons / totalCoupons) * 100) : 0;
+    const couponSummary = { total: totalCoupons, used: usedCoupons, rate: couponRedemptionRate, details: couponRedemption };
 
     // ─── 12. Package Sales vs. Usage ─────────────────────────────────────
     const packageSalesUsage = allPackages.map((pkg: any) => {
@@ -300,7 +326,7 @@ export async function GET(request: NextRequest) {
             peakHours,
             roomUsage,
             therapistUtilization,
-            couponRedemption: { total: totalCoupons, used: usedCoupons, rate: couponRedemptionRate },
+            couponRedemption: couponSummary,
             packageSalesUsage,
             // Status Boards
             therapistStatus,
