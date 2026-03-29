@@ -174,24 +174,52 @@ export async function GET(request: NextRequest) {
         .sort((a: any, b: any) => (a.first_name + a.last_name).localeCompare(b.first_name + b.last_name, "th"))
         .map((e: any) => ({ employee_id: e.employee_id, name: `${e.first_name} ${e.last_name}` }));
 
-    // ─── 6. Revenue By Day (Line Chart) ──────────────────────────────────
-    const revenueByDayMap: Record<string, number> = {};
-    
-    // Revenue from bookings
-    filteredBookings.filter((b: any) => isPaid(b.payment_status)).forEach((b: any) => {
-        const dateKey = new Date(b.booking_dateTime).toLocaleDateString("en-CA");
-        revenueByDayMap[dateKey] = (revenueByDayMap[dateKey] ?? 0) + Number(b.total_price ?? 0);
-    });
+    // ─── 6. Revenue Chart Data (Hourly or Daily) ────────────────────────
+    const isSingleDay = fromDate.toLocaleDateString("en-CA") === toDate.toLocaleDateString("en-CA");
+    let revenueByDay;
 
-    // Revenue from package orders
-    filteredPackageOrders.filter((po: any) => isPaid(po.payment_status)).forEach((po: any) => {
-        const dateKey = new Date(po.order_dateTime).toLocaleDateString("en-CA");
-        revenueByDayMap[dateKey] = (revenueByDayMap[dateKey] ?? 0) + Number(po.total_price ?? 0);
-    });
+    if (isSingleDay) {
+        // Hourly grouping for Today
+        const hourlyMap: Record<string, number> = {};
+        
+        // Revenue from bookings
+        filteredBookings.filter((b: any) => isPaid(b.payment_status)).forEach((b: any) => {
+            const hour = new Date(b.booking_dateTime).getHours();
+            const hourKey = `${String(hour).padStart(2, "0")}:00`;
+            hourlyMap[hourKey] = (hourlyMap[hourKey] ?? 0) + Number(b.total_price ?? 0);
+        });
 
-    const revenueByDay = Object.entries(revenueByDayMap)
-        .map(([date, revenue]) => ({ date, revenue }))
-        .sort((a, b) => a.date.localeCompare(b.date));
+        // Revenue from package orders
+        filteredPackageOrders.filter((po: any) => isPaid(po.payment_status)).forEach((po: any) => {
+            const hour = new Date(po.order_dateTime).getHours();
+            const hourKey = `${String(hour).padStart(2, "0")}:00`;
+            hourlyMap[hourKey] = (hourlyMap[hourKey] ?? 0) + Number(po.total_price ?? 0);
+        });
+
+        // Fill gaps between 07:00 and 22:00
+        revenueByDay = Array.from({ length: 16 }, (_, i) => {
+            const hour = i + 7;
+            const hourKey = `${String(hour).padStart(2, "0")}:00`;
+            return { date: hourKey, revenue: hourlyMap[hourKey] ?? 0, isHourly: true };
+        });
+    } else {
+        // Daily grouping as before
+        const dailyMap: Record<string, number> = {};
+        
+        filteredBookings.filter((b: any) => isPaid(b.payment_status)).forEach((b: any) => {
+            const dateKey = new Date(b.booking_dateTime).toLocaleDateString("en-CA");
+            dailyMap[dateKey] = (dailyMap[dateKey] ?? 0) + Number(b.total_price ?? 0);
+        });
+
+        filteredPackageOrders.filter((po: any) => isPaid(po.payment_status)).forEach((po: any) => {
+            const dateKey = new Date(po.order_dateTime).toLocaleDateString("en-CA");
+            dailyMap[dateKey] = (dailyMap[dateKey] ?? 0) + Number(po.total_price ?? 0);
+        });
+
+        revenueByDay = Object.entries(dailyMap)
+            .map(([date, revenue]) => ({ date, revenue, isHourly: false }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+    }
 
     // ─── 7. Popular Services (Bar Chart) ─────────────────────────────────
     const serviceCountMap: Record<number, number> = {};
