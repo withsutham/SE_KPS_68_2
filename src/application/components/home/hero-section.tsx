@@ -27,7 +27,7 @@ export function HeroSection() {
                     </Link>
                     <div className="relative overflow-visible">
                         {/* "คุ้มกว่า" promotional badge */}
-                        <div role="note" aria-label="Better value promotion" className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center justify-center px-4 py-1.5 bg-primary text-primary-foreground text-xs rounded-full shadow-lg whitespace-nowrap animate-in fade-in zoom-in duration-300 font-bold font-mitr">
+                        <div role="note" aria-label="Better value promotion" className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center justify-center px-4 py-1.5 bg-primary text-primary-foreground text-xs rounded-full shadow-lg whitespace-nowrap animate-in fade-in zoom-in duration-300 font-medium font-mitr">
                             <span className="relative z-10 leading-none">คุ้มกว่า</span>
                             <div aria-hidden="true" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45" />
                         </div>
