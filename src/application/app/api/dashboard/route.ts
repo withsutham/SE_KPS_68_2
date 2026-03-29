@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         { data: memberPackages },
         { data: packages },
         { data: packageDetails },
+        { data: packageOrders },
     ] = await Promise.all([
         supabase.from("booking").select("*"),
         supabase.from("booking_detail").select("*"),
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
         supabase.from("member_package").select("*"),
         supabase.from("package").select("*"),
         supabase.from("package_detail").select("*"),
+        supabase.from("package_order").select("*"),
     ]);
 
     const allBookings = bookings ?? [];
@@ -52,6 +54,7 @@ export async function GET(request: NextRequest) {
     const allMemberPackages = memberPackages ?? [];
     const allPackages = packages ?? [];
     const allPackageDetails = packageDetails ?? [];
+    const allPackageOrders = packageOrders ?? [];
 
     // ─── Date range filtering ────────────────────────────────────────────
     const now = new Date();
@@ -73,6 +76,16 @@ export async function GET(request: NextRequest) {
         return d >= prevFromDate && d <= prevToDate;
     });
 
+    const filteredPackageOrders = allPackageOrders.filter((po: any) => {
+        const d = new Date(po.order_dateTime);
+        return d >= fromDate && d <= toDate;
+    });
+
+    const prevFilteredPackageOrders = allPackageOrders.filter((po: any) => {
+        const d = new Date(po.order_dateTime);
+        return d >= prevFromDate && d <= prevToDate;
+    });
+
     const filteredBookingIds = new Set(filteredBookings.map((b: any) => b.booking_id));
 
     const filteredDetails = allDetails.filter((d: any) => filteredBookingIds.has(d.booking_id));
@@ -88,11 +101,30 @@ export async function GET(request: NextRequest) {
     });
 
     // ─── 1. KPI: Total Revenue ───────────────────────────────────────────
-    const completedPayments = filteredPayments.filter((p: any) => p.payment_status === "completed");
-    const totalRevenue = completedPayments.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0);
+    const isPaid = (status: string) => ["completed", "confirmed", "paid", "success"].includes(status?.toLowerCase());
 
-    const prevCompletedPayments = prevFilteredPayments.filter((p: any) => p.payment_status === "completed");
-    const prevTotalRevenue = prevCompletedPayments.reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0);
+    const revenueFromBookings = filteredBookings
+        .filter((b: any) => isPaid(b.payment_status))
+        .reduce((sum: number, b: any) => sum + Number(b.total_price ?? 0), 0);
+
+    const revenueFromPackageOrders = filteredPackageOrders
+        .filter((po: any) => isPaid(po.payment_status))
+        .reduce((sum: number, po: any) => sum + Number(po.total_price ?? 0), 0);
+
+    const totalRevenue = revenueFromBookings + revenueFromPackageOrders;
+
+    const prevRevenueFromBookings = prevFilteredBookings
+        .filter((b: any) => isPaid(b.payment_status))
+        .reduce((sum: number, b: any) => sum + Number(b.total_price ?? 0), 0);
+
+    const prevRevenueFromPackageOrders = prevFilteredPackageOrders
+        .filter((po: any) => isPaid(po.payment_status))
+        .reduce((sum: number, po: any) => sum + Number(po.total_price ?? 0), 0);
+
+    const prevTotalRevenue = prevRevenueFromBookings + prevRevenueFromPackageOrders;
+
+    // Filter payments for other uses
+    const completedPayments = filteredPayments.filter((p: any) => isPaid(p.payment_status));
 
     // ─── 2. KPI: Total Bookings ──────────────────────────────────────────
     const totalBookings = filteredBookings.length;
@@ -114,10 +146,8 @@ export async function GET(request: NextRequest) {
 
     // ─── 4. KPI: Average Transaction Value ───────────────────────────────
     const currentMonthCompletedPayments = allPayments.filter((p: any) => {
-        const booking = allBookings.find((b: any) => b.booking_id === p.booking_id);
-        if (!booking) return false;
-        const d = new Date(booking.booking_dateTime);
-        return d >= currentMonthStart && p.payment_status === "completed";
+        const d = new Date(p.payment_date);
+        return d >= currentMonthStart && (p.payment_status === "completed" || p.payment_status === "paid");
     });
     const avgTransactionValue = currentMonthCompletedPayments.length > 0
         ? currentMonthCompletedPayments.reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0) / currentMonthCompletedPayments.length
@@ -146,12 +176,19 @@ export async function GET(request: NextRequest) {
 
     // ─── 6. Revenue By Day (Line Chart) ──────────────────────────────────
     const revenueByDayMap: Record<string, number> = {};
-    for (const p of completedPayments) {
-        const booking = allBookings.find((b: any) => b.booking_id === p.booking_id);
-        if (!booking) continue;
-        const dateKey = new Date(booking.booking_dateTime).toLocaleDateString("en-CA");
-        revenueByDayMap[dateKey] = (revenueByDayMap[dateKey] ?? 0) + Number(p.amount ?? 0);
-    }
+    
+    // Revenue from bookings
+    filteredBookings.filter((b: any) => isPaid(b.payment_status)).forEach((b: any) => {
+        const dateKey = new Date(b.booking_dateTime).toLocaleDateString("en-CA");
+        revenueByDayMap[dateKey] = (revenueByDayMap[dateKey] ?? 0) + Number(b.total_price ?? 0);
+    });
+
+    // Revenue from package orders
+    filteredPackageOrders.filter((po: any) => isPaid(po.payment_status)).forEach((po: any) => {
+        const dateKey = new Date(po.order_dateTime).toLocaleDateString("en-CA");
+        revenueByDayMap[dateKey] = (revenueByDayMap[dateKey] ?? 0) + Number(po.total_price ?? 0);
+    });
+
     const revenueByDay = Object.entries(revenueByDayMap)
         .map(([date, revenue]) => ({ date, revenue }))
         .sort((a, b) => a.date.localeCompare(b.date));
