@@ -16,6 +16,8 @@ import {
   Calendar,
   Settings,
   ClipboardList,
+  DoorOpen,
+  Clock,
   PanelLeft,
   PanelLeftClose,
   LogOut,
@@ -33,8 +35,10 @@ const topItems: MenuItem[] = [
   { href: "/manager/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { href: "/manager/monitor", label: "มอนิเตอร์", icon: Monitor },
   { href: "/manager/booking", label: "จัดการการจอง", icon: ClipboardList },
+  { href: "/manager/rooms", label: "จัดการห้องนวด", icon: DoorOpen },
   { href: "/manager/package", label: "จัดการแพ็กเกจ", icon: Package },
   { href: "/manager/coupon", label: "จัดการคูปอง", icon: Tag },
+  { href: "/manager/operating-time", label: "เวลาทำการ", icon: Clock },
 ];
 
 const employeeItems: MenuItem[] = [
