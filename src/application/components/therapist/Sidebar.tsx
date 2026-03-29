@@ -1,27 +1,16 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Home, Calendar, Send, History, User, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { getEmployeeByUserId } from '@/components/therapist/employee_actions';
 import Image from 'next/image';
 
-export default function Sidebar() {
-  const pathname = usePathname();
-  const [employee, setEmployee] = useState<any>(null);
+interface SidebarProps {
+  employee: any;
+}
 
-  useEffect(() => {
-    async function fetchProfile() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const empData = await getEmployeeByUserId(user.id);
-        setEmployee(empData);
-      }
-    }
-    fetchProfile();
-  }, []);
+export default function Sidebar({ employee }: SidebarProps) {
+  const pathname = usePathname();
 
   // จัดการเมนูเป็น Array เพื่อให้ง่ายต่อการเพิ่ม/ลด
   const menuItems = [

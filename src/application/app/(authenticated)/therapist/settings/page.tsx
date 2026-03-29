@@ -199,7 +199,6 @@ export default function TherapistSettingsPage() {
             
             <div className="text-center">
               <p className="text-sm font-bold text-slate-800">รูปประจำตัว</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">แนะนำขนาด 500x500 พิกเซล</p>
             </div>
           </div>
 

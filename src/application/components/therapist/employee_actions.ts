@@ -5,6 +5,8 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 /**
  * Fetches the user_type from the profiles table for a given user ID.
@@ -71,17 +73,28 @@ export async function getLeaveRecordsByEmployeeId(employeeId: number) {
  * Bypasses RLS using the admin client.
  */
 export async function createLeaveRecord(params: {
-  employee_id: number;
   start_datetime: string;
   end_datetime: string;
   reason: string;
 }) {
+  const supabaseServer = await createClient();
+  const { data: { user } } = await supabaseServer.auth.getUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const emp = await getEmployeeByUserId(user.id);
+  if (!emp) {
+    throw new Error("Employee record not found for this user");
+  }
+
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("leave_record")
     .insert([
       {
         ...params,
+        employee_id: emp.employee_id,
         approval_status: "pending",
       },
     ])
@@ -92,6 +105,9 @@ export async function createLeaveRecord(params: {
     console.error("Error creating leave record:", error.message);
     throw new Error(error.message);
   }
+
+  revalidatePath('/therapist');
+  revalidatePath('/therapist/leavehistory');
 
   return { success: true, data };
 }
@@ -121,6 +137,9 @@ export async function updateLeaveRecord(
     throw new Error(error.message);
   }
 
+  revalidatePath('/therapist');
+  revalidatePath('/therapist/leavehistory');
+
   return { success: true, data };
 }
 
@@ -139,6 +158,9 @@ export async function deleteLeaveRecord(leaveRecordId: number) {
     console.error("Error deleting leave record:", error.message);
     throw new Error(error.message);
   }
+
+  revalidatePath('/therapist');
+  revalidatePath('/therapist/leavehistory');
 
   return { success: true };
 }
