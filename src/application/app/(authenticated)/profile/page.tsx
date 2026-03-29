@@ -201,62 +201,84 @@ function ProfilePageInner() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-8 max-w-2xl">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-2xl font-bold font-mitr">
+    <main className="flex-1 w-full min-h-screen bg-background relative overflow-hidden">
+      {/* Subtle background motif */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+        <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute top-1/2 -right-60 h-[400px] w-[400px] rounded-full bg-secondary/30 blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-3xl mx-auto px-4 md:px-8 pt-8 pb-24 relative z-10 space-y-8">
+        {/* Page header */}
+        <div className="flex flex-col items-center text-center mb-8 border-b border-border/50 pb-8">
+          <p className="text-xs font-medium tracking-widest text-primary/60 uppercase font-sans mb-3">
+            ฟื้นใจ · Massage & Spa
+          </p>
+          <h1 className="text-3xl md:text-4xl font-medium tracking-tight font-mitr text-foreground mb-3">
             โปรไฟล์ของฉัน
-          </CardTitle>
-          {!isEditing && (
-            <Button
-              onClick={handleEdit}
-              variant="outline"
-              size="sm"
-              className="font-mitr"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              แก้ไข
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-6">
+          </h1>
+          <p className="text-muted-foreground font-sans max-w-lg">
+            จัดการข้อมูลส่วนตัวและช่องทางการติดต่อของคุณ
+          </p>
+        </div>
+
+        <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border/50 bg-muted/20">
+            <CardTitle className="text-xl font-medium font-mitr">
+              ข้อมูลส่วนตัว
+            </CardTitle>
+            {!isEditing && (
+              <Button
+                onClick={handleEdit}
+                variant="outline"
+                size="sm"
+                className="font-mitr rounded-full px-4"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                แก้ไขข้อมูล
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
           {isEditing ? (
             // Edit Mode
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="firstName" className="font-mitr">
-                  ชื่อ <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="กรอกชื่อ"
-                  className={`font-mitr ${errors.firstName ? "border-destructive" : ""}`}
-                />
-                {errors.firstName && (
-                  <p className="text-sm text-destructive font-mitr">
-                    {errors.firstName}
-                  </p>
-                )}
-              </div>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="font-mitr">
+                    ชื่อ <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="กรอกชื่อ"
+                    className={`font-mitr transition-all ${errors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  />
+                  {errors.firstName && (
+                    <p className="text-sm text-destructive font-mitr">
+                      {errors.firstName}
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastName" className="font-mitr">
-                  นามสกุล <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="กรอกนามสกุล"
-                  className={`font-mitr ${errors.lastName ? "border-destructive" : ""}`}
-                />
-                {errors.lastName && (
-                  <p className="text-sm text-destructive font-mitr">
-                    {errors.lastName}
-                  </p>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="font-mitr">
+                    นามสกุล <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="กรอกนามสกุล"
+                    className={`font-mitr transition-all ${errors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  />
+                  {errors.lastName && (
+                    <p className="text-sm text-destructive font-mitr">
+                      {errors.lastName}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -269,7 +291,7 @@ function ProfilePageInner() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="กรอกเบอร์โทรศัพท์ (9-10 หลัก)"
-                  className={`font-mitr ${errors.phoneNumber ? "border-destructive" : ""}`}
+                  className={`font-mitr transition-all ${errors.phoneNumber ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
                 {errors.phoneNumber && (
                   <p className="text-sm text-destructive font-mitr">
@@ -286,11 +308,11 @@ function ProfilePageInner() {
                   <Input
                     value={profile.email_address || "-"}
                     disabled
-                    className="font-mitr bg-muted"
+                    className="font-mitr bg-muted/50 border-dashed"
                   />
-                  <span className="text-muted-foreground text-sm">🔒</span>
+                  <span className="text-muted-foreground text-sm" title="ไม่สามารถแก้ไขอีเมลได้">🔒</span>
                 </div>
-                <p className="text-xs text-muted-foreground font-mitr">
+                <p className="text-xs text-muted-foreground/70 font-mitr">
                   ไม่สามารถแก้ไขอีเมลได้
                 </p>
               </div>
@@ -303,17 +325,17 @@ function ProfilePageInner() {
                   <Input
                     value={formatDate(profile.regis_datetime)}
                     disabled
-                    className="font-mitr bg-muted"
+                    className="font-mitr bg-muted/50 border-dashed"
                   />
-                  <span className="text-muted-foreground text-sm">🔒</span>
+                  <span className="text-muted-foreground text-sm" title="ไม่สามารถแก้ไขข้อมูลนี้ได้">🔒</span>
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-3 pt-6 border-t border-border/50">
                 <Button
                   onClick={handleCancel}
                   variant="outline"
-                  className="flex-1 font-mitr"
+                  className="flex-1 font-mitr rounded-full"
                   disabled={isSaving}
                 >
                   <X className="h-4 w-4 mr-2" />
@@ -321,7 +343,7 @@ function ProfilePageInner() {
                 </Button>
                 <Button
                   onClick={handleSave}
-                  className="flex-1 font-mitr"
+                  className="flex-1 font-mitr rounded-full shadow-md"
                   disabled={isSaving}
                 >
                   {isSaving ? (
@@ -329,54 +351,61 @@ function ProfilePageInner() {
                   ) : (
                     <Save className="h-4 w-4 mr-2" />
                   )}
-                  บันทึก
+                  บันทึกข้อมูล
                 </Button>
               </div>
-            </>
+            </div>
           ) : (
             // Display Mode
-            <>
-              <div className="space-y-2">
-                <Label className="font-mitr text-muted-foreground">ชื่อ</Label>
-                <p className="text-lg font-mitr">{profile.first_name}</p>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <Label className="font-mitr text-muted-foreground/80 text-sm">ชื่อ</Label>
+                  <div className="text-base font-medium font-mitr bg-muted/20 p-3 rounded-lg border border-border/40 text-foreground">
+                    {profile.first_name}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="font-mitr text-muted-foreground/80 text-sm">
+                    นามสกุล
+                  </Label>
+                  <div className="text-base font-medium font-mitr bg-muted/20 p-3 rounded-lg border border-border/40 text-foreground">
+                    {profile.last_name}
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="font-mitr text-muted-foreground">
-                  นามสกุล
-                </Label>
-                <p className="text-lg font-mitr">{profile.last_name}</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-mitr text-muted-foreground">
+              <div className="space-y-1.5">
+                <Label className="font-mitr text-muted-foreground/80 text-sm">
                   เบอร์โทรศัพท์
                 </Label>
-                <p className="text-lg font-mitr">
+                <div className="text-base font-medium font-mitr bg-muted/20 p-3 rounded-lg border border-border/40 text-foreground">
                   {profile.phone_number
                     ? formatPhoneNumber(profile.phone_number)
-                    : "-"}
-                </p>
+                    : <span className="text-muted-foreground/50 italic">- ไม่ได้ระบุ -</span>}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="font-mitr text-muted-foreground">
+              <div className="space-y-1.5">
+                <Label className="font-mitr text-muted-foreground/80 text-sm">
                   อีเมล
                 </Label>
-                <p className="text-lg font-mitr">
-                  {profile.email_address || "-"}
-                </p>
+                <div className="text-base font-medium font-mitr bg-muted/20 p-3 rounded-lg border border-border/40 text-foreground flex justify-between items-center">
+                  <span>{profile.email_address || "-"}</span>
+                  <span className="text-muted-foreground/40 text-xs">ยืนยันแล้ว</span>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="font-mitr text-muted-foreground">
+              <div className="space-y-1.5 pt-2">
+                <Label className="font-mitr text-muted-foreground/80 text-sm">
                   สมาชิกตั้งแต่
                 </Label>
-                <p className="text-lg font-mitr">
+                <div className="text-base font-medium font-mitr bg-muted/20 p-3 rounded-lg border border-border/40 text-foreground">
                   {formatDate(profile.regis_datetime)}
-                </p>
+                </div>
               </div>
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
