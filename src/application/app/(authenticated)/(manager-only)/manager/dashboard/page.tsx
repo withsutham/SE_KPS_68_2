@@ -12,6 +12,9 @@ import {
     ChevronDown,
     LayoutDashboard,
     RefreshCw,
+    AlertCircle,
+    ChevronRight,
+    XCircle,
 } from "lucide-react";
 import {
     LineChart,
@@ -41,13 +44,14 @@ interface DashboardData {
     newCustomersLastMonth: number;
     avgTransactionValue: number;
     availableTherapists: { employee_id: number; name: string }[];
-    revenueByDay: { date: string; revenue: number }[];
+    revenueByDay: { date: string; revenue: number; isHourly?: boolean }[];
     popularServices: { name: string; count: number }[];
     peakHours: { hour: string; count: number }[];
     roomUsage: { name: string; rate: number; totalMinutes: number; maxMinutes: number }[];
     therapistUtilization: { name: string; rate: number; totalMinutes: number; maxMinutes: number }[];
     couponRedemption: { total: number; used: number; rate: number; details: { name: string, total: number, used: number }[] };
     packageSalesUsage: { name: string; sold: number; used: number }[];
+    notifications: { id: string; type: "info" | "warning" | "error"; message: string; link?: string }[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -333,6 +337,55 @@ function CustomTooltip({ active, payload, label }: any) {
     );
 }
 
+// ─── Notification Block ────────────────────────────────────────────────────────
+
+function NotificationBlock({ notifications }: { notifications: DashboardData["notifications"] }) {
+    if (!notifications || notifications.length === 0) return null;
+
+    return (
+        <div className="flex flex-col gap-3 mb-8">
+            {notifications.map((n) => {
+                const config = {
+                    info: { icon: Inbox, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+                    warning: { icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+                    error: { icon: XCircle, color: "text-rose-500", bg: "bg-rose-500/10", border: "border-rose-500/20" },
+                }[n.type];
+
+                return (
+                    <div
+                        key={n.id}
+                        className={cn(
+                            "flex items-center justify-between gap-4 p-4 rounded-2xl border backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-2",
+                            config.bg,
+                            config.border
+                        )}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center border", config.bg, config.border)}>
+                                <config.icon className={cn("h-4 w-4", config.color)} />
+                            </div>
+                            <p className="text-sm font-medium font-mitr text-foreground">{n.message}</p>
+                        </div>
+                        {n.link && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className={cn("rounded-xl font-sans text-xs font-bold hover:bg-white/10", config.color)}
+                            >
+                                <a href={n.link} className="flex items-center gap-1.5">
+                                    ดูข้อมูล
+                                    <ChevronRight className="h-3 w-3" />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ManagerDashboardPage() {
@@ -356,8 +409,14 @@ export default function ManagerDashboardPage() {
             const { from, to } = getRange();
             const res = await fetch(`/api/dashboard?from=${from}&to=${to}`);
             const json = await res.json();
-            if (json.success) setData(json.data);
-        } catch {
+            if (json.success) {
+                setData(json.data);
+            } else {
+                console.error("Dashboard API error:", json.error);
+                setData(null);
+            }
+        } catch (err) {
+            console.error("Dashboard fetch exception:", err);
             setData(null);
         } finally {
             setLoading(false);
@@ -533,6 +592,8 @@ export default function ManagerDashboardPage() {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-8">
+                        <NotificationBlock notifications={data.notifications} />
+
                         {/* ── ① KPI Cards ─────────────────────────────────────────── */}
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                             {kpiCards.map((card) => (
@@ -545,14 +606,14 @@ export default function ManagerDashboardPage() {
                             {/* 2.1 Revenue Trend */}
                             <SectionCard
                                 title="แนวโน้มรายได้"
-                                subtitle="รายได้รวมแยกตามวัน"
+                                subtitle={data.revenueByDay[0]?.isHourly ? "รายได้รวมแยกตามชั่วโมง" : "รายได้รวมแยกตามวัน"}
                                 icon={TrendingUp}
                             >
                                 {data.revenueByDay.length === 0 ? (
                                     <EmptyState message="ยังไม่มีข้อมูลรายได้ในช่วงเวลานี้" />
                                 ) : (
                                     <ResponsiveContainer width="100%" height={220}>
-                                        <AreaChart data={data.revenueByDay.map((d) => ({ ...d, date: formatDateTH(d.date) }))}>
+                                        <AreaChart data={data.revenueByDay}>
                                             <defs>
                                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
@@ -560,8 +621,18 @@ export default function ManagerDashboardPage() {
                                                 </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.2} vertical={false} />
-                                            <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} dy={10} />
-                                            <YAxis tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} tickFormatter={(v) => `฿${(v / 1000).toFixed(0)}k`} />
+                                            <XAxis 
+                                                dataKey="date" 
+                                                tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} 
+                                                tickLine={false} 
+                                                axisLine={false} 
+                                                dy={10} 
+                                                tickFormatter={(v, i) => {
+                                                    const item = data.revenueByDay[i];
+                                                    return item?.isHourly ? v : formatDateTH(v);
+                                                }}
+                                            />
+                                            <YAxis tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `฿${(v / 1000).toFixed(0)}k` : `฿${v}`} />
                                             <Tooltip content={<CustomTooltip />} />
                                             <Area type="monotone" dataKey="revenue" name="รายได้" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
                                         </AreaChart>

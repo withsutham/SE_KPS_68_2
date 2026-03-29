@@ -28,6 +28,8 @@ import {
   XCircle,
   Search,
   BarChart3,
+  ChevronDown,
+  Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,7 @@ interface Employee {
   first_name: string;
   last_name: string;
   phone_number: string | null;
+  image_url?: string | null;
 }
 
 interface BookingDetail {
@@ -96,6 +99,8 @@ interface MergedSlot {
   startHourIndex: number; // index into HOURS array
   spanCount: number; // how many hour slots it spans
   dayIndex: number;
+  columnIndex?: number;
+  totalColumns?: number;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -216,6 +221,57 @@ function buildMergedSlots(
     }
   }
 
+  // Calculate Overlaps for each day
+  for (let dayIdx = 0; dayIdx < weekDates.length; dayIdx++) {
+    const daySlots = result.filter(s => s.dayIndex === dayIdx);
+    if (daySlots.length === 0) continue;
+
+    // Sort by start time, then duration
+    daySlots.sort((a, b) => {
+      if (a.startHourIndex !== b.startHourIndex) return a.startHourIndex - b.startHourIndex;
+      return b.spanCount - a.spanCount;
+    });
+
+    // Identify overlapping groups
+    let groups: MergedSlot[][] = [];
+    let lastEnd = -1;
+
+    for (const slot of daySlots) {
+      if (slot.startHourIndex >= lastEnd) {
+        groups.push([slot]);
+      } else {
+        groups[groups.length - 1].push(slot);
+      }
+      lastEnd = Math.max(lastEnd, slot.startHourIndex + slot.spanCount);
+    }
+
+    // For each group, assign columns
+    for (const group of groups) {
+      const columns: MergedSlot[][] = [];
+      for (const slot of group) {
+        let placed = false;
+        for (let i = 0; i < columns.length; i++) {
+          const lastInColumn = columns[i][columns[i].length - 1];
+          if (slot.startHourIndex >= lastInColumn.startHourIndex + lastInColumn.spanCount) {
+            columns[i].push(slot);
+            slot.columnIndex = i;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          slot.columnIndex = columns.length;
+          columns.push([slot]);
+        }
+      }
+      // Assign totalColumns based on max concurrent slots in the group
+      // A simple heuristic: totalColumns = columns.length for the whole group
+      for (const slot of group) {
+        slot.totalColumns = columns.length;
+      }
+    }
+  }
+
   return result;
 }
 
@@ -269,8 +325,12 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
       )}
     >
       <div className="flex items-center gap-3">
-        <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-          <User className="h-4 w-4 text-primary" />
+        <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
+          {employee.image_url ? (
+            <img src={employee.image_url} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
+          ) : (
+            <User className="h-4 w-4 text-primary" />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium font-mitr truncate">
@@ -302,21 +362,123 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
   );
 }
 
+// ─── Booking Details Dialog ───────────────────────────────────────────────────
+function BookingDetailsDialog({
+  state,
+  onClose,
+  onUnassign,
+  employees,
+  massages,
+  saving,
+}: {
+  state: { open: boolean; slot: MergedSlot | null };
+  onClose: () => void;
+  onUnassign: (slot: MergedSlot) => void;
+  employees: Employee[];
+  massages: Massage[];
+  saving: boolean;
+}) {
+  if (!state.slot) return null;
+
+  const slot = state.slot;
+  const massage = massages.find((m) => m.massage_id === slot.massage_id);
+  const employee = employees.find((e) => e.employee_id === slot.employee_id);
+  const startTime = new Date(slot.bookingDetails[0].massage_start_dateTime);
+  const endTime = new Date(slot.bookingDetails[slot.bookingDetails.length - 1].massage_end_dateTime);
+
+  return (
+    <Dialog open={state.open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md w-full">
+        <DialogHeader>
+          <DialogTitle className="font-mitr flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-primary" /> รายละเอียดการจอง #{slot.booking_id}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 py-2 font-sans">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center border-b pb-2">
+              <span className="text-muted-foreground text-sm">บริการ</span>
+              <span className="font-medium">{massage?.massage_name ?? `บริการ #${slot.massage_id}`}</span>
+            </div>
+            <div className="flex justify-between items-center border-b pb-2">
+              <span className="text-muted-foreground text-sm">วัน/เวลา</span>
+              <span className="font-medium">
+                {formatDateShort(startTime)} | {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+            <div className="flex justify-between items-center border-b pb-2">
+              <span className="text-muted-foreground text-sm">ระยะเวลา</span>
+              <span className="font-medium">{slot.spanCount} ชั่วโมง</span>
+            </div>
+            <div className="flex justify-between items-center border-b pb-2">
+              <span className="text-muted-foreground text-sm">พนักงานที่ได้รับมอบหมาย</span>
+              {employee ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                    {employee.image_url ? (
+                      <img src={employee.image_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-3 w-3 text-primary" />
+                    )}
+                  </div>
+                  <span className="font-medium">{employee.first_name} {employee.last_name}</span>
+                </div>
+              ) : (
+                <span className="text-amber-500 font-medium">รอจัดคน</span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 mt-2">
+            {employee && (
+              <Button
+                variant="destructive"
+                className="w-full rounded-xl gap-2 font-mitr font-normal h-11"
+                onClick={() => onUnassign(slot)}
+                disabled={saving}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                นำพนักงานออก (ยกเลิกการจัดคิว)
+              </Button>
+            )}
+            <Button variant="outline" className="w-full rounded-xl font-mitr font-normal h-11" onClick={onClose}>
+              ปิดหน้าต่าง
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Droppable Merged Slot ────────────────────────────────────────────────────
 function DroppableMergedSlot({
   slot,
   employees,
   massages,
   leaveRecords,
+  onClick,
 }: {
   slot: MergedSlot;
   employees: Employee[];
   massages: Massage[];
   leaveRecords: LeaveRecord[];
+  onClick: (slot: MergedSlot) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `merged-${slot.dayIndex}-${slot.startHourIndex}-${slot.booking_id}`,
     data: { mergedSlot: slot },
+  });
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDraggableRef,
+    isDragging,
+  } = useDraggable({
+    id: `assigned-${slot.booking_id}`,
+    data: { assignedSlot: slot },
+    disabled: !slot.employee_id,
   });
 
   const getEmployeeName = (id: number | null) => {
@@ -358,15 +520,30 @@ function DroppableMergedSlot({
     <div
       ref={setNodeRef}
       className={cn(
-        "absolute left-0 right-0 rounded-xl border transition-all duration-200 p-2 overflow-hidden",
-        slotColor
+        "absolute left-0 right-0 rounded-xl border transition-all duration-200 p-2 overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/30",
+        slotColor,
+        isDragging && "opacity-0"
       )}
       style={{
         top: `${slot.startHourIndex * (52 + 4)}px`,
         height: `${heightPx}px`,
+        left: slot.totalColumns && slot.totalColumns > 1 
+          ? `${(slot.columnIndex || 0) * (100 / slot.totalColumns)}%` 
+          : "0",
+        width: slot.totalColumns && slot.totalColumns > 1 
+          ? `${100 / slot.totalColumns}%` 
+          : "100%",
+      }}
+      onPointerDown={(e) => {
+        // If it's a click (not starting a drag), open dialog
+        // Library's sensor distance constraint will handle distinguishing drag vs click
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick(slot);
       }}
     >
-      <div className="flex flex-col gap-1 h-full">
+      <div className="flex flex-col gap-1 h-full relative" ref={setDraggableRef} {...listeners} {...attributes}>
         <Badge
           variant="outline"
           className={cn("text-[10px] w-fit px-1.5 py-0 font-sans", badgeColor)}
@@ -414,11 +591,33 @@ function DroppableMergedSlot({
 function DragOverlayContent({ employee }: { employee: Employee }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-primary/40 bg-card shadow-xl shadow-primary/20 cursor-grabbing backdrop-blur-sm">
-      <div className="h-9 w-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
-        <User className="h-4 w-4 text-primary" />
+      <div className="h-9 w-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0 overflow-hidden">
+        {employee.image_url ? (
+          <img src={employee.image_url} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
+        ) : (
+          <User className="h-4 w-4 text-primary" />
+        )}
       </div>
       <p className="text-sm font-medium font-mitr">
         {employee.first_name} {employee.last_name}
+      </p>
+    </div>
+  );
+}
+
+function DragOverlayAssignedContent({ slot, employees, massages }: { slot: MergedSlot; employees: Employee[]; massages: Massage[] }) {
+  const emp = employees.find(e => e.employee_id === slot.employee_id);
+  const massage = massages.find(m => m.massage_id === slot.massage_id);
+  return (
+    <div className="flex flex-col gap-1 px-4 py-3 rounded-2xl border border-red-400 bg-red-50/90 shadow-xl shadow-red-200 cursor-grabbing backdrop-blur-sm">
+      <div className="flex items-center gap-2">
+        <XCircle className="h-4 w-4 text-red-500" />
+        <p className="text-sm font-medium font-mitr text-red-700">
+          ยกเลิกจัดคิว {emp?.first_name} {emp?.last_name}
+        </p>
+      </div>
+      <p className="text-[10px] font-sans text-red-600/80">
+        ปล่อยเมาส์ที่ว่างเพื่อคอมเฟิร์มการนำออก
       </p>
     </div>
   );
@@ -641,6 +840,103 @@ function MonthlyStatsDialog({
   );
 }
 
+// ─── Massage Filter Dialog ──────────────────────────────────────────────────
+function MassageFilterDialog({
+  open,
+  onClose,
+  massages,
+  currentId,
+  onSelect,
+}: {
+  open: boolean;
+  onClose: () => void;
+  massages: Massage[];
+  currentId: number | 'all';
+  onSelect: (id: number | 'all') => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-xl w-full max-h-[85vh] overflow-hidden flex flex-col p-0 font-sans">
+        <DialogHeader className="px-6 py-4 border-b shrink-0 bg-muted/5 backdrop-blur-sm">
+          <DialogTitle className="font-mitr text-xl flex items-center gap-2">
+            <Filter className="h-5 w-5 text-primary" /> เลือกพนักงานตามทักษะบริการ
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-muted/5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+             <button
+               onClick={() => { onSelect('all'); onClose(); }}
+               className={cn(
+                 "group relative flex flex-col items-start gap-1.5 p-4 rounded-2xl border text-left transition-all duration-200",
+                 currentId === 'all' 
+                   ? "bg-primary/10 border-primary shadow-sm shadow-primary/20 ring-1 ring-primary/20" 
+                   : "bg-background hover:bg-primary/5 hover:border-primary/30 border-border/40"
+               )}
+             >
+               <div className="flex items-center gap-2">
+                 <div className={cn(
+                   "w-2 h-2 rounded-full",
+                   currentId === 'all' ? "bg-primary animate-pulse" : "bg-muted-foreground/30"
+                 )} />
+                 <span className="font-mitr font-medium text-base">บริการทั้งหมด</span>
+               </div>
+               <span className="text-[12px] text-muted-foreground leading-relaxed pl-4">
+                 แสดงพนักงานทุกคนในระบบโดยไม่ระบุประเภทของการนวด
+               </span>
+               {currentId === 'all' && (
+                 <div className="absolute top-3 right-3">
+                   <CheckCircle2 className="h-4 w-4 text-primary" />
+                 </div>
+               )}
+             </button>
+             
+             {massages.map((m) => (
+               <button
+                 key={m.massage_id}
+                 onClick={() => { onSelect(m.massage_id); onClose(); }}
+                 className={cn(
+                   "group relative flex flex-col items-start gap-1.5 p-4 rounded-2xl border text-left transition-all duration-200",
+                   currentId === m.massage_id 
+                     ? "bg-primary/10 border-primary shadow-sm shadow-primary/20 ring-1 ring-primary/20" 
+                     : "bg-background hover:bg-primary/5 hover:border-primary/30 border-border/40"
+                 )}
+               >
+                 <div className="flex items-center gap-2">
+                   <div className={cn(
+                     "w-2 h-2 rounded-full",
+                     currentId === m.massage_id ? "bg-primary animate-pulse" : "bg-primary/20 group-hover:bg-primary/40"
+                   )} />
+                   <span className="font-mitr font-medium text-base">{m.massage_name}</span>
+                 </div>
+                 {m.massage_name_en && (
+                   <span className="text-[12px] text-muted-foreground leading-relaxed pl-4 uppercase tracking-wider font-sans opacity-80">
+                     {m.massage_name_en}
+                   </span>
+                 )}
+                 {currentId === m.massage_id && (
+                   <div className="absolute top-3 right-3">
+                     <CheckCircle2 className="h-4 w-4 text-primary" />
+                   </div>
+                 )}
+               </button>
+             ))}
+          </div>
+        </div>
+        
+        <div className="px-6 py-4 border-t bg-muted/20 flex justify-end items-center gap-4">
+           <p className="text-[11px] text-muted-foreground font-sans italic mr-auto">
+             * การเลือกบริการจะกรองเฉพาะพนักงานที่มี "ทักษะ" นั้นๆ
+           </p>
+           <Button variant="ghost" onClick={onClose} className="rounded-full px-6 font-mitr font-normal hover:bg-primary/5">
+              ปิด
+           </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function WeeklySchedulePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -673,6 +969,7 @@ export default function WeeklySchedulePage() {
   }, [searchParams]);
 
   const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
+  const [activeAssignedSlot, setActiveAssignedSlot] = useState<MergedSlot | null>(null);
 
   // Confirm dialog state combining skill mismatch warning
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -688,17 +985,55 @@ export default function WeeklySchedulePage() {
     reason: string;
   }>({ open: false, title: "", reason: "" });
 
+  const [detailsDialog, setDetailsDialog] = useState<{
+    open: boolean;
+    slot: MergedSlot | null;
+  }>({ open: false, slot: null });
+
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterMassageId, setFilterMassageId] = useState<number | 'all'>('all');
+  const [filterStartTime, setFilterStartTime] = useState<string>("");
+  const [filterEndTime, setFilterEndTime] = useState<string>("");
+  const [massageDialogOpen, setMassageDialogOpen] = useState(false);
 
-  // Filter employees by search
+  // Filter employees by search and massage skill
   const filteredEmployees = useMemo(() => {
-    if (!searchQuery.trim()) return employees;
-    const q = searchQuery.toLowerCase();
-    return employees.filter(e => 
-      `${e.first_name} ${e.last_name}`.toLowerCase().includes(q)
-    );
-  }, [employees, searchQuery]);
+    let result = employees;
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(e => 
+        `${e.first_name} ${e.last_name}`.toLowerCase().includes(q)
+      );
+    }
+    
+    // Filter by massage skill
+    if (filterMassageId !== 'all') {
+      result = result.filter(emp => 
+        skills.some(s => s.employee_id === emp.employee_id && s.massage_id === filterMassageId)
+      );
+    }
+
+    // Filter by time range (Working hours)
+    if (filterStartTime || filterEndTime) {
+      result = result.filter(emp => {
+        const empSchs = schedules.filter(s => s.employee_id === emp.employee_id);
+        const start = filterStartTime || "00:00";
+        const end = filterEndTime || "23:59";
+        
+        return empSchs.some(sch => {
+          const schStart = sch.start_time.slice(0, 5);
+          const schEnd = sch.end_time.slice(0, 5);
+          // Overlap: StartA < EndB AND StartB < EndA
+          return schStart < end && start < schEnd;
+        });
+      });
+    }
+    
+    return result;
+  }, [employees, searchQuery, filterMassageId, skills, filterStartTime, filterEndTime, schedules]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -779,15 +1114,50 @@ export default function WeeklySchedulePage() {
     }
   };
 
+  const unassignEmployee = async (slot: MergedSlot) => {
+    setSaving(true);
+    try {
+      await Promise.all(
+        slot.bookingDetails.map((b) =>
+          fetch(`/api/booking_detail/${b.booking_detail_id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ employee_id: null }),
+          })
+        )
+      );
+      await fetchData();
+      setDetailsDialog({ open: false, slot: null });
+    } catch (err) {
+      console.error("Failed to unassign employee:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // ─── Drag Handlers ─────────────────────────────────────────────────────────
   const handleDragStart = (event: DragStartEvent) => {
     const emp = event.active.data.current?.employee as Employee | undefined;
-    setActiveEmployee(emp ?? null);
+    const assignedSlot = event.active.data.current?.assignedSlot as MergedSlot | undefined;
+    
+    if (emp) setActiveEmployee(emp);
+    if (assignedSlot) setActiveAssignedSlot(assignedSlot);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     setActiveEmployee(null);
+    setActiveAssignedSlot(null);
     const { over, active } = event;
+
+    // Handle Drag out to Unassign
+    if (!over && active.id.toString().startsWith("assigned-")) {
+      const assignedSlot = active.data.current?.assignedSlot as MergedSlot | undefined;
+      if (assignedSlot) {
+        await unassignEmployee(assignedSlot);
+      }
+      return;
+    }
+
     if (!over || !active) return;
 
     const employee = active.data.current?.employee as Employee | undefined;
@@ -933,14 +1303,55 @@ export default function WeeklySchedulePage() {
               สรุปรวมประจำเดือน
             </Button>
             {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
-              <Input 
-                placeholder="ค้นหาชื่อพนักงาน..." 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-8 bg-background/80 border-border/40 text-sm font-sans rounded-lg"
-              />
+            <div className="relative space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                <Input 
+                  placeholder="ค้นหาชื่อพนักงาน..." 
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-8 bg-background/80 border-border/40 text-sm font-sans rounded-lg"
+                />
+              </div>
+              
+              {/* Working Hours Filter */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground font-sans ml-1">เวลาเริ่ม (ตั้งแต่)</span>
+                  <Input 
+                    type="time" 
+                    value={filterStartTime} 
+                    onChange={(e) => setFilterStartTime(e.target.value)}
+                    className="h-8 text-xs font-sans bg-background/80"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground font-sans ml-1">เวลาเลิก (ถึง)</span>
+                  <Input 
+                    type="time" 
+                    value={filterEndTime} 
+                    onChange={(e) => setFilterEndTime(e.target.value)}
+                    className="h-8 text-xs font-sans bg-background/80"
+                  />
+                </div>
+              </div>
+
+              {/* Skill Filter Button (Dialog Trigger) */}
+              <Button
+                variant="outline"
+                onClick={() => setMassageDialogOpen(true)}
+                className="w-full h-9 justify-between font-sans text-xs bg-background/80 border-border/40 hover:bg-primary/5 hover:border-primary/40 transition-all rounded-lg px-3 group"
+              >
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <Filter className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="truncate">
+                    {filterMassageId === 'all' 
+                      ? "เลือกตามบริการ (ทั้งหมด)" 
+                      : (massages.find(m => m.massage_id === filterMassageId)?.massage_name ?? "เลือกบริการ")}
+                  </span>
+                </div>
+                <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+              </Button>
             </div>
           </div>
 
@@ -1103,6 +1514,7 @@ export default function WeeklySchedulePage() {
                                 employees={employees}
                                 massages={massages}
                                 leaveRecords={leaveRecords}
+                                onClick={(s) => setDetailsDialog({ open: true, slot: s })}
                               />
                             ))}
                           </div>
@@ -1140,6 +1552,8 @@ export default function WeeklySchedulePage() {
         <DragOverlay>
           {activeEmployee ? (
             <DragOverlayContent employee={activeEmployee} />
+          ) : activeAssignedSlot ? (
+            <DragOverlayAssignedContent slot={activeAssignedSlot} employees={employees} massages={massages} />
           ) : null}
         </DragOverlay>
       </DndContext>
@@ -1166,6 +1580,25 @@ export default function WeeklySchedulePage() {
         weekMonday={weekMonday}
         employees={employees}
         massages={massages}
+      />
+
+      {/* Booking Details Dialog */}
+      <BookingDetailsDialog
+        state={detailsDialog}
+        onClose={() => setDetailsDialog({ open: false, slot: null })}
+        onUnassign={unassignEmployee}
+        employees={employees}
+        massages={massages}
+        saving={saving}
+      />
+
+      {/* Massage Filter Dialog */}
+      <MassageFilterDialog
+        open={massageDialogOpen}
+        onClose={() => setMassageDialogOpen(false)}
+        massages={massages}
+        currentId={filterMassageId}
+        onSelect={setFilterMassageId}
       />
     </main>
   );

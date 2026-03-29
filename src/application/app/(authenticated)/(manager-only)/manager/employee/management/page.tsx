@@ -46,6 +46,7 @@ interface Employee {
   phone_number: string | null;
   work_since: string | null;
   profile_id?: string | null;
+  image_url?: string | null;
 }
 
 interface WorkSchedule {
@@ -218,15 +219,38 @@ export default function EmployeeManagementPage() {
     [employees, selectedEmpId]
   );
 
-  // Filter employees by search
+  const totalPendingLeaves = useMemo(() => {
+    return leaveRecords.filter(l => l.approval_status === "pending").length;
+  }, [leaveRecords]);
+
+  // Filter and sort employees
   const filteredEmployees = useMemo(() => {
-    if (!searchQuery.trim()) return employees;
-    const q = searchQuery.toLowerCase();
-    return employees.filter(e => 
-      `${e.first_name} ${e.last_name}`.toLowerCase().includes(q) ||
-      (e.phone_number && e.phone_number.includes(q))
-    );
-  }, [employees, searchQuery]);
+    let result = [...employees];
+    
+    // 1. Filter by search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(e => 
+        `${e.first_name} ${e.last_name}`.toLowerCase().includes(q) ||
+        (e.phone_number && e.phone_number.includes(q))
+      );
+    }
+
+    // 2. Sort by pending leaves
+    return result.sort((a, b) => {
+      const countA = leaveRecords.filter(l => l.employee_id === a.employee_id && l.approval_status === "pending").length;
+      const countB = leaveRecords.filter(l => l.employee_id === b.employee_id && l.approval_status === "pending").length;
+      
+      // Sort priority:
+      // 1. Employees with pending leaves come first
+      // 2. Among those with pending leaves, sort by count descending
+      if (countA > 0 && countB === 0) return -1;
+      if (countA === 0 && countB > 0) return 1;
+      if (countA > 0 && countB > 0) return countB - countA;
+      
+      return 0; // Maintain original order for others
+    });
+  }, [employees, searchQuery, leaveRecords]);
 
   return (
     <main className="flex-1 w-full h-full flex flex-col md:flex-row overflow-hidden bg-background">
@@ -239,6 +263,11 @@ export default function EmployeeManagementPage() {
                 <Users className="h-4 w-4 text-primary" />
               </div>
               <h2 className="font-mitr font-medium">รายชื่อพนักงาน</h2>
+              {totalPendingLeaves > 0 && (
+                <Badge variant="outline" className="bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800 ml-1 px-1.5 py-0 h-5 text-[10px] font-bold">
+                  {totalPendingLeaves}
+                </Badge>
+              )}
             </div>
             <EmployeeFormDialog mode="add" massages={massages} onSaved={fetchData} />
           </div>
@@ -277,11 +306,15 @@ export default function EmployeeManagementPage() {
                  >
                    <div className="flex items-center gap-3">
                      <div className={cn(
-                       "h-10 w-10 min-w-10 rounded-full flex items-center justify-center text-sm font-mitr font-medium border",
-                       isActive ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border shadow-sm text-foreground/70"
-                     )}>
-                       {getInitials(emp.first_name, emp.last_name)}
-                     </div>
+                        "h-10 w-10 min-w-10 rounded-full flex items-center justify-center text-sm font-mitr font-medium border overflow-hidden",
+                        isActive ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border shadow-sm text-foreground/70"
+                      )}>
+                        {emp.image_url ? (
+                          <img src={emp.image_url} alt={`${emp.first_name}`} className="h-full w-full object-cover" />
+                        ) : (
+                          getInitials(emp.first_name, emp.last_name)
+                        )}
+                      </div>
                      <div className="flex-1 min-w-0">
                        <p className="font-mitr truncate text-[15px]">{emp.first_name} {emp.last_name}</p>
                        <p className="text-xs text-muted-foreground truncate">{emp.phone_number || "ไม่มีเบอร์"}</p>
@@ -354,8 +387,12 @@ function EmployeeDetailPanel({ employee, schedules, leaveRecords, massages, skil
       {/* Detail Header */}
       <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between pb-6 border-b border-border/40">
         <div className="flex items-center gap-5">
-           <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/80 to-primary text-primary-foreground shadow-lg flex items-center justify-center text-3xl font-mitr font-medium border border-primary/20">
-             {getInitials(employee.first_name, employee.last_name)}
+           <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/80 to-primary text-primary-foreground shadow-lg flex items-center justify-center text-3xl font-mitr font-medium border border-primary/20 overflow-hidden">
+             {employee.image_url ? (
+                <img src={employee.image_url} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
+             ) : (
+                getInitials(employee.first_name, employee.last_name)
+             )}
            </div>
            <div>
              <h1 className="text-3xl font-mitr font-medium">{employee.first_name} {employee.last_name}</h1>
@@ -438,6 +475,7 @@ function EmployeeDetailPanel({ employee, schedules, leaveRecords, massages, skil
 function EmployeeFormDialog({ mode, employee, massages, currentSkills, onSaved }: any) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
      email: "",
      password: "",
@@ -450,6 +488,7 @@ function EmployeeFormDialog({ mode, employee, massages, currentSkills, onSaved }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     setLoading(true);
     try {
        const url = mode === "add" ? "/api/employee" : `/api/employee/${employee.employee_id}`;
@@ -470,10 +509,11 @@ function EmployeeFormDialog({ mode, employee, massages, currentSkills, onSaved }
        
        if (!res.ok) {
           const errorJson = await res.json();
-          alert(`เกิดข้อผิดพลาด: ${errorJson.error}`);
+          setFormError(errorJson.error || "เกิดข้อผิดพลาดไม่ทราบสาเหตุ");
           return;
        }
        setOpen(false);
+       setFormError(null);
        onSaved();
     } catch(err) {
        console.error(err)
@@ -502,6 +542,12 @@ function EmployeeFormDialog({ mode, employee, massages, currentSkills, onSaved }
             <DialogTitle className="font-mitr text-xl">{mode === "add" ? "เพิ่มพนักงานใหม่" : "แก้ไขข้อมูลพนักงาน"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 pt-4 font-sans">
+            {formError && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-sm font-sans">
+                <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-red-700 dark:text-red-400">{formError}</p>
+              </div>
+            )}
             {mode === "add" && (
               <>
                 <div className="space-y-2">
@@ -567,9 +613,11 @@ function EmployeeFormDialog({ mode, employee, massages, currentSkills, onSaved }
 function DeleteEmployeeDialog({ employee, onDelete }: any) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const confirmDelete = async () => {
     setLoading(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/employee/${employee.employee_id}`, { method: "DELETE" });
       if (res.ok) {
@@ -577,7 +625,7 @@ function DeleteEmployeeDialog({ employee, onDelete }: any) {
         onDelete();
       } else {
         const errorJson = await res.json();
-        alert(`เกิดข้อผิดพลาด: ${errorJson.error || "ไม่สามารถลบได้"}`);
+        setDeleteError(errorJson.error || "ไม่สามารถลบได้");
       }
     } catch (err) {
       console.error(err);
@@ -591,12 +639,18 @@ function DeleteEmployeeDialog({ employee, onDelete }: any) {
       <Button variant="destructive" onClick={() => setOpen(true)} className="rounded-full gap-2 font-sans">
         <Trash2 className="h-4 w-4" /> ลบพนักงาน
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setDeleteError(null); }}>
          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="font-mitr text-destructive flex gap-2 items-center"><AlertTriangle className="h-5 w-5" /> ยืนยันการลบ</DialogTitle>
             </DialogHeader>
             <p className="py-4 text-sm font-sans text-muted-foreground">คุณแน่ใจหรือไม่ว่าต้องการลบพนักงาน <strong className="text-foreground">{employee.first_name}</strong>? กรณีนี้จะรวมถึงการเพิกถอนสิทธิ์ระบบรหัสผ่านด้วย การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+            {deleteError && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-sm font-sans">
+                <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-red-700 dark:text-red-400">{deleteError}</p>
+              </div>
+            )}
             <DialogFooter>
                <Button variant="ghost" onClick={() => setOpen(false)}>ยกเลิก</Button>
                <Button variant="destructive" onClick={confirmDelete} disabled={loading}>
@@ -618,6 +672,11 @@ function ScheduleTabContent({ employee, schedules, onRefresh }: any) {
   const [endTime, setEndTime] = useState("18:00");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [errorDialog, setErrorDialog] = useState<{ open: boolean; title: string; message: string }>({
+    open: false,
+    title: "",
+    message: "",
+  });
 
   const handleSaveSchedule = async () => {
     if (!startTime || !endTime) return;
@@ -625,7 +684,11 @@ function ScheduleTabContent({ employee, schedules, onRefresh }: any) {
     const h1 = Number(startTime.replace(":", ""));
     const h2 = Number(endTime.replace(":", ""));
     if (h1 >= h2) {
-      alert("เวลาเริ่มงานต้องมาก่อนเวลาเลิกงาน");
+      setErrorDialog({
+        open: true,
+        title: "เวลาไม่ถูกต้อง",
+        message: "เวลาเริ่มงานต้องมาก่อนเวลาเลิกงาน กรุณาตรวจสอบและลองใหม่อีกครั้ง",
+      });
       return;
     }
 
@@ -637,8 +700,12 @@ function ScheduleTabContent({ employee, schedules, onRefresh }: any) {
     });
 
     if (hasOverlap) {
-       alert("ไม่สามารถบันทึกได้! เนื่องจากช่วงเวลานี้ทับซ้อนกับกะเดิมที่คุณตั้งไว้แล้วในวันเดียวกัน กรุณาลบอันเก่าออกหรือเปลี่ยนเวลาใหม่");
-       return;
+      setErrorDialog({
+        open: true,
+        title: "ช่วงเวลาทับซ้อน",
+        message: "ไม่สามารถบันทึกได้! เนื่องจากช่วงเวลานี้ทับซ้อนกับกะเดิมที่คุณตั้งไว้แล้วในวันเดียวกัน กรุณาลบอันเก่าออกหรือเปลี่ยนเวลาใหม่",
+      });
+      return;
     }
 
     setSaving(true);
@@ -677,24 +744,38 @@ function ScheduleTabContent({ employee, schedules, onRefresh }: any) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 bg-muted/20 p-4 rounded-xl border border-border/40 font-sans">
-        <select
-          value={addingDay}
-          onChange={(e) => setAddingDay(e.target.value as Weekday)}
-          className="px-3 py-2 bg-background border border-border rounded-lg text-sm outline-none"
-        >
-          {WEEKDAYS.map((w) => (
-            <option key={w.key} value={w.key}>วัน{w.label}</option>
-          ))}
-        </select>
-        <div className="flex items-center gap-2 flex-1">
-          <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-          <span className="text-muted-foreground">ถึง</span>
-          <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+      <div className="flex flex-col gap-4 bg-muted/20 p-4 rounded-xl border border-border/40 font-sans">
+        {/* Day selector: checkbox-style toggle buttons */}
+        <div className="flex flex-wrap gap-2">
+          {WEEKDAYS.map((w) => {
+            const isSelected = addingDay === w.key;
+            return (
+              <button
+                key={w.key}
+                type="button"
+                onClick={() => setAddingDay(w.key)}
+                className={cn(
+                  "px-4 py-2.5 rounded-xl text-sm font-mitr font-medium transition-all border-2 min-w-[80px]",
+                  isSelected
+                    ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
+                    : "bg-card text-muted-foreground border-border/50 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+                )}
+              >
+                {w.label}
+              </button>
+            );
+          })}
         </div>
-        <Button onClick={handleSaveSchedule} disabled={saving} className="md:w-32">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "บันทึกกะทํางาน"}
-        </Button>
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+          <div className="flex items-center gap-2 flex-1">
+            <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+            <span className="text-muted-foreground text-sm">ถึง</span>
+            <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+          </div>
+          <Button onClick={handleSaveSchedule} disabled={saving} className="md:w-36">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "บันทึกกะทํางาน"}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[200px] content-start">
@@ -724,6 +805,25 @@ function ScheduleTabContent({ employee, schedules, onRefresh }: any) {
           </div>
         )}
       </div>
+
+      {/* Error Dialog (themed replacement for native alert) */}
+      <Dialog open={errorDialog.open} onOpenChange={(v) => !v && setErrorDialog({ open: false, title: "", message: "" })}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-mitr flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" /> {errorDialog.title}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="py-2 text-sm font-sans text-muted-foreground leading-relaxed">
+            {errorDialog.message}
+          </p>
+          <DialogFooter>
+            <Button onClick={() => setErrorDialog({ open: false, title: "", message: "" })} className="w-full">
+              รับทราบ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
