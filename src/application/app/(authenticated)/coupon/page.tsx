@@ -46,7 +46,7 @@ export default function CouponPage() {
   useEffect(() => {
     setCurrentPage(1);
     setRowsPerPage(activeTab === "history" ? "10" : "9");
-    if (activeTab === "my-coupons" && sortBy === "newest") {
+    if (activeTab === "my-coupons" && (sortBy === "newest" || sortBy === "expiring_soon")) {
       setSortBy("discount_desc");
     }
   }, [activeTab, sortBy]);
@@ -197,7 +197,24 @@ export default function CouponPage() {
   );
 
   const sortCouponsList = (items: any[]) => {
+    if (sortBy === "expiring_soon") {
+      return [...items].sort((a, b) => {
+        const getDeadline = (item: any) => {
+          if (item.coupon && item.coupon.collect_deadline) {
+            return new Date(item.coupon.collect_deadline).getTime();
+          }
+          if (item.collect_deadline) {
+            return new Date(item.collect_deadline).getTime();
+          }
+          // If no deadline, put it at the end
+          return Infinity;
+        };
+        return getDeadline(a) - getDeadline(b);
+      });
+    }
+
     if (sortBy === "newest") return items;
+    
     return [...items].sort((a, b) => {
       const getDiscount = (item: any) => {
         if (item.coupon && typeof item.coupon.discount_percent !== "undefined") {
@@ -326,7 +343,7 @@ export default function CouponPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {activeTab === "discover" && (
-                        <SelectItem value="newest" className="font-sans">ล่าสุด</SelectItem>
+                        <SelectItem value="expiring_soon" className="font-sans">ใกล้หมดวันเก็บ</SelectItem>
                       )}
                       <SelectItem value="discount_desc" className="font-sans">ส่วนลด (มากไปน้อย)</SelectItem>
                       <SelectItem value="discount_asc" className="font-sans">ส่วนลด (น้อยไปมาก)</SelectItem>
