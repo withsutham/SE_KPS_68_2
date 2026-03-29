@@ -191,7 +191,7 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
               let skipCount = 0;
               return (
                 <tr key={day} className="h-28 group">
-                  <td className="border-b border-r-2 border-[#62846E] bg-[#fbfaf9] text-center sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                  <td className="border-b border-r-2 border-[#62846E] bg-[#fbfaf9] text-center">
                     <span className="px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all bg-[#62846E]/10 text-[#62846E] border border-transparent">
                       {day}
                     </span>

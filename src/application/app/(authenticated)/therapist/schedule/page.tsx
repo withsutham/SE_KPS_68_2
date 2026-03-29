@@ -22,10 +22,10 @@ export default async function SchedulePage() {
   
   if (!employee) {
     return (
-      <div className="min-h-screen bg-[#fbfaf9] p-8">
+      <>
         <h1 className="text-2xl font-bold mb-6 text-red-600">ไม่พบโปรไฟล์พนักงานของคุณ</h1>
         <p>กรุณาติดต่อผู้ดูแลระบบเพื่อตรวจสอบข้อมูลของคุณ (ID: {user.id})</p>
-      </div>
+      </>
     );
   }
 
@@ -53,9 +53,9 @@ export default async function SchedulePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fbfaf9] p-8">
+    <>
       <h1 className="text-2xl font-bold mb-6">ตารางงานของคุณ</h1>
       <ScheduleContent initialBookings={(bookings as any) || []} />
-    </div>
+    </>
   );
 }
