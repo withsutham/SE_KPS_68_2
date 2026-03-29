@@ -107,22 +107,32 @@ export function OperatingTimeManagement() {
   }
 
   return (
-    <main className="flex-1 font-mitr">
+    <main className="relative flex-1 w-full font-mitr">
+      {/* Background elements to match other pages */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -right-32 -top-28 h-[420px] w-[420px] rounded-full bg-primary/6 blur-3xl" />
+        <div className="absolute bottom-0 left-[-12rem] h-[360px] w-[360px] rounded-full bg-secondary/40 blur-3xl" />
+      </div>
+
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 md:px-8 md:py-12">
-        <section className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-card/80 p-8 shadow-xl shadow-primary/5 backdrop-blur-sm">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_hsl(var(--primary)/0.16),_transparent_35%),radial-gradient(circle_at_bottom_right,_hsl(var(--secondary)/0.45),_transparent_35%)]" />
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl space-y-3">
-              <p className="text-sm font-medium uppercase tracking-[0.3em] text-primary/70">คอนโซลผู้จัดการ</p>
-              <h1 className="font-mitr text-3xl text-foreground md:text-4xl">จัดการเวลาทำการ</h1>
-              <p className="text-muted-foreground">กำหนดเวลาเปิด-ปิดของร้านเพื่อให้ลูกค้าสามารถเลือกจองคิวในช่วงเวลาที่ถูกต้อง</p>
-            </div>
-            <Button variant="outline" onClick={() => void loadOperatingTime()} disabled={isLoading} className="w-full sm:w-auto">
-              <RefreshCw className={isLoading ? "animate-spin" : ""} />
-              รีเฟรช
+        {/* Consistent Header Section */}
+        <header className="text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
+            <Clock className="h-7 w-7 text-primary" />
+          </div>
+          <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">ผู้จัดการ · Manager</p>
+          <h1 className="text-3xl font-bold text-foreground md:text-4xl">จัดการเวลาทำการ</h1>
+          <p className="mx-auto mt-3 max-w-2xl font-sans text-sm text-muted-foreground md:text-base">
+            กำหนดเวลาเปิด-ปิดของร้านเพื่อให้ลูกค้าสามารถเลือกจองคิวในช่วงเวลาที่ถูกต้อง
+          </p>
+
+          <div className="mt-8 flex justify-center">
+            <Button variant="outline" onClick={() => void loadOperatingTime()} disabled={isLoading} className="h-11 rounded-full px-8 shadow-sm">
+              <RefreshCw className={isLoading ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"} />
+              รีเฟรชข้อมูล
             </Button>
           </div>
-        </section>
+        </header>
 
         {(errorMessage || successMessage) && (
           <div
