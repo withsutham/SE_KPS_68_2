@@ -232,7 +232,7 @@ function ProfilePageInner() {
             {!isEditing && (
               <Button
                 onClick={handleEdit}
-                className="font-mitr rounded-full px-4 !bg-emerald-600 hover:!bg-emerald-700 !text-white shadow-sm transition-colors"
+                className="font-mitr rounded-full px-4 shadow-sm transition-colors"
                 size="sm"
               >
                 <Edit className="h-4 w-4 mr-2" />
@@ -344,7 +344,7 @@ function ProfilePageInner() {
                 </Button>
                 <Button
                   onClick={handleSave}
-                  className="flex-1 font-mitr rounded-full shadow-md !bg-emerald-600 hover:!bg-emerald-700 !text-white transition-colors"
+                  className="flex-1 font-mitr rounded-full shadow-md transition-colors"
                   disabled={isSaving}
                 >
                   {isSaving ? (
