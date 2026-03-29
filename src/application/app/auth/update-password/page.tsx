@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { UpdatePasswordForm } from "@/components/update-password-form";
+
+export const metadata: Metadata = {
+  title: "เปลี่ยนรหัสผ่าน",
+};
 
 export default function Page() {
   return (

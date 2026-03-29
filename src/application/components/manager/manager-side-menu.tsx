@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,8 @@ import {
   PanelLeft,
   PanelLeftClose,
   LogOut,
-  Clock,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 type MenuItem = {
@@ -64,11 +66,22 @@ function MenuLink({ item, active, collapsed }: { item: MenuItem; active: boolean
 export function ManagerSideMenu() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before rendering theme-dependent content
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/";
+  };
+
+  const handleThemeToggle = () => {
+    setTheme(theme === "light" ? "dark" : "light");
   };
 
   return (
@@ -118,7 +131,27 @@ export function ManagerSideMenu() {
         </div>
       </div>
 
-      <div className="border-t border-border/50 p-3">
+      <div className="border-t border-border/50 p-3 space-y-2">
+        <Button
+          variant="ghost"
+          onClick={handleThemeToggle}
+          disabled={!mounted}
+          className={cn(
+            "w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm",
+            "text-muted-foreground hover:bg-muted hover:text-foreground",
+            collapsed && "justify-center px-2"
+          )}
+          title={collapsed ? (theme === "light" ? "Dark mode" : "Light mode") : undefined}
+          aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        >
+          {mounted && (theme === "light" ? (
+            <Moon className="h-4 w-4 shrink-0" />
+          ) : (
+            <Sun className="h-4 w-4 shrink-0" />
+          ))}
+          {!collapsed && <span>{theme === "light" ? "Dark mode" : "Light mode"}</span>}
+        </Button>
+        
         <Button
           variant="ghost"
           onClick={handleLogout}

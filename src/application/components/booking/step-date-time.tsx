@@ -114,8 +114,8 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
 
         if (json.success) {
           const slots = json.data.map((d: any) => ({
-            start: new Date(d.massage_start_datetime),
-            end: new Date(d.massage_end_datetime),
+            start: new Date(d.massage_start_dateTime),
+            end: new Date(d.massage_end_dateTime),
           }));
           setBookedSlots(slots);
         }
