@@ -3,6 +3,13 @@ import { headers } from "next/headers";
 import { Button } from "./ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { ChevronDown, User } from "lucide-react";
 
 export async function AuthButton() {
   const supabase = await createClient();
@@ -42,9 +49,28 @@ export async function AuthButton() {
 
   return user ? (
     <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-      <span className="hidden sm:inline text-muted-foreground font-mitr truncate max-w-[220px]">
-        สวัสดีคุณ {displayName}
-      </span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="flex items-center gap-1 font-mitr text-muted-foreground hover:text-foreground px-2 sm:px-3"
+          >
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline truncate max-w-[180px]">
+              สวัสดีคุณ {displayName}
+            </span>
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48 font-mitr">
+          <DropdownMenuItem asChild>
+            <Link href="/profile" className="cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
+              โปรไฟล์ของฉัน
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <LogoutButton />
     </div>
   ) : (
