@@ -47,6 +47,17 @@ export default async function SchedulePage() {
     console.error("Error fetching bookings:", error.message);
   }
 
+  // 5. ดึงข้อมูลการลาที่ได้รับอนุมัติแล้ว (Approved)
+  const { data: leaveRecords, error: leaveError } = await supabase
+    .from('leave_record')
+    .select('*')
+    .eq('employee_id', targetEmployeeId)
+    .eq('approval_status', 'approved');
+
+  if (leaveError) {
+    console.error("Error fetching leave records:", leaveError.message);
+  }
+
   console.log("Raw Bookings Found:", bookings?.length || 0, "records");
   if (bookings && bookings.length > 0) {
     console.log("Sample Booking Date:", bookings[0].massage_start_dateTime);
@@ -55,7 +66,10 @@ export default async function SchedulePage() {
   return (
     <>
       <h1 className="text-2xl font-bold mb-6">ตารางงานของคุณ</h1>
-      <ScheduleContent initialBookings={(bookings as any) || []} />
+      <ScheduleContent 
+        initialBookings={(bookings as any) || []} 
+        leaveRecords={(leaveRecords as any) || []}
+      />
     </>
   );
 }
