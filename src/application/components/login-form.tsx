@@ -16,6 +16,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { getUserType } from "@/components/therapist/employee_actions";
+
 export function LoginForm({
   className,
   ...props
@@ -46,11 +48,21 @@ export function LoginForm({
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
+
+      // Check user role for redirect via server action (to bypass RLS safely)
+      if (authData?.user) {
+        const userType = await getUserType(authData.user.id);
+        if (userType === "therapist") {
+          window.location.href = "/therapist";
+          return;
+        }
+      }
+
       // Redirect to the intended page, or home by default
       window.location.href = returnTo;
     } catch (error: unknown) {
