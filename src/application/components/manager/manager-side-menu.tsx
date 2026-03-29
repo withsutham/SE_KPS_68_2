@@ -23,6 +23,7 @@ import {
   LogOut,
   Sun,
   Moon,
+  Sparkles,
 } from "lucide-react";
 
 type MenuItem = {
@@ -36,6 +37,7 @@ const topItems: MenuItem[] = [
   { href: "/manager/monitor", label: "มอนิเตอร์", icon: Monitor },
   { href: "/manager/booking", label: "จัดการการจอง", icon: ClipboardList },
   { href: "/manager/rooms", label: "จัดการห้องนวด", icon: DoorOpen },
+  { href: "/manager/massage", label: "จัดการบริการนวด", icon: Sparkles },
   { href: "/manager/package", label: "จัดการแพ็กเกจ", icon: Package },
   { href: "/manager/coupon", label: "จัดการคูปอง", icon: Tag },
   { href: "/manager/operating-time", label: "เวลาทำการ", icon: Clock },
