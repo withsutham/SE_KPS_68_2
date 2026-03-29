@@ -57,7 +57,7 @@ export async function AuthButton() {
           >
             <User className="h-4 w-4" />
             <span className="hidden sm:inline truncate max-w-[180px]">
-              {displayName}
+              สวัสดีคุณ {displayName}
             </span>
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
