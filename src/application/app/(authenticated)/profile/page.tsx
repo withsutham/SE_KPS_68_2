@@ -131,7 +131,9 @@ function ProfilePageInner() {
       newErrors.lastName = "กรุณากรอกนามสกุล";
     }
 
-    if (phoneNumber) {
+    if (!phoneNumber.trim()) {
+      newErrors.phoneNumber = "กรุณากรอกเบอร์โทรศัพท์";
+    } else {
       const cleanedPhone = phoneNumber.replace(/[-\s]/g, "");
       if (!/^[0-9]{9,10}$/.test(cleanedPhone)) {
         newErrors.phoneNumber = "รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง (ต้องเป็นตัวเลข 9-10 หลัก)";
@@ -283,7 +285,7 @@ function ProfilePageInner() {
 
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber" className="font-mitr">
-                  เบอร์โทรศัพท์
+                  เบอร์โทรศัพท์ <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="phoneNumber"
