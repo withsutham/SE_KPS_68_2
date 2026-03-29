@@ -257,12 +257,22 @@ function ServicePickerModal({ open, onClose, allServices, selectedIds, onToggle,
         </DialogHeader>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "all" | "packages")} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <TabsList className="mx-6 mt-4 grid w-auto grid-cols-2 bg-muted/40 p-1 rounded-lg shrink-0">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "all" | "packages")} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="mx-6 mt-4 grid w-auto grid-cols-2 bg-muted/40 p-1 rounded-lg shrink-0 overflow-visible">
             <TabsTrigger value="all" className="data-[state=active]:bg-background rounded-md">
               บริการทั้งหมด
             </TabsTrigger>
-            <TabsTrigger value="packages" className="data-[state=active]:bg-background rounded-md gap-2">
+            <TabsTrigger value="packages" className="relative overflow-visible data-[state=active]:bg-background rounded-md gap-2">
+              {/* Promotional Bubble */}
+              {unusedPackages.length > 0 && (
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap z-10" role="status" aria-live="polite">
+                  <div className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md shadow-md">
+                    มีแพ็กเกจที่ใช้งานได้
+                    {/* Arrow pointer */}
+                    <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-primary rotate-45"></div>
+                  </div>
+                </div>
+              )}
               <Package className="h-4 w-4" />
               แพ็กเกจของฉัน
               {unusedPackages.length > 0 && (
