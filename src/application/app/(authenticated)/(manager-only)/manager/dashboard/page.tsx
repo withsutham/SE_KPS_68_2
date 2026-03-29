@@ -409,8 +409,14 @@ export default function ManagerDashboardPage() {
             const { from, to } = getRange();
             const res = await fetch(`/api/dashboard?from=${from}&to=${to}`);
             const json = await res.json();
-            if (json.success) setData(json.data);
-        } catch {
+            if (json.success) {
+                setData(json.data);
+            } else {
+                console.error("Dashboard API error:", json.error);
+                setData(null);
+            }
+        } catch (err) {
+            console.error("Dashboard fetch exception:", err);
             setData(null);
         } finally {
             setLoading(false);
