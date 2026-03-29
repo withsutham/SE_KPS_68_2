@@ -1,11 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const resolvedParams = await params;
         const body = await request.json();
         const { first_name, last_name, phone_number, work_since, skills } = body;
-        const employee_id = parseInt(params.id, 10);
+        const employee_id = parseInt(resolvedParams.id, 10);
         
         const supabase = createAdminClient();
 
@@ -45,9 +46,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const employee_id = parseInt(params.id, 10);
+        const resolvedParams = await params;
+        const employee_id = parseInt(resolvedParams.id, 10);
         const supabase = createAdminClient();
 
         // 1. Get profile_id first
