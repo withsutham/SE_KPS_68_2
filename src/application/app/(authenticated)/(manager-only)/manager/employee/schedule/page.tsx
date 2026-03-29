@@ -1029,6 +1029,7 @@ export default function WeeklySchedulePage() {
   const [filterMassageId, setFilterMassageId] = useState<number | 'all'>('all');
   const [filterStartTime, setFilterStartTime] = useState<string>("");
   const [filterEndTime, setFilterEndTime] = useState<string>("");
+  const [filterDays, setFilterDays] = useState<string[]>([]);
   const [massageDialogOpen, setMassageDialogOpen] = useState(false);
 
   // Filter employees by search and massage skill
@@ -1065,6 +1066,14 @@ export default function WeeklySchedulePage() {
         });
       });
     }
+
+    // Filter by specific days
+    if (filterDays.length > 0) {
+      result = result.filter(emp => {
+        const empDays = new Set(schedules.filter(s => s.employee_id === emp.employee_id).map(s => s.weekday));
+        return filterDays.some(d => empDays.has(d as any));
+      });
+    }
     
     // Sort: Priority to those with leave collisions (Global)
     result = [...result].sort((a, b) => {
@@ -1088,7 +1097,7 @@ export default function WeeklySchedulePage() {
     });
     
     return result;
-  }, [employees, searchQuery, filterMassageId, skills, filterStartTime, filterEndTime, schedules, leaveRecords, allBookings]);
+  }, [employees, searchQuery, filterMassageId, skills, filterStartTime, filterEndTime, filterDays, schedules, leaveRecords, allBookings]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -1420,6 +1429,34 @@ export default function WeeklySchedulePage() {
                     onChange={(e) => setFilterEndTime(e.target.value)}
                     className="h-8 text-xs font-sans bg-background/80"
                   />
+                </div>
+              </div>
+
+              {/* Day Filter */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[10px] text-muted-foreground font-sans ml-1">วันทำงาน</span>
+                <div className="flex gap-1">
+                  {DAY_ORDER.map(d => {
+                    const isActive = filterDays.includes(d);
+                    return (
+                      <button
+                        key={d}
+                        onClick={() => {
+                          setFilterDays(prev => 
+                            isActive ? prev.filter(x => x !== d) : [...prev, d]
+                          );
+                        }}
+                        className={cn(
+                          "text-[10px] w-8 h-7 flex items-center justify-center rounded-lg font-sans font-medium transition-all border",
+                          isActive 
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                            : "bg-background/80 text-muted-foreground/60 border-border/40 hover:border-primary/40 hover:text-primary"
+                        )}
+                      >
+                        {DAY_SHORT[d]}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
