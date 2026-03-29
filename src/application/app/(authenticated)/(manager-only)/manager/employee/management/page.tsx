@@ -46,6 +46,7 @@ interface Employee {
   phone_number: string | null;
   work_since: string | null;
   profile_id?: string | null;
+  image_url?: string | null;
 }
 
 interface WorkSchedule {
@@ -277,11 +278,15 @@ export default function EmployeeManagementPage() {
                  >
                    <div className="flex items-center gap-3">
                      <div className={cn(
-                       "h-10 w-10 min-w-10 rounded-full flex items-center justify-center text-sm font-mitr font-medium border",
-                       isActive ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border shadow-sm text-foreground/70"
-                     )}>
-                       {getInitials(emp.first_name, emp.last_name)}
-                     </div>
+                        "h-10 w-10 min-w-10 rounded-full flex items-center justify-center text-sm font-mitr font-medium border overflow-hidden",
+                        isActive ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border shadow-sm text-foreground/70"
+                      )}>
+                        {emp.image_url ? (
+                          <img src={emp.image_url} alt={`${emp.first_name}`} className="h-full w-full object-cover" />
+                        ) : (
+                          getInitials(emp.first_name, emp.last_name)
+                        )}
+                      </div>
                      <div className="flex-1 min-w-0">
                        <p className="font-mitr truncate text-[15px]">{emp.first_name} {emp.last_name}</p>
                        <p className="text-xs text-muted-foreground truncate">{emp.phone_number || "ไม่มีเบอร์"}</p>
@@ -354,8 +359,12 @@ function EmployeeDetailPanel({ employee, schedules, leaveRecords, massages, skil
       {/* Detail Header */}
       <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between pb-6 border-b border-border/40">
         <div className="flex items-center gap-5">
-           <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/80 to-primary text-primary-foreground shadow-lg flex items-center justify-center text-3xl font-mitr font-medium border border-primary/20">
-             {getInitials(employee.first_name, employee.last_name)}
+           <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/80 to-primary text-primary-foreground shadow-lg flex items-center justify-center text-3xl font-mitr font-medium border border-primary/20 overflow-hidden">
+             {employee.image_url ? (
+                <img src={employee.image_url} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
+             ) : (
+                getInitials(employee.first_name, employee.last_name)
+             )}
            </div>
            <div>
              <h1 className="text-3xl font-mitr font-medium">{employee.first_name} {employee.last_name}</h1>
