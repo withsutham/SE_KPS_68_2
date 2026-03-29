@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Calendar, Send, CalendarDays, Loader2, CheckCircle2 } from 'lucide-react';
+import { Calendar, Send, CalendarDays, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import Link from 'next/link';
 import { differenceInDays, parseISO } from 'date-fns';
 import { useRouter } from 'next/navigation';
@@ -9,12 +9,19 @@ import { useRouter } from 'next/navigation';
 import { createLeaveRecord } from '@/components/therapist/employee_actions'; 
 
 export default function Leave() {
-    const today = new Date().toISOString().split('T')[0];
-    const [startDate, setStartDate] = useState(today);
-    const [endDate, setEndDate] = useState(today);
+    // ใช้ toLocaleDateString('en-CA') เพื่อดึงวันที่ตาม Timezone ท้องถิ่นในรูปแบบ YYYY-MM-DD
+    const today = new Date().toLocaleDateString('en-CA');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [reason, setReason] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [modal, setModal] = useState<{ show: boolean, title: string, message: string, type: 'warning' | 'error' }>({ 
+        show: false, 
+        title: '', 
+        message: '', 
+        type: 'warning' 
+    });
     const router = useRouter();
 
     const totalDays = useMemo(() => {
@@ -25,9 +32,55 @@ export default function Leave() {
         return differenceInDays(end, start) + 1;
     }, [startDate, endDate]);
 
+    const handleStartDateChange = (val: string) => {
+        setStartDate(val);
+        // ถ้าวันเริ่มที่เลือกใหม่ มากกว่าวันสิ้นสุดปัจจุบัน ให้ปรับวันสิ้นสุดตาม
+        if (endDate < val) {
+            setEndDate(val);
+        }
+    };
+
     const handleSubmit = async () => {
+        // 0. ตรวจสอบว่าเลือกวันที่หรือยัง
+        if (!startDate || !endDate) {
+            setModal({
+                show: true,
+                title: 'กรุณาเลือกวันที่',
+                message: 'โปรดเลือกวันที่เริ่มต้นและวันสิ้นสุดการลาของคุณ',
+                type: 'warning'
+            });
+            return;
+        }
+
+        // 1. ตรวจสอบวันที่ห้ามเป็นอดีต
+        if (startDate < today) {
+            setModal({
+                show: true,
+                title: 'วันที่ไม่ถูกต้อง',
+                message: 'ไม่สามารถเลือกวันที่เริ่มต้นย้อนหลังได้ กรุณาตรวจสอบอีกครั้ง',
+                type: 'warning'
+            });
+            return;
+        }
+
+        // 2. ตรวจสอบวันเริ่มต้องไม่เกินวันสิ้นสุด
+        if (endDate < startDate) {
+            setModal({
+                show: true,
+                title: 'ช่วงเวลาไม่ถูกต้อง',
+                message: 'วันที่สิ้นสุดต้องไม่มาก่อนวันที่เริ่มต้น',
+                type: 'warning'
+            });
+            return;
+        }
+
         if (!reason.trim()) {
-            alert('กรุณาระบุเหตุผลการลา');
+            setModal({
+                show: true,
+                title: 'กรุณาระบุเหตุผล',
+                message: 'โปรดระบุเหตุผลในการลาของคุณเพื่อให้หัวหน้างานประกอบการพิจารณา',
+                type: 'warning'
+            });
             return;
         }
 
@@ -47,7 +100,12 @@ export default function Leave() {
                 router.push('/therapist/leavehistory');
             }, 2000);
         } catch (error: any) {
-            alert(`เกิดข้อผิดพลาด: ${error.message}`);
+            setModal({
+                show: true,
+                title: 'เกิดข้อผิดพลาด',
+                message: error.message || 'ไม่สามารถส่งคำขอลาได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง',
+                type: 'error'
+            });
         } finally {
             setSubmitting(false);
         }
@@ -73,7 +131,7 @@ export default function Leave() {
                                     <input
                                         type="date"
                                         value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
+                                        onChange={(e) => handleStartDateChange(e.target.value)}
                                         min={today}
                                         className="w-full pl-10 p-3 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-[#161c18] dark:text-gray-100 text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#62846E]/20 transition-all font-medium appearance-none"
                                     />
@@ -150,6 +208,39 @@ export default function Leave() {
                     </p>
                 </div>
             </div>
+
+            {/* Custom Modal Notification */}
+            {modal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#1b231e] rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-white dark:border-white/5">
+                        <div className="p-8 text-center space-y-4">
+                            <div className={cn(
+                                "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4",
+                                modal.type === 'warning' ? "bg-amber-50 dark:bg-amber-500/10 text-amber-500" : "bg-red-50 dark:bg-red-500/10 text-red-500"
+                            )}>
+                                <AlertCircle size={40} />
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">{modal.title}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed px-2">
+                                {modal.message}
+                            </p>
+                        </div>
+                        <div className="p-6 bg-gray-50/50 dark:bg-[#1c2621] flex flex-col gap-2 border-t border-gray-100 dark:border-white/5">
+                            <button 
+                                onClick={() => setModal({ ...modal, show: false })}
+                                className="w-full py-4 rounded-2xl font-bold text-white bg-[#62846E] hover:bg-[#4a6353] shadow-lg transition-all flex items-center justify-center text-sm"
+                            >
+                                เข้าใจแล้ว
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
+
+// Helper funtion for class names
+function cn(...classes: string[]) {
+    return classes.filter(Boolean).join(' ');
+}
