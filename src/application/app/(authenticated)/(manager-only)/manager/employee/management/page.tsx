@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { cn, getEmployeeImageUrl } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Weekday = "SUN" | "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT";
@@ -47,6 +47,7 @@ interface Employee {
   work_since: string | null;
   profile_id?: string | null;
   image_url?: string | null;
+  image_src?: string | null;
 }
 
 interface WorkSchedule {
@@ -309,8 +310,8 @@ export default function EmployeeManagementPage() {
                         "h-10 w-10 min-w-10 rounded-full flex items-center justify-center text-sm font-mitr font-medium border overflow-hidden",
                         isActive ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border shadow-sm text-foreground/70"
                       )}>
-                        {emp.image_url ? (
-                          <img src={emp.image_url} alt={`${emp.first_name}`} className="h-full w-full object-cover" />
+                        {getEmployeeImageUrl(emp) ? (
+                          <img src={getEmployeeImageUrl(emp)!} alt={`${emp.first_name}`} className="h-full w-full object-cover" />
                         ) : (
                           getInitials(emp.first_name, emp.last_name)
                         )}
@@ -388,8 +389,8 @@ function EmployeeDetailPanel({ employee, schedules, leaveRecords, massages, skil
       <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between pb-6 border-b border-border/40">
         <div className="flex items-center gap-5">
            <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/80 to-primary text-primary-foreground shadow-lg flex items-center justify-center text-3xl font-mitr font-medium border border-primary/20 overflow-hidden">
-             {employee.image_url ? (
-                <img src={employee.image_url} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
+             {getEmployeeImageUrl(employee) ? (
+                <img src={getEmployeeImageUrl(employee)!} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
              ) : (
                 getInitials(employee.first_name, employee.last_name)
              )}

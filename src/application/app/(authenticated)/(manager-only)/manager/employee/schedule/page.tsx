@@ -31,7 +31,7 @@ import {
   ChevronDown,
   Filter,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getEmployeeImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,8 @@ interface Employee {
   last_name: string;
   phone_number: string | null;
   image_url?: string | null;
+  image_src?: string | null;
+  profile_id?: string | null;
 }
 
 interface BookingDetail {
@@ -346,8 +348,8 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
     >
       <div className="flex items-center gap-3">
         <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden relative">
-          {employee.image_url ? (
-            <img src={employee.image_url} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
+          {getEmployeeImageUrl(employee) ? (
+            <img src={getEmployeeImageUrl(employee)!} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
           ) : (
             <User className="h-4 w-4 text-primary" />
           )}
@@ -448,8 +450,8 @@ function BookingDetailsDialog({
               {employee ? (
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                    {employee.image_url ? (
-                      <img src={employee.image_url} alt="" className="h-full w-full object-cover" />
+                    {getEmployeeImageUrl(employee) ? (
+                      <img src={getEmployeeImageUrl(employee)!} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <User className="h-3 w-3 text-primary" />
                     )}
@@ -625,8 +627,8 @@ function DragOverlayContent({ employee }: { employee: Employee }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-primary/40 bg-card shadow-xl shadow-primary/20 cursor-grabbing backdrop-blur-sm">
       <div className="h-9 w-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0 overflow-hidden">
-        {employee.image_url ? (
-          <img src={employee.image_url} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
+        {getEmployeeImageUrl(employee) ? (
+          <img src={getEmployeeImageUrl(employee)!} alt={`${employee.first_name}`} className="h-full w-full object-cover" />
         ) : (
           <User className="h-4 w-4 text-primary" />
         )}
