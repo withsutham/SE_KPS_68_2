@@ -41,7 +41,7 @@ interface DashboardData {
     newCustomersLastMonth: number;
     avgTransactionValue: number;
     availableTherapists: { employee_id: number; name: string }[];
-    revenueByDay: { date: string; revenue: number }[];
+    revenueByDay: { date: string; revenue: number; isHourly?: boolean }[];
     popularServices: { name: string; count: number }[];
     peakHours: { hour: string; count: number }[];
     roomUsage: { name: string; rate: number; totalMinutes: number; maxMinutes: number }[];
@@ -545,14 +545,14 @@ export default function ManagerDashboardPage() {
                             {/* 2.1 Revenue Trend */}
                             <SectionCard
                                 title="แนวโน้มรายได้"
-                                subtitle="รายได้รวมแยกตามวัน"
+                                subtitle={data.revenueByDay[0]?.isHourly ? "รายได้รวมแยกตามชั่วโมง" : "รายได้รวมแยกตามวัน"}
                                 icon={TrendingUp}
                             >
                                 {data.revenueByDay.length === 0 ? (
                                     <EmptyState message="ยังไม่มีข้อมูลรายได้ในช่วงเวลานี้" />
                                 ) : (
                                     <ResponsiveContainer width="100%" height={220}>
-                                        <AreaChart data={data.revenueByDay.map((d) => ({ ...d, date: formatDateTH(d.date) }))}>
+                                        <AreaChart data={data.revenueByDay}>
                                             <defs>
                                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
@@ -560,8 +560,18 @@ export default function ManagerDashboardPage() {
                                                 </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.2} vertical={false} />
-                                            <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} dy={10} />
-                                            <YAxis tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} tickFormatter={(v) => `฿${(v / 1000).toFixed(0)}k`} />
+                                            <XAxis 
+                                                dataKey="date" 
+                                                tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} 
+                                                tickLine={false} 
+                                                axisLine={false} 
+                                                dy={10} 
+                                                tickFormatter={(v, i) => {
+                                                    const item = data.revenueByDay[i];
+                                                    return item?.isHourly ? v : formatDateTH(v);
+                                                }}
+                                            />
+                                            <YAxis tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `฿${(v / 1000).toFixed(0)}k` : `฿${v}`} />
                                             <Tooltip content={<CustomTooltip />} />
                                             <Area type="monotone" dataKey="revenue" name="รายได้" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
                                         </AreaChart>
