@@ -1,7 +1,7 @@
 import ScheduleContent from "@/components/therapist/schedule";
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from "next/navigation"; // นำเข้า redirect เพื่อเด้งกลับหน้า login
-import { getEmployeeByUserId } from "@/lib/user-actions";
+import { getEmployeeByUserId } from "@/components/therapist/employee_actions";
 
 export default async function SchedulePage() {
   const supabase = await createClient();
