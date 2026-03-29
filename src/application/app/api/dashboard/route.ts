@@ -131,19 +131,17 @@ export async function GET(request: NextRequest) {
     const prevTotalBookings = prevFilteredBookings.length;
 
     // ─── 3. KPI: New Customers ───────────────────────────────────────────
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const currentMonthStartStr = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const prevMonthStartStr = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
 
     const newCustomersThisMonth = allCustomers.filter((c: any) => {
         if (!c.regis_dateTime) return false;
-        const d = new Date(c.regis_dateTime);
-        return d >= currentMonthStart;
+        return c.regis_dateTime >= currentMonthStartStr;
     }).length;
 
     const newCustomersLastMonth = allCustomers.filter((c: any) => {
         if (!c.regis_dateTime) return false;
-        const d = new Date(c.regis_dateTime);
-        return d >= prevMonthStart && d < currentMonthStart;
+        return c.regis_dateTime >= prevMonthStartStr && c.regis_dateTime < currentMonthStartStr;
     }).length;
 
     // ─── 4. KPI: Average Transaction Value ───────────────────────────────
