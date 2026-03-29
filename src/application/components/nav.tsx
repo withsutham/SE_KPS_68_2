@@ -16,7 +16,20 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NavScrollLink } from "@/components/nav-scroll-link";
 
-export function Nav() {
+export async function Nav() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let isTherapist = false;
+  if (user) {
+    const adminSupabase = await createAdminClient();
+    const { data: profile } = await adminSupabase
+      .from("profiles")
+      .select("user_type")
+      .eq("profile_id", user.id)
+      .single();
+    isTherapist = profile?.user_type === "therapist";
+  }
+
   return (
     <nav className="print:hidden w-full flex justify-center border-b border-border/40 backdrop-blur-md sticky top-0 z-50">
       <div className="w-full max-w-7xl flex justify-between items-center gap-3 py-3 px-4 sm:p-6 sm:px-10">
@@ -26,10 +39,18 @@ export function Nav() {
               <MobileNavMenu />
             </Suspense>
           </div>
-          <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <Flower2 className="h-7 w-7 text-primary transition-transform group-hover:rotate-45 duration-500" />
-            <span className="font-semibold text-base sm:text-xl tracking-normal sm:tracking-wider uppercase whitespace-nowrap text-foreground/90 font-mitr max-[340px]:hidden">ฟื้นใจ</span>
-          </Link>
+          
+          {isTherapist ? (
+            <div className="flex items-center gap-2 shrink-0">
+              <Flower2 className="h-7 w-7 text-primary" />
+              <span className="font-semibold text-base sm:text-xl tracking-normal sm:tracking-wider uppercase whitespace-nowrap text-foreground/90 font-mitr max-[340px]:hidden">ฟื้นใจ</span>
+            </div>
+          ) : (
+            <Link href="/" className="flex items-center gap-2 group shrink-0">
+              <Flower2 className="h-7 w-7 text-primary transition-transform group-hover:rotate-45 duration-500" />
+              <span className="font-semibold text-base sm:text-xl tracking-normal sm:tracking-wider uppercase whitespace-nowrap text-foreground/90 font-mitr max-[340px]:hidden">ฟื้นใจ</span>
+            </Link>
+          )}
 
           <div className="hidden md:flex items-center gap-2">
             <Suspense fallback={null}>
@@ -125,26 +146,11 @@ async function NavLinkGroup() {
     return null;
   }
 
-  // therapist — can view their own timetable
+  // therapist — no extra links in top nav as they use the sidebar
   if (role === "therapist") {
-    return (
-      <>
-        <NavScrollLink
-          href="/#services"
-          className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4"
-        >
-          ดูบริการนวด
-        </NavScrollLink>
-        <Button variant="ghost" asChild className="hover:text-primary transition-colors text-foreground/80 font-mitr font-normal h-10 px-4">
-          <Link href="/manager/employee/schedule" className="text-sm">
-            ตารางทำงาน
-          </Link>
-        </Button>
-      </>
-    );
+    return null;
   }
 
-  // for any other authenticated role (just in case)
   return (
     <NavScrollLink
       href="/#services"
@@ -183,11 +189,13 @@ async function MobileNavMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 font-mitr border-border/50 backdrop-blur-xl bg-background/95">
-        <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-          <Link href="/#services" className="w-full cursor-pointer py-2.5 px-3 text-base">
-            ดูบริการนวด
-          </Link>
-        </DropdownMenuItem>
+        {role !== "therapist" && (
+          <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
+            <Link href="/#services" className="w-full cursor-pointer py-2.5 px-3 text-base">
+              ดูบริการนวด
+            </Link>
+          </DropdownMenuItem>
+        )}
 
         {!user && null}
 
@@ -218,16 +226,7 @@ async function MobileNavMenu() {
           </>
         )}
 
-        {role === "therapist" && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary">
-              <Link href="/manager/employee/schedule" className="w-full cursor-pointer py-2.5 px-3 text-base">
-                ตารางทำงาน
-              </Link>
-            </DropdownMenuItem>
-          </>
-        )}
+        {/* Cleaned up therapist mobile menu items */}
       </DropdownMenuContent>
     </DropdownMenu>
   );

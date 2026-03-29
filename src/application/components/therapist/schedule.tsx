@@ -100,8 +100,10 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
         const dayName = days[startDate.getDay()];
         
         const startHour = startDate.getHours().toString().padStart(2, '0');
+        const startMinute = startDate.getMinutes().toString().padStart(2, '0');
         const endHour = endDate.getHours().toString().padStart(2, '0');
-        const timeString = `${startHour}:00 - ${endHour}:00`;
+        const endMinute = endDate.getMinutes().toString().padStart(2, '0');
+        const timeString = `${startHour}:${startMinute} - ${endHour}:${endMinute}`;
 
         return {
           day: dayName,
@@ -169,10 +171,10 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
       </div>
 
       <div className="overflow-x-auto rounded-xl border-2 border-[#62846E] bg-white shadow-md">
-        <table className="w-full border-collapse min-w-[1000px]">
+        <table className="w-max min-w-full border-collapse table-fixed">
           <thead>
             <tr className="bg-[#fbfaf9]">
-              <th className="border-b-2 border-r-2 border-[#62846E] p-4 w-36 relative bg-[#fbfaf9] overflow-hidden">
+              <th className="border-b-2 border-r-2 border-[#62846E] p-4 w-36 min-w-[9rem] sticky left-0 z-20 bg-[#fbfaf9] overflow-hidden">
                 <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" preserveAspectRatio="none">
                   <line x1="0" y1="0" x2="100%" y2="100%" stroke="#62846E" strokeWidth="1" />
                 </svg>
@@ -180,7 +182,7 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
                 <div className="text-[11px] font-bold absolute bottom-2 left-2 text-[#62846E] uppercase">วัน</div>
               </th>
               {times.map((time) => (
-                <th key={time} className="border-b-2 border-r border-[#62846E] p-3 text-[11px] font-bold text-[#62846E] uppercase tracking-wider">
+                <th key={time} className="border-b-2 border-r border-[#62846E] p-3 w-48 min-w-[12rem] text-[11px] font-bold text-[#62846E] uppercase tracking-wider text-center">
                   {time}
                 </th>
               ))}
@@ -191,7 +193,7 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
               let skipCount = 0;
               return (
                 <tr key={day} className="h-28 group">
-                  <td className="border-b border-r-2 border-[#62846E] bg-[#fbfaf9] text-center">
+                  <td className="border-b border-r-2 border-[#62846E] bg-[#fbfaf9] text-center sticky left-0 z-10 transition-colors group-hover:bg-[#f5f4f2]">
                     <span className="px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all bg-[#62846E]/10 text-[#62846E] border border-transparent">
                       {day}
                     </span>
@@ -207,35 +209,71 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
                     const appointment = appointments.find((app) => {
                       if (app.day !== day) return false;
                       const appStartHour = app.startDate.getHours();
-                      const appEndHour = app.endDate.getHours();
                       
-                      // ตรวจสอบว่า slot นี้อยู่ในช่วงเวลาของนัดหมายหรือไม่
-                      return slotStartHour >= appStartHour && slotStartHour < appEndHour;
+                      // ค้นหานัดหมายที่เริ่มในช่องเวลานี้ หรือเริ่มก่อนแต่นี่เป็น slot แรกที่มี (สำหรับ edge cases)
+                      if (slotStartHour === appStartHour) return true;
+                      if (timeIdx === 0 && appStartHour < slotStartHour && app.endDate.getHours() > slotStartHour) return true;
+                      
+                      return false;
                     });
 
                     if (appointment) {
+                      const appStartHour = appointment.startDate.getHours();
+                      const appStartMinute = appointment.startDate.getMinutes();
                       const appEndHour = appointment.endDate.getHours();
-                      const duration = Math.max(1, appEndHour - slotStartHour);
-                      const remainingSlots = times.length - timeIdx;
-                      const colSpan = Math.min(duration, remainingSlots);
+                      const appEndMinute = appointment.endDate.getMinutes();
                       
+                      let activeSlots = 0;
+                      for (let i = timeIdx; i < times.length; i++) {
+                         const slotHour = parseInt(times[i].split(':')[0]);
+                         if (slotHour < appEndHour || (slotHour === appEndHour && appEndMinute > 0)) {
+                             activeSlots++;
+                         } else {
+                             break;
+                         }
+                      }
+                      
+                      const colSpan = Math.max(1, activeSlots);
                       skipCount = colSpan - 1;
+                      
+                      let totalDrawMinutes = 0;
+                      for (let i = timeIdx; i < timeIdx + colSpan; i++) {
+                         const slotH = parseInt(times[i].split(':')[0]);
+                         const spanStart = Math.max((appStartHour * 60) + appStartMinute, slotH * 60);
+                         const spanEnd = Math.min((appEndHour * 60) + appEndMinute, (slotH + 1) * 60);
+                         
+                         if (spanEnd > spanStart) {
+                             totalDrawMinutes += (spanEnd - spanStart);
+                         }
+                      }
+
+                      const firstSlotHour = parseInt(times[timeIdx].split(':')[0]);
+                      const startOffsetMinutes = Math.max(0, ((appStartHour * 60) + appStartMinute) - (firstSlotHour * 60));
+                      
+                      const marginLeftPercent = (startOffsetMinutes / (colSpan * 60)) * 100;
+                      const widthPercent = Math.max(5, (totalDrawMinutes / (colSpan * 60)) * 100);
 
                       return (
                         <td 
                           key={time} 
                           colSpan={colSpan} 
-                          className="border-b border-r border-gray-100 p-1.5 transition-colors group-hover:bg-gray-50/50"
+                          className="border-b border-r border-gray-100 p-0 transition-colors group-hover:bg-gray-50/50"
                         >
-                          <div className={`h-full w-full p-3 rounded-lg ${appointment.color} flex flex-col justify-center items-start shadow-sm border border-white/50 hover:shadow-md transition-all duration-200 cursor-pointer transform hover:-translate-y-0.5`}>
-                            <p className="text-[12px] font-bold leading-tight line-clamp-1">{appointment.service}</p>
-                            <p className="text-[10px] mt-0.5 font-medium opacity-90">{appointment.room}</p>
-                            <p className="text-[10px] mt-1 text-gray-600 bg-white/40 px-1.5 py-0.5 rounded italic whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
-                              ลูกค้า: {appointment.customer}
-                            </p>
-                            <div className="flex items-center gap-1 mt-auto pt-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                              <p className="text-[9px] opacity-80 uppercase font-black">ยืนยันแล้ว</p>
+                          <div className="h-full w-full relative block px-1.5 py-1.5">
+                            <div 
+                              style={{ width: `${widthPercent}%`, marginLeft: `${marginLeftPercent}%` }}
+                              className={`h-full min-h-[90px] p-2 rounded-lg ${appointment.color} flex flex-col justify-start items-start shadow-sm border border-white/50 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden z-10`}
+                            >
+                              <p className="text-[12px] font-bold leading-tight truncate w-full">{appointment.service}</p>
+                              <p className="text-[10px] mt-0.5 font-medium opacity-90 truncate w-full text-left">{appointment.time}</p>
+                              <p className="text-[10px] mt-1 text-gray-600 bg-white/40 px-1 py-0.5 rounded italic truncate w-full">
+                                ลูกค้า: {appointment.customer}
+                              </p>
+                              <div className="mt-auto pt-1 w-full">
+                                <span className="inline-block text-[10px] font-bold border border-white/60 bg-white/30 px-1.5 py-0.5 rounded-md truncate max-w-full">
+                                  {appointment.room}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </td>

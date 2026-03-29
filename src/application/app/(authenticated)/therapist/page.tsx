@@ -21,6 +21,7 @@ export default function HRDashboard() {
   // 1. สร้าง State สำหรับปฏิทิน
   const [currentDate, setCurrentDate] = useState(new Date());
   const [recentLeaves, setRecentLeaves] = useState<LeaveRecord[]>([]);
+  const [allLeaves, setAllLeaves] = useState<LeaveRecord[]>([]);
   const [employee, setEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,6 +38,7 @@ export default function HRDashboard() {
           
           if (empData) {
             const records = await getLeaveRecordsByEmployeeId(empData.employee_id);
+            setAllLeaves(records);
             setRecentLeaves(records.slice(0, 2)); // Show only latest 2
           }
         }
@@ -183,18 +185,33 @@ export default function HRDashboard() {
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const isToday = day === new Date().getDate() && viewMonth === new Date().getMonth();
+              
+              // ตรวจสอบวันหยุด (OFF)
+              const dayStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const isOffDay = allLeaves.some(leave => {
+                 if (leave.approval_status !== 'approved') return false;
+                 const start = leave.start_datetime.split('T')[0];
+                 const end = leave.end_datetime.split('T')[0];
+                 return dayStr >= start && dayStr <= end;
+              });
+
               return (
                 <div 
                   key={day} 
                   className={`
-                    py-2 rounded-xl cursor-pointer transition-all flex items-center justify-center font-bold text-sm
+                    py-2 rounded-xl cursor-pointer transition-all flex flex-col items-center justify-center font-bold text-sm min-h-[56px]
                     ${isToday 
                       ? 'bg-[#62846E] text-white shadow-md shadow-green-100' 
                       : 'text-slate-600 hover:bg-gray-50 hover:text-[#62846E]'
                     }
                   `}
                 >
-                  {day}
+                  <span className={`${isOffDay && !isToday ? 'text-gray-400/80' : ''}`}>{day}</span>
+                  {isOffDay && (
+                    <span className={`text-[9px] mt-0.5 font-bold px-1.5 py-0.5 rounded ${isToday ? 'bg-white/30 text-white' : 'bg-red-50 text-red-500'}`}>
+                      OFF
+                    </span>
+                  )}
                 </div>
               );
             })}
