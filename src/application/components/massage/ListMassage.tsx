@@ -240,7 +240,8 @@ export default function ListMassage() {
 
       <Panel
         title="ตารางบริการนวด"
-        subtitle="แสดงรายการบริการพร้อมรูปภาพ ราคา ระยะเวลา และปุ่มจัดการในมุมมองเดียว"
+        subtitle=""
+        // subtitle="แสดงรายการบริการพร้อมรูปภาพ ราคา ระยะเวลา และปุ่มจัดการในมุมมองเดียว"
         icon={HandPlatter}
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -342,7 +343,7 @@ export default function ListMassage() {
                           <p className="font-mitr text-base font-semibold text-emerald-600">
                             ฿{Number(massage.massage_price).toLocaleString("th-TH")}
                           </p>
-                          <p className="font-sans text-xs text-muted-foreground">ราคาต่อบริการ</p>
+                          {/* <p className="font-sans text-xs text-muted-foreground">ราคาต่อบริการ</p> */}
                         </td>
                         <td className="px-6 py-4 align-top">
                           <p className="font-sans text-sm text-foreground">

@@ -25,11 +25,11 @@ export default function ManagerMassagePage() {
             </p>
             <h1 className="text-3xl text-foreground md:text-4xl">จัดการบริการนวด</h1>
             <p className="mx-auto mt-3 max-w-2xl font-sans text-sm text-muted-foreground md:text-base">
-              จัดการรายการบริการนวด รูปภาพ ราคา และเวลาในธีมเดียวกับแดชบอร์ดผู้จัดการ
+              จัดการรายการบริการนวด รูปภาพ ราคา และเวลา
             </p>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex justify-end">
             <Link href="/manager/massage/create">
               <Button className="rounded-full px-5 font-sans">+ สร้างบริการนวดใหม่</Button>
             </Link>

@@ -366,7 +366,7 @@ export function CouponManagement() {
           <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.32em] text-primary/60">ผู้จัดการ · Manager</p>
           <h1 className="font-mitr text-3xl text-foreground md:text-4xl">จัดการคูปอง</h1>
           <p className="mx-auto mt-3 max-w-2xl font-sans text-sm text-muted-foreground md:text-base">
-            สร้างคูปอง กรองข้อมูล และติดตามคูปองที่หมดอายุแล้วได้ในมุมมองเดียวแบบแดชบอร์ดผู้จัดการ
+            สร้างคูปอง กรองข้อมูล และติดตามคูปองที่หมดอายุแล้ว
           </p>
         </header>
 
@@ -619,7 +619,7 @@ export function CouponManagement() {
                             </td>
                             <td className="px-6 py-4 align-top">
                               <p className="font-mitr text-base text-foreground">{Number(coupon.discount_percent).toFixed(2)}%</p>
-                              <p className="font-sans text-xs text-muted-foreground">ส่วนลดเป็นเปอร์เซ็นต์</p>
+                              {/* <p className="font-sans text-xs text-muted-foreground">ส่วนลดเป็นเปอร์เซ็นต์</p> */}
                             </td>
                             <td className="px-6 py-4 align-top">
                               <div className="space-y-1 font-sans text-sm">

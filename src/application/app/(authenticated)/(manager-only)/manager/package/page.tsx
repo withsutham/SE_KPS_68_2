@@ -289,11 +289,11 @@ export default function PackagePage() {
               จัดการแพ็กเกจ
             </h1>
             <p className="mx-auto mt-3 max-w-2xl font-sans text-sm text-muted-foreground md:text-base">
-              จัดการแคมเปญแพ็กเกจ ดูภาพตัวอย่าง และตรวจสอบสถานะการใช้งานในมุมมองเดียวแบบแดชบอร์ดผู้จัดการ
+              จัดการแคมเปญแพ็กเกจ ดูภาพตัวอย่าง และตรวจสอบสถานะการใช้งานทั้งหมด
             </p>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex justify-end">
             <Link href="/manager/package/create">
               <Button className="rounded-full px-5 font-sans">+ สร้างแพ็กเกจ</Button>
             </Link>
@@ -393,9 +393,9 @@ export default function PackagePage() {
                 </div>
                 <div>
                   <h2 className="font-mitr text-xl text-foreground">ตารางแพ็กเกจ</h2>
-                  <p className="font-sans text-sm text-muted-foreground">
+                  {/* <p className="font-sans text-sm text-muted-foreground">
                     ดูรูปแพ็กเกจ ช่วงเวลาแคมเปญ รายการบริการที่รวมอยู่ และสถานะทั้งหมดในตารางเดียว
-                  </p>
+                  </p> */}
                 </div>
               </div>
 
@@ -528,9 +528,9 @@ export default function PackagePage() {
                             <p className="font-mitr text-base font-semibold text-emerald-600">
                               ฿{Number(pkg.package_price).toLocaleString("th-TH")}
                             </p>
-                            <p className="font-sans text-xs text-muted-foreground">
+                            {/* <p className="font-sans text-xs text-muted-foreground">
                               ราคาแพ็กเกจ
-                            </p>
+                            </p> */}
                           </td>
 
                           <td className="px-6 py-4 align-top">
