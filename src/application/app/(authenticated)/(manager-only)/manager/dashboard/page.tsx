@@ -12,6 +12,9 @@ import {
     ChevronDown,
     LayoutDashboard,
     RefreshCw,
+    AlertCircle,
+    ChevronRight,
+    XCircle,
 } from "lucide-react";
 import {
     LineChart,
@@ -48,6 +51,7 @@ interface DashboardData {
     therapistUtilization: { name: string; rate: number; totalMinutes: number; maxMinutes: number }[];
     couponRedemption: { total: number; used: number; rate: number; details: { name: string, total: number, used: number }[] };
     packageSalesUsage: { name: string; sold: number; used: number }[];
+    notifications: { id: string; type: "info" | "warning" | "error"; message: string; link?: string }[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -333,6 +337,55 @@ function CustomTooltip({ active, payload, label }: any) {
     );
 }
 
+// ─── Notification Block ────────────────────────────────────────────────────────
+
+function NotificationBlock({ notifications }: { notifications: DashboardData["notifications"] }) {
+    if (!notifications || notifications.length === 0) return null;
+
+    return (
+        <div className="flex flex-col gap-3 mb-8">
+            {notifications.map((n) => {
+                const config = {
+                    info: { icon: Inbox, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+                    warning: { icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+                    error: { icon: XCircle, color: "text-rose-500", bg: "bg-rose-500/10", border: "border-rose-500/20" },
+                }[n.type];
+
+                return (
+                    <div
+                        key={n.id}
+                        className={cn(
+                            "flex items-center justify-between gap-4 p-4 rounded-2xl border backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-2",
+                            config.bg,
+                            config.border
+                        )}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center border", config.bg, config.border)}>
+                                <config.icon className={cn("h-4 w-4", config.color)} />
+                            </div>
+                            <p className="text-sm font-medium font-mitr text-foreground">{n.message}</p>
+                        </div>
+                        {n.link && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className={cn("rounded-xl font-sans text-xs font-bold hover:bg-white/10", config.color)}
+                            >
+                                <a href={n.link} className="flex items-center gap-1.5">
+                                    ดูข้อมูล
+                                    <ChevronRight className="h-3 w-3" />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ManagerDashboardPage() {
@@ -533,6 +586,8 @@ export default function ManagerDashboardPage() {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-8">
+                        <NotificationBlock notifications={data.notifications} />
+
                         {/* ── ① KPI Cards ─────────────────────────────────────────── */}
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                             {kpiCards.map((card) => (

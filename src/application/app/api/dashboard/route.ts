@@ -373,10 +373,34 @@ export async function GET(request: NextRequest) {
     });
 
     // ─── Response ────────────────────────────────────────────────────────
+    // ─── 12. Notifications ──────────────────────────────────────────────
+    const notifications = [];
+
+    // 1. Pending Bookings Alert
+    const pendingBookings = allBookings.filter((b: any) => b.payment_status === "pending").length;
+    if (pendingBookings > 0) {
+        notifications.push({
+            id: "pending-bookings",
+            type: "warning",
+            message: `มีรายการจอง ${pendingBookings} รายการที่รอการตรวจสอบ`,
+            link: "/manager/booking?status=pending"
+        });
+    }
+
+    // 2. Staff on Leave Info
+    const leaveCount = onLeaveIds.size;
+    if (leaveCount > 0) {
+        notifications.push({
+            id: "staff-on-leave",
+            type: "info",
+            message: `วันนี้มีพนักงานลา ${leaveCount} ท่าน`,
+            link: "/manager/employee/schedule"
+        });
+    }
+
     return NextResponse.json({
         success: true,
         data: {
-            // KPIs
             totalRevenue,
             prevTotalRevenue,
             totalBookings,
@@ -385,7 +409,6 @@ export async function GET(request: NextRequest) {
             newCustomersLastMonth,
             avgTransactionValue,
             availableTherapists,
-            // Charts
             revenueByDay,
             popularServices,
             peakHours,
@@ -393,6 +416,7 @@ export async function GET(request: NextRequest) {
             therapistUtilization,
             couponRedemption: couponSummary,
             packageSalesUsage,
+            notifications,
             // Status Boards
             therapistStatus,
             roomStatus,
