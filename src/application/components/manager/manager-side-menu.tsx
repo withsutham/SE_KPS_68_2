@@ -48,13 +48,13 @@ const employeeItems: MenuItem[] = [
   { href: "/manager/employee/management", label: "จัดการข้อมูลพนักงาน", icon: Settings },
 ];
 
-function MenuLink({ item, active, collapsed }: { item: MenuItem; active: boolean; collapsed: boolean }) {
+function MenuLink({ item, active, collapsed, badge }: { item: MenuItem; active: boolean; collapsed: boolean; badge?: number }) {
   const Icon = item.icon;
   return (
     <Link
       href={item.href}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors relative",
         active
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -63,7 +63,15 @@ function MenuLink({ item, active, collapsed }: { item: MenuItem; active: boolean
       title={collapsed ? item.label : undefined}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      {!collapsed && <span>{item.label}</span>}
+      {!collapsed && <span className="flex-1">{item.label}</span>}
+      {!collapsed && badge && badge > 0 && (
+        <span className="shrink-0 h-5 px-1.5 rounded-full bg-yellow-500 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-background">
+          {badge}
+        </span>
+      )}
+      {collapsed && badge && badge > 0 && (
+        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-yellow-500 ring-2 ring-background" />
+      )}
     </Link>
   );
 }
@@ -73,10 +81,27 @@ export function ManagerSideMenu() {
   const [collapsed, setCollapsed] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   // Ensure component is mounted before rendering theme-dependent content
   useEffect(() => {
     setMounted(true);
+    
+    // Fetch pending leave records
+    const fetchPendingLeaves = async () => {
+      try {
+        const res = await fetch("/api/leave_record");
+        const json = await res.json();
+        if (json.data) {
+          const count = json.data.filter((l: any) => l.approval_status === "pending").length;
+          setPendingCount(count);
+        }
+      } catch (err) {
+        console.error("Failed to fetch pending leaves:", err);
+      }
+    };
+
+    fetchPendingLeaves();
   }, []);
 
   const handleLogout = async () => {
@@ -131,7 +156,13 @@ export function ManagerSideMenu() {
         <div className="mt-5 space-y-1">
           {!collapsed && <p className="px-2 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">พนักงาน</p>}
           {employeeItems.map((item) => (
-            <MenuLink key={item.href} item={item} active={pathname === item.href} collapsed={collapsed} />
+            <MenuLink 
+              key={item.href} 
+              item={item} 
+              active={pathname === item.href} 
+              collapsed={collapsed} 
+              badge={item.href === "/manager/employee/management" ? pendingCount : undefined}
+            />
           ))}
         </div>
       </div>
