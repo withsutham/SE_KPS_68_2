@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import { getUserType } from "@/lib/user-actions";
+import { getUserType } from "@/components/therapist/employee_actions";
 
 export function LoginForm({
   className,
