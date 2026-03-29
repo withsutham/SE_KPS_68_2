@@ -1,90 +1,33 @@
 # Wellness Massage Management System
 
-## Getting Started.
+**ฟื้นใจ (Feun-Jai)** — A premium multi-service massage shop management platform built with Next.js, Tailwind CSS, and Supabase.
 
-Follow these steps to set up the project locally:
+---
 
-### 1. Install Dependencies
-Navigate to the application directory and install the required packages:
+## Documentation
+
+| Document | Description |
+| :--- | :--- |
+| [Getting Started](docs/getting-started/setup.md) | Install dependencies, configure environment variables, and run the app locally |
+| [API Reference](docs/api/api-reference.md) | All available REST endpoints, request/response formats, table schemas, and code examples |
+| [AI Context Guide](docs/guides/ai-context.md) | Architecture overview, design system rules, and component conventions for AI assistants |
+| [Application README](src/application/README.md) | Tech stack details and UI/UX guidelines for the Next.js application |
+
+---
+
+## Quick Start
+
 ```bash
-cd src/application
-npm install
-```
+# 1. Install dependencies
+cd src/application && npm install
 
-### 2. Configure Environment Variables
-Inside the `src/application` directory, you will find a `.env.example` file.
-1.  **Rename/Copy** this file to `.env.local`.
-2.  **Update the keys** with your Supabase credentials:
+# 2. Copy and configure environment variables (run from src/application/)
+cp .env.example .env.local   # then fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, and SUPABASE_SERVICE_ROLE_KEY
 
-```bash
-# src/application/.env.local
-
-NEXT_PUBLIC_SUPABASE_URL=https://kuopbajnxyxpzzgrkzcn.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_WTqfKWPQygDYSx8L7UnT7Q_XaE900Hi
-SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SECRET_API_KEY
-```
-
-> **Note:** `.env.local` is ignored by Git. Never share your `SUPABASE_SECRET_API_KEY` (service role) publicly.
-
-### 3. Run the Development Server
-From the `src/application` folder:
-```bash
+# 3. Start the development server
 npm run dev
 ```
 
-### 4. Verify the Setup
-*   **Web App:** Visit [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 5. API Documentation
-
-📝 **Complete API Reference:** For comprehensive details on all available endpoints, request/response formats, and usage examples, please refer to the [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) file located in the root directory.
-
-The application provides standardized RESTful API endpoints for all 18 database tables (e.g., `profiles`, `users`, `customer`, `employee`, `booking`, `massage`, etc.).
-
-All endpoints are located at `http://localhost:3000/api/[table_name]`.
-
-#### Supported Operations (CRUD)
-
-**1. Create (POST)**
-- **Endpoint:** `POST /api/[table_name]`
-- **Body:** JSON object matching the table schema.
-- **Description:** Inserts a new record into the specified table.
-
-**2. Read (GET)**
-- **Endpoint (All):** `GET /api/[table_name]`
-  - fetches all records in the table.
-- **Endpoint (Single):** `GET /api/[table_name]/[id]`
-  - Fetches a specific record by its primary key UUID.
-
-**3. Update (PUT)** *(Only generated tables currently support PUT)*
-- **Endpoint:** `PUT /api/[table_name]/[id]`
-- **Body:** JSON object containing the fields to update.
-- **Description:** Updates the specified record. 
-
-**4. Delete (DELETE)** *(Only generated tables currently support DELETE)*
-- **Endpoint:** `DELETE /api/[table_name]/[id]`
-- **Description:** Deletes the specified record by its primary key.
-
-#### Examples using the `customer` table:
-*   `GET http://localhost:3000/api/customer`
-*   `GET http://localhost:3000/api/customer/123e4567-e89b-12d3...`
-*   `POST http://localhost:3000/api/customer` (with JSON body)
-*   `PUT http://localhost:3000/api/customer/123e4567-e89b-12d3...` (with JSON body)
-*   `DELETE http://localhost:3000/api/customer/123e4567-e89b-12d3...`
-
-### 6. Running Unit Tests
-
-The application includes automated unit testing for all 18 API modules using [Vitest](https://vitest.dev/). The tests use mocked Supabase clients to simulate database interactions safely and quickly.
-
-**Running the tests:**
-From the `src/application` folder:
-```bash
-npm run test
-```
-
-This will run all test suites in the `src/test/api/` directory and print a summary of which test modules pass or fail.
-
-**Running tests in watch mode (for development):**
-```bash
-npm run test:watch
-```
+> See [docs/getting-started/setup.md](docs/getting-started/setup.md) for full setup instructions.

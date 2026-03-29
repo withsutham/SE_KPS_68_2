@@ -1,50 +1,74 @@
 # ฟื้นใจ (Feun-Jai): Massage Shop Platform
 
-Welcome to the **Feun-Jai** project repository! This is the core application for the multi-service massage shop, designed with a premium, Zen-inspired aesthetic.
+Welcome to the **Feun-Jai** application — the core Next.js frontend for the multi-service massage shop platform, styled with a premium, Zen-inspired aesthetic.
 
-## 🎯 Project Overview
-This project aims to provide a seamless, "login-first" booking experience for Feun-Jai's customers. The current state includes the fully localized (Thai) and styled homepage, establishing the baseline UI/UX standards for the rest of the application.
+> **New to the project?** See [docs/getting-started/setup.md](../../docs/getting-started/setup.md) for installation and environment setup instructions.
+
+---
 
 ## 🛠 Tech Stack
-We are utilizing a scalable and modern web development stack:
-- **Framework**: [Next.js](https://nextjs.org/) (App Router)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Backend/Auth**: [Supabase](https://supabase.com/)
-- **Fonts**: `Mitr` (Headings) and `Sarabun` (Body) via Google Fonts.
+
+| Layer | Technology |
+| :--- | :--- |
+| Framework | [Next.js](https://nextjs.org/) (App Router) |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) |
+| UI Components | [shadcn/ui](https://ui.shadcn.com/) |
+| Icons | [Lucide React](https://lucide.dev/) |
+| Backend / Auth | [Supabase](https://supabase.com/) |
+| Fonts | `Mitr` (Headings) · `Sarabun` (Body) via Google Fonts |
+
+---
 
 ## 🎨 UI/UX Guidelines (Feun-Jai Aesthetic)
-When building new pages or components, please adhere to the established "Feun-Jai" aesthetic:
-1. **Minimalism**: Utilize generous whitespace (`py-32`, `max-w-7xl` containers) to let the design breathe.
-2. **Typography**: Always use class `font-mitr` for `<h1/>` through `<h6/>` tags. Body text should default to the `sans` family (Sarabun).
-3. **Colors**: Rely on the predefined CSS variables in `globals.css`. The primary color is a calming "Sage" green (`bg-primary`, `text-primary`).
-4. **Theme**: The application defaults to **Light Mode** to maintain a clean, spa-like feel, but dark mode is supported.
 
-## 🚀 Getting Started Locally
+When building new pages or components, adhere to the established "Feun-Jai" aesthetic:
 
-### 1. Prerequisites
-Ensure you have `Node.js` installed and an active Supabase project URL/Key.
+1. **Minimalism** — Use generous whitespace (`py-32`, `max-w-7xl` containers) to let the design breathe.
+2. **Typography** — Use `font-mitr` for all headings (`h1`–`h6`). Body text defaults to the `sans` family (Sarabun).
+3. **Colors** — Rely on the predefined CSS variables in `globals.css`. The primary color is a calming "Sage" green (`bg-primary`, `text-primary`).
+4. **Theme** — Defaults to **Light Mode** for a clean, spa-like feel; dark mode is also supported.
 
-### 2. Environment Variables
-Create a `.env.local` file in the root directory and add your Supabase credentials (copy from `.env.example`):
-```env
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+---
+
+## 🗂 Project Structure
+
+```
+src/application/
+├── app/                         # Next.js App Router pages and layouts
+│   ├── layout.tsx               # Root layout (includes <Nav /> and <Footer />)
+│   ├── page.tsx                 # Homepage
+│   ├── auth/                    # Login, sign-up, forgot-password, update-password
+│   ├── (authenticated)/         # Protected routes (require login)
+│   │   ├── booking/             # Booking flow
+│   │   │   └── history/         # Customer booking history
+│   │   ├── coupon/              # Customer coupon discovery & management
+│   │   ├── package/             # Customer package browsing & history
+│   │   ├── profile/             # Customer profile settings
+│   │   └── (manager-only)/      # Manager-restricted routes
+│   │       └── manager/
+│   │           ├── dashboard/   # Analytics dashboard
+│   │           ├── booking/     # Booking management
+│   │           ├── coupon/      # Coupon management
+│   │           ├── employee/    # Employee management & scheduling
+│   │           ├── massage/     # Massage service management
+│   │           ├── monitor/     # Live therapist & room status board
+│   │           ├── operating-time/ # Shop hours management
+│   │           ├── package/     # Package management
+│   │           └── rooms/       # Room management
+├── components/
+│   ├── ui/                      # shadcn/ui primitives (Button, Card, Input, …)
+│   ├── home/                    # Homepage section components
+│   │   ├── hero-section.tsx
+│   │   ├── services-section.tsx
+│   │   └── features-section.tsx
+│   ├── booking/                 # Multi-step booking flow components
+│   ├── coupon/                  # Coupon card and list components
+│   ├── manager/                 # Manager dashboard & sidebar components
+│   ├── nav.tsx                  # Global navigation bar
+│   ├── footer.tsx               # Global footer
+│   ├── theme-switcher.tsx       # Dark/light mode toggle
+│   └── auth-button.tsx          # Authentication state display
+└── src/test/api/                # Vitest unit tests for API routes
 ```
 
-### 3. Install Dependencies
-```bash
-npm install
-```
-
-### 4. Run the Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## 📝 Next Steps for the Team
-- **Authentication**: Connect the localized Login/Register pages (`app/auth/`) to the Supabase backend workflow.
-- **Booking Flow**: Develop the protected booking interface.
-- **Dashboard**: Create a user dashboard for managing appointments.
-
+> **Note:** `<Nav />` and `<Footer />` are rendered by `layout.tsx` — do **not** import them again in individual page files.
