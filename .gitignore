@@ -93,3 +93,6 @@ Thumbs.db
 
 # Opencode-specific directory
 .opencode/
+
+# Prevent empty lockfiles in non-package directories
+src/package-lock.json
