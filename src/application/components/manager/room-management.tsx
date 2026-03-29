@@ -12,7 +12,6 @@ import {
     CheckCircle2,
     Settings2,
     X,
-    Save,
     Users
 } from "lucide-react";
 
@@ -59,6 +58,7 @@ export function RoomManagement() {
     const [roomMassages, setRoomMassages] = useState<RoomMassage[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [serviceFilterId, setServiceFilterId] = useState<number | "all">("all");
 
     // Dialog States
     const [isAddRoomOpen, setIsAddRoomOpen] = useState(false);
@@ -73,6 +73,7 @@ export function RoomManagement() {
     // Room-Massage Link States
     const [linkingCapacity, setLinkingCapacity] = useState(1);
     const [linkingMassageId, setLinkingMassageId] = useState<number | "">("");
+    const [serviceSearchTerm, setServiceSearchTerm] = useState("");
 
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -98,7 +99,7 @@ export function RoomManagement() {
             if (roomsJson.success) setRooms(roomsJson.data);
             if (massagesJson.success) setMassages(massagesJson.data);
             if (roomMassagesJson.success) setRoomMassages(roomMassagesJson.data);
-        } catch (error) {
+        } catch {
             setErrorMessage("Failed to load data");
         } finally {
             setIsLoading(false);
@@ -233,9 +234,12 @@ export function RoomManagement() {
 
     // --- Helpers ---
 
-    const filteredRooms = rooms.filter(r => 
-        r.room_name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredRooms = rooms.filter(r => {
+        const matchesName = r.room_name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesService = serviceFilterId === "all" || 
+            roomMassages.some(rm => rm.room_id === r.room_id && rm.massage_id === serviceFilterId);
+        return matchesName && matchesService;
+    });
 
     const getServicesForRoom = (roomId: number) => {
         return roomMassages.filter(rm => rm.room_id === roomId).map(rm => ({
@@ -243,6 +247,12 @@ export function RoomManagement() {
             massage_name: massages.find(m => m.massage_id === rm.massage_id)?.massage_name || "Unknown"
         }));
     };
+
+    useEffect(() => {
+        if (!isManageServicesOpen) {
+            setServiceSearchTerm("");
+        }
+    }, [isManageServicesOpen]);
 
     useEffect(() => {
         if (successMessage || errorMessage) {
@@ -301,14 +311,28 @@ export function RoomManagement() {
 
                 {/* Search & Stats */}
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                    <div className="relative w-full md:max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            placeholder="ค้นหาชื่อห้อง..." 
-                            className="pl-9 h-11 bg-card/50"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:max-w-2xl">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="ค้นหาชื่อห้อง..." 
+                                className="pl-9 h-11 bg-card/50"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="relative w-full sm:w-64">
+                            <select 
+                                className="flex h-11 w-full rounded-md border border-input bg-card/50 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={serviceFilterId}
+                                onChange={(e) => setServiceFilterId(e.target.value === "all" ? "all" : Number(e.target.value))}
+                            >
+                                <option value="all">บริการทั้งหมด</option>
+                                {massages.map(m => (
+                                    <option key={m.massage_id} value={m.massage_id}>รองรับ: {m.massage_name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     <div className="flex items-center gap-6 text-sm text-muted-foreground bg-card/40 px-6 py-2.5 rounded-full border border-border/40">
                         <div className="flex items-center gap-2">
@@ -382,7 +406,7 @@ export function RoomManagement() {
                                     <CardContent className="space-y-4">
                                         <div className="space-y-2">
                                             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">บริการที่รองรับ</p>
-                                            <div className="flex flex-wrap gap-1.5 min-h-[2.5rem]">
+                                            <div className="flex flex-wrap gap-1.5 min-h-[2.5rem] max-h-[6rem] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-primary/10 hover:scrollbar-thumb-primary/20">
                                                 {services.length > 0 ? (
                                                     services.map(s => (
                                                         <Badge key={s.room_massage_id} variant="secondary" className="bg-primary/5 text-primary border-primary/10 text-[10px] px-2 py-0">
@@ -497,9 +521,11 @@ export function RoomManagement() {
                                         onChange={(e) => setLinkingMassageId(e.target.value ? Number(e.target.value) : "")}
                                     >
                                         <option value="">เลือกบริการ...</option>
-                                        {massages.map(m => (
-                                            <option key={m.massage_id} value={m.massage_id}>{m.massage_name}</option>
-                                        ))}
+                                        {massages
+                                            .filter(m => !getServicesForRoom(selectedRoom?.room_id || 0).some(s => s.massage_id === m.massage_id))
+                                            .map(m => (
+                                                <option key={m.massage_id} value={m.massage_id}>{m.massage_name}</option>
+                                            ))}
                                     </select>
                                 </div>
                                 <div className="md:col-span-3 space-y-2">
@@ -524,13 +550,24 @@ export function RoomManagement() {
 
                             {/* Current Links List */}
                             <div className="space-y-3">
-                                <h4 className="text-sm font-semibold flex items-center gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                                    รายการที่เชื่อมโยงอยู่
-                                </h4>
-                                <div className="border rounded-xl overflow-hidden">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                        รายการที่เชื่อมโยงอยู่
+                                    </h4>
+                                    <div className="relative w-full max-w-[200px]">
+                                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                        <Input
+                                            placeholder="ค้นหาบริการ..."
+                                            className="pl-8 h-8 text-xs bg-muted/50"
+                                            value={serviceSearchTerm}
+                                            onChange={(e) => setServiceSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="border rounded-xl overflow-hidden max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/10 hover:scrollbar-thumb-primary/20">
                                     <table className="w-full text-sm">
-                                        <thead className="bg-muted/50 text-muted-foreground font-medium">
+                                        <thead className="bg-muted/50 text-muted-foreground font-medium sticky top-0 z-10 backdrop-blur-sm shadow-sm">
                                             <tr>
                                                 <th className="px-4 py-2 text-left">บริการ</th>
                                                 <th className="px-4 py-2 text-center w-24">ความจุ</th>
@@ -538,9 +575,11 @@ export function RoomManagement() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y">
-                                            {selectedRoom && getServicesForRoom(selectedRoom.room_id).length > 0 ? (
-                                                getServicesForRoom(selectedRoom.room_id).map(link => (
-                                                    <tr key={link.room_massage_id} className="hover:bg-muted/10">
+                                            {selectedRoom && getServicesForRoom(selectedRoom.room_id).filter(s => s.massage_name.toLowerCase().includes(serviceSearchTerm.toLowerCase())).length > 0 ? (
+                                                getServicesForRoom(selectedRoom.room_id)
+                                                    .filter(s => s.massage_name.toLowerCase().includes(serviceSearchTerm.toLowerCase()))
+                                                    .map(link => (
+                                                        <tr key={link.room_massage_id} className="hover:bg-muted/10">
                                                         <td className="px-4 py-3 font-medium">{link.massage_name}</td>
                                                         <td className="px-4 py-3 text-center">
                                                             <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
