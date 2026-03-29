@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       customer_name: body.customer_name,
       customer_phone: body.customer_phone,
       customer_email: body.customer_email || null,
-      booking_dateTime: body.booking_datetime,
+      booking_dateTime: new Date().toISOString(),
       total_price: body.total_price || 0,
       payment_status: "pending", // Waiting for manager to verify deposit slip
     };
