@@ -252,7 +252,7 @@ function PackagePageContent() {
                         ) : (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {paginatedList.map(({ pkgInfo, details }, index) => {
+                                    {activeTab === "my-packages" && paginatedList.map(({ pkgInfo, details }, index) => {
                                         const totalUsed = details.filter((d: any) => d.is_used).length;
                                         const totalServices = details.length;
 
@@ -424,7 +424,7 @@ function PackagePageContent() {
                         ) : (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {paginatedList.map((pkg) => {
+                                    {activeTab === "discover" && paginatedList.map((pkg) => {
                                         const endStr = pkg.campaign_end_datetime
                                         ? new Date(pkg.campaign_end_datetime).toLocaleDateString("th-TH") : "";
                                     const originalPrice = pkg.package_detail?.reduce((sum: number, detail: any) => sum + (Number(detail.massage?.massage_price) || 0), 0) || 0;
@@ -532,7 +532,7 @@ function PackagePageContent() {
                         ) : (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {paginatedList.map(({ pkgInfo, details }, index) => {
+                                    {activeTab === "history" && paginatedList.map(({ pkgInfo, details }, index) => {
                                         const totalUsed = details.length;
                                     const totalServices = details.length;
 
