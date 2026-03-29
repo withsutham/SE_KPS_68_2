@@ -159,7 +159,19 @@ function PackagePageContent() {
     const activePackages = Object.values(groupedMyPackages).filter(v => v.details.some(d => !d.is_used));
     const historyPackages = myPackages
         .filter(mp => mp.is_used)
-        .sort((a, b) => b.member_package_id - a.member_package_id); // Sort descending to show latest roughly first
+        .sort((a, b) => {
+            const getLatestTime = (mp: any) => {
+                const times: string[] = (mp.booking_detail ?? []).map((bd: any) => bd.massage_start_dateTime).filter(Boolean);
+                if (times.length === 0) return null;
+                return times.reduce((latest, t) => (t > latest ? t : latest));
+            };
+            const aTime = getLatestTime(a);
+            const bTime = getLatestTime(b);
+            if (!aTime && !bTime) return b.member_package_id - a.member_package_id;
+            if (!aTime) return 1;
+            if (!bTime) return -1;
+            return new Date(bTime).getTime() - new Date(aTime).getTime();
+        });
     const filteredAvailable = availablePackages.filter(pkg => {
         const now = new Date();
         const start = pkg.campaign_start_datetime ? new Date(pkg.campaign_start_datetime) : null;
@@ -538,6 +550,11 @@ function PackagePageContent() {
                                     {activeTab === "history" && paginatedList.map((mp: any, index: number) => {
                                         const pInfo = mp.package_detail?.package;
                                         const massage = mp.package_detail?.massage;
+                                        const allTimes: string[] = (mp.booking_detail ?? []).map((bd: any) => bd.massage_start_dateTime).filter(Boolean);
+                                        const latestTime = allTimes.length > 0 ? allTimes.reduce((latest: string, t: string) => (t > latest ? t : latest)) : null;
+                                        const usageDateStr = latestTime
+                                            ? new Date(latestTime).toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" })
+                                            : null;
 
                                         return (
                                             <div
@@ -561,6 +578,11 @@ function PackagePageContent() {
                                                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                                         <Clock className="h-3 w-3" /> {massage?.massage_time || 60} นาที
                                                     </span>
+                                                    {usageDateStr && (
+                                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3" /> {usageDateStr}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
