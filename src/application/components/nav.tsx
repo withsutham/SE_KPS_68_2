@@ -22,6 +22,7 @@ export async function Nav() {
   const { data: { user } } = await supabase.auth.getUser();
 
   let isTherapist = false;
+  let role: string | null = null;
   if (user) {
     const adminSupabase = await createAdminClient();
     const { data: profile } = await adminSupabase
@@ -30,6 +31,12 @@ export async function Nav() {
       .eq("profile_id", user.id)
       .single();
     isTherapist = profile?.user_type === "therapist";
+    role = profile?.user_type ?? null;
+  }
+
+  // Hide top nav for manager/shop_owner as they use the sidebar
+  if (role === "manager" || role === "shop_owner") {
+    return null;
   }
 
   return (

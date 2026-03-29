@@ -353,7 +353,7 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
             </div>
 
             {/* Coupon selection */}
-            {data.customerId && coupons.length > 0 && (
+            {data.customerId && coupons.length > 0 && subtotal > 0 && (
               <div className="py-2">
                 <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-2">
                   <Ticket className="h-3.5 w-3.5" /> ส่วนลด / คูปอง
