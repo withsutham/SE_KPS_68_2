@@ -169,7 +169,6 @@ export default function EmployeeManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     try {
       const [empRes, schRes, leaveRes, msgRes, skRes] = await Promise.all([
         fetch("/api/employee"),
@@ -190,21 +189,29 @@ export default function EmployeeManagementPage() {
       setLeaveRecords(leaveJson.data ?? []);
       setMassages(msgJson.data ?? []);
       setSkills(skJson.data ?? []);
-      
-      // Auto-select first if none selected
-      if (!selectedEmpId && empJson.data && empJson.data.length > 0) {
-        setSelectedEmpId(empJson.data[0].employee_id);
-      }
     } catch {
       setEmployees([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedEmpId]);
+  }, []); // Stable function
 
   useEffect(() => {
+    setLoading(true);
     fetchData();
   }, [fetchData]);
+
+  // Handle auto-selection:
+  // 1. If nothing is selected
+  // 2. If the selected employee is no longer in the list (deleted by someone else or this user)
+  useEffect(() => {
+    const stillExists = employees.some(e => e.employee_id === selectedEmpId);
+    if (employees.length > 0 && (!selectedEmpId || !stillExists)) {
+      setSelectedEmpId(employees[0].employee_id);
+    } else if (employees.length === 0) {
+      setSelectedEmpId(null);
+    }
+  }, [employees, selectedEmpId]);
 
   const selectedEmployee = useMemo(() => 
     employees.find(e => e.employee_id === selectedEmpId) || null,
