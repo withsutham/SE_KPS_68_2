@@ -106,8 +106,19 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
 export function BookingManagement() {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // --- Filters & Search ---
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [idSearch, setIdSearch] = useState("");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+    const [showAdvanced, setShowAdvanced] = useState(false);
+
+    // --- Pagination ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     const [selectedBooking, setSelectedBooking] = useState<FullBooking | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -196,11 +207,52 @@ export function BookingManagement() {
     };
 
     const filteredBookings = bookings.filter(b => {
-        const matchesSearch = b.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             b.customer_phone.includes(searchTerm);
-        const matchesStatus = statusFilter === "all" || b.payment_status === statusFilter;
-        return matchesSearch && matchesStatus;
+        // ID Search
+        if (idSearch && b.booking_id.toString() !== idSearch.trim()) return false;
+
+        // Text Search (Name, Phone, Email)
+        const search = searchTerm.toLowerCase();
+        const matchesSearch = 
+            b.customer_name.toLowerCase().includes(search) || 
+            b.customer_phone.includes(search) ||
+            (b.customer_email?.toLowerCase().includes(search));
+        
+        if (!matchesSearch) return false;
+
+        // Status Filter
+        if (statusFilter !== "all" && b.payment_status !== statusFilter) return false;
+
+        // Date Range
+        const bookingDate = new Date(b.booking_dateTime);
+        if (dateFrom) {
+            const from = new Date(dateFrom);
+            from.setHours(0, 0, 0, 0);
+            if (bookingDate < from) return false;
+        }
+        if (dateTo) {
+            const to = new Date(dateTo);
+            to.setHours(23, 59, 59, 999);
+            if (bookingDate > to) return false;
+        }
+
+        return true;
     });
+
+    const totalFiltered = filteredBookings.length;
+    const totalPages = Math.ceil(totalFiltered / itemsPerPage);
+    const paginatedBookings = filteredBookings.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    const handleResetFilters = () => {
+        setSearchTerm("");
+        setStatusFilter("all");
+        setIdSearch("");
+        setDateFrom("");
+        setDateTo("");
+        setCurrentPage(1);
+    };
 
     return (
         <main className="relative flex-1 w-full font-mitr">
@@ -244,25 +296,74 @@ export function BookingManagement() {
 
                 <Card className="border-border/60 bg-card/80 shadow-lg shadow-primary/5 backdrop-blur-sm">
                     <CardHeader className="border-b border-border/60 bg-muted/30 p-6">
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full md:w-auto">
-                                <TabsList className="bg-muted/50 p-1">
-                                    <TabsTrigger value="all">ทั้งหมด</TabsTrigger>
-                                    <TabsTrigger value="pending">รอตรวจสอบ</TabsTrigger>
-                                    <TabsTrigger value="confirmed">ยืนยันแล้ว</TabsTrigger>
-                                    <TabsTrigger value="completed">เสร็จสิ้น</TabsTrigger>
-                                    <TabsTrigger value="cancelled">ยกเลิก</TabsTrigger>
-                                </TabsList>
-                            </Tabs>
-                            <div className="relative w-full md:w-72">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    placeholder="ค้นหาชื่อหรือเบอร์โทร..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-9"
-                                />
+                        <div className="flex flex-col gap-6">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                                <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }} className="w-full md:w-auto">
+                                    <TabsList className="bg-muted/50 p-1">
+                                        <TabsTrigger value="all">ทั้งหมด</TabsTrigger>
+                                        <TabsTrigger value="pending">รอตรวจสอบ</TabsTrigger>
+                                        <TabsTrigger value="confirmed">ยืนยันแล้ว</TabsTrigger>
+                                        <TabsTrigger value="completed">เสร็จสิ้น</TabsTrigger>
+                                        <TabsTrigger value="cancelled">ยกเลิก</TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                                <div className="flex items-center gap-2">
+                                    <div className="relative w-full md:w-72">
+                                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            placeholder="ค้นหาชื่อหรือเบอร์โทร..."
+                                            value={searchTerm}
+                                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                            className="pl-9 h-10 bg-background/50"
+                                        />
+                                    </div>
+                                    <Button 
+                                        variant="outline" 
+                                        size="icon" 
+                                        className={cn("h-10 w-10 shrink-0", showAdvanced && "bg-primary/10 border-primary/30 text-primary")}
+                                        onClick={() => setShowAdvanced(!showAdvanced)}
+                                    >
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                    {(searchTerm || statusFilter !== "all" || idSearch || dateFrom || dateTo) && (
+                                        <Button variant="ghost" size="sm" onClick={handleResetFilters} className="text-xs font-sans h-10 px-3 hover:text-destructive">
+                                            ล้างตัวกรอง
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
+
+                            {showAdvanced && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border/40 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Booking ID</label>
+                                        <Input 
+                                            placeholder="ค้นหาตาม ID..." 
+                                            value={idSearch}
+                                            onChange={(e) => { setIdSearch(e.target.value); setCurrentPage(1); }}
+                                            className="h-9 text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">ตั้งแต่วันที่</label>
+                                        <Input 
+                                            type="date" 
+                                            value={dateFrom}
+                                            onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
+                                            className="h-9 text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">ถึงวันที่</label>
+                                        <Input 
+                                            type="date" 
+                                            value={dateTo}
+                                            onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
+                                            className="h-9 text-xs"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -289,7 +390,7 @@ export function BookingManagement() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border/40">
-                                        {filteredBookings.map((b) => {
+                                        {paginatedBookings.map((b) => {
                                             const config = STATUS_CONFIG[b.payment_status] || { label: b.payment_status, color: "bg-gray-100", icon: AlertCircle };
                                             return (
                                                 <tr key={b.booking_id} className="hover:bg-muted/30 transition-colors">
@@ -331,6 +432,78 @@ export function BookingManagement() {
                             </div>
                         )}
                     </CardContent>
+                    {/* Pagination Footer */}
+                    {!isLoading && totalFiltered > 0 && (
+                        <div className="flex flex-col border-t border-border/60 bg-muted/20 px-6 py-4 md:flex-row md:items-center md:justify-between gap-4">
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground order-2 md:order-1">
+                                <p className="font-sans">
+                                    แสดง {((currentPage - 1) * itemsPerPage) + 1} ถึง {Math.min(currentPage * itemsPerPage, totalFiltered)} จาก {totalFiltered} รายการ
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs whitespace-nowrap">แสดงหน้าละ:</span>
+                                    <select 
+                                        value={itemsPerPage} 
+                                        onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                        className="h-8 rounded-lg border border-border/40 bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                                    >
+                                        {[10, 20, 50, 100].map(val => (
+                                            <option key={val} value={val}>{val}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-center gap-1.5 order-1 md:order-2">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="h-9 w-9 rounded-xl transition-all"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                
+                                <div className="flex items-center gap-1 px-2">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        // Show pages around current page
+                                        let pageNum = i + 1;
+                                        if (totalPages > 5) {
+                                            if (currentPage > 3) pageNum = currentPage - 3 + i + 1;
+                                            if (pageNum > totalPages) pageNum = totalPages - 4 + i;
+                                        }
+                                        if (pageNum <= 0) pageNum = i + 1;
+                                        if (pageNum > totalPages) return null;
+
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={currentPage === pageNum ? "default" : "ghost"}
+                                                size="sm"
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className={cn(
+                                                    "h-9 w-9 rounded-xl font-sans text-xs font-bold transition-all",
+                                                    currentPage === pageNum ? "shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
+                                                )}
+                                            >
+                                                {pageNum}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="h-9 w-9 rounded-xl transition-all"
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </Card>
             </div>
 
