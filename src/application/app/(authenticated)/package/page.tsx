@@ -45,10 +45,6 @@ function PackagePageContent() {
         setRowsPerPage(activeTab === "history" ? "10" : "9");
     }, [activeTab]);
 
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [rowsPerPage]);
-
     // Handle URL params for redirect flow
     useEffect(() => {
         if (isLoading) return;
