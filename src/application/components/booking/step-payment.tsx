@@ -137,9 +137,19 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
             const json = await res.json();
             bookingId = json.data?.id ?? null;
             bookingDetails = json.data?.details ?? null;
+          } else if (res.status === 409) {
+            const json = await res.json();
+            alert(json.error || "ไม่มีพนักงานหรือห้องว่างในช่วงเวลาที่เลือก กรุณาเลือกเวลาอื่น");
+            return;
+          } else {
+            const json = await res.json();
+            alert(json.error || "เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+            return;
           }
         } catch (err) {
           console.error("Booking submission error:", err);
+          alert("เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+          return;
         }
 
         onUpdate({
@@ -228,9 +238,22 @@ export function StepPayment({ data, onUpdate, onNext, onBack }: StepProps) {
           const json = await res.json();
           bookingId = json.data?.id ?? null;
           bookingDetails = json.data?.details ?? null;
+        } else if (res.status === 409) {
+          const json = await res.json();
+          alert(json.error || "ไม่มีพนักงานหรือห้องว่างในช่วงเวลาที่เลือก กรุณาเลือกเวลาอื่น");
+          setLoading(false);
+          return;
+        } else {
+          const json = await res.json();
+          alert(json.error || "เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+          setLoading(false);
+          return;
         }
       } catch (err) {
         console.error("Booking submission error:", err);
+        alert("เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง");
+        setLoading(false);
+        return;
       }
 
       onUpdate({

@@ -8,7 +8,8 @@ function autoAssignResources(
   endTime: Date,
   skills: any[] | null,
   rooms: any[] | null,
-  localBookings: any[]
+  localBookings: any[],
+  leaveRecords: any[] | null
 ): { employeeId: number | null; roomId: number | null } {
   let assignedEmployeeId: number | null = null;
   let assignedRoomId: number | null = null;
@@ -20,6 +21,17 @@ function autoAssignResources(
       .map((s) => s.employee_id) || [];
 
   for (const empId of skilledEmployees) {
+    // Check if employee is on leave during the booking time
+    const isOnLeave = leaveRecords?.some(
+      (leave: any) =>
+        leave.employee_id === empId &&
+        leave.approval_status === "approved" &&
+        new Date(leave.start_dateTime) < endTime &&
+        new Date(leave.end_dateTime) > startTime
+    );
+    if (isOnLeave) continue;
+
+    // Check if employee has overlapping booking
     const isOverlapping = localBookings.some(
       (b: any) =>
         b.employee_id === empId &&
@@ -73,6 +85,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const supabase = await createAdminClient();
 
+    // Input validation
+    if (!body.customer_name || body.customer_name.trim() === "") {
+      return NextResponse.json(
+        { success: false, error: "กรุณากรอกชื่อลูกค้า", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+    if (!body.customer_phone || body.customer_phone.trim() === "") {
+      return NextResponse.json(
+        { success: false, error: "กรุณากรอกเบอร์โทรศัพท์", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+    if (!body.booking_datetime) {
+      return NextResponse.json(
+        { success: false, error: "กรุณาเลือกวันและเวลานวด", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+    if (!body.services || !Array.isArray(body.services) || body.services.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "กรุณาเลือกบริการอย่างน้อย 1 รายการ", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+
     // 1. Create booking
     const bookingPayload: Record<string, any> = {
       customer_name: body.customer_name,
@@ -116,20 +154,25 @@ export async function POST(request: NextRequest) {
       const dateStr = startDateTime.toLocaleDateString("en-CA"); // 'YYYY-MM-DD'
 
       // Auto-assignment Prep: Fetch all relevant data for the day
-      const [{ data: existingBookings }, { data: skills }, { data: rooms }] =
-        await Promise.all([
-          supabase
-            .from("booking_detail")
-            .select(
-              "employee_id, room_id, massage_start_dateTime, massage_end_dateTime",
-            )
-            .gte("massage_start_dateTime", `${dateStr}T00:00:00+07:00`)
-            .lt("massage_start_dateTime", `${dateStr}T23:59:59+07:00`),
-          supabase
-            .from("therapist_massage_skill")
-            .select("employee_id, massage_id"),
-          supabase.from("room_massage").select("room_id, massage_id, capacity"),
-        ]);
+      const [
+        { data: existingBookings },
+        { data: skills },
+        { data: rooms },
+        { data: leaveRecords },
+      ] = await Promise.all([
+        supabase
+          .from("booking_detail")
+          .select(
+            "employee_id, room_id, massage_start_dateTime, massage_end_dateTime",
+          )
+          .gte("massage_start_dateTime", `${dateStr}T00:00:00+07:00`)
+          .lt("massage_start_dateTime", `${dateStr}T23:59:59+07:00`),
+        supabase
+          .from("therapist_massage_skill")
+          .select("employee_id, massage_id"),
+        supabase.from("room_massage").select("room_id, massage_id, capacity"),
+        supabase.from("leave_record").select("employee_id, start_dateTime, end_dateTime, approval_status"),
+      ]);
 
       let currentStartTime = new Date(startDateTime);
       const localBookings = existingBookings ? [...existingBookings] : [];
@@ -174,10 +217,22 @@ export async function POST(request: NextRequest) {
             endDateTime,
             skills,
             rooms,
-            localBookings
+            localBookings,
+            leaveRecords
           );
           assignedEmployeeId = assignment.employeeId;
           assignedRoomId = assignment.roomId;
+
+          if (assignedEmployeeId === null || assignedRoomId === null) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: "ไม่มีพนักงานหรือห้องว่างในช่วงเวลาที่เลือก กรุณาเลือกเวลาอื่น",
+                code: "NO_AVAILABLE_RESOURCES",
+              },
+              { status: 409 }
+            );
+          }
           
           // Use the real massage_id for storage
           massageId = realMassageId;
@@ -214,10 +269,22 @@ export async function POST(request: NextRequest) {
             endDateTime,
             skills,
             rooms,
-            localBookings
+            localBookings,
+            leaveRecords
           );
           assignedEmployeeId = assignment.employeeId;
           assignedRoomId = assignment.roomId;
+
+          if (assignedEmployeeId === null || assignedRoomId === null) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: "ไม่มีพนักงานหรือห้องว่างในช่วงเวลาที่เลือก กรุณาเลือกเวลาอื่น",
+                code: "NO_AVAILABLE_RESOURCES",
+              },
+              { status: 409 }
+            );
+          }
 
           const payload = {
             booking_id: bookingId,
