@@ -17,6 +17,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { PaymentDialog } from "@/components/package/payment-dialog";
 
 function PackagePageContent() {
@@ -33,6 +34,16 @@ function PackagePageContent() {
         type: "success" | "error";
     } | null>(null);
     const [activeTab, setActiveTab] = useState("my-packages");
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState("9");
+
+    // Adjust default rows per page based on tab and reset page
+    useEffect(() => {
+        setCurrentPage(1);
+        setRowsPerPage(activeTab === "history" ? "10" : "9");
+    }, [activeTab]);
 
     // Handle URL params for redirect flow
     useEffect(() => {
@@ -146,13 +157,45 @@ function PackagePageContent() {
     });
 
     const activePackages = Object.values(groupedMyPackages).filter(v => v.details.some(d => !d.is_used));
-    const historyPackages = Object.values(groupedMyPackages).filter(v => v.details.every(d => d.is_used));
+    const historyPackages = myPackages
+        .filter(mp => mp.is_used)
+        .sort((a, b) => {
+            const getLatestTime = (mp: any) => {
+                const times: string[] = (mp.booking_detail ?? []).map((bd: any) => bd.massage_start_dateTime).filter(Boolean);
+                if (times.length === 0) return null;
+                return times.reduce((latest, t) => (t > latest ? t : latest));
+            };
+            const aTime = getLatestTime(a);
+            const bTime = getLatestTime(b);
+            if (!aTime && !bTime) return b.member_package_id - a.member_package_id;
+            if (!aTime) return 1;
+            if (!bTime) return -1;
+            return new Date(bTime).getTime() - new Date(aTime).getTime();
+        });
     const filteredAvailable = availablePackages.filter(pkg => {
         const now = new Date();
         const start = pkg.campaign_start_datetime ? new Date(pkg.campaign_start_datetime) : null;
         const end = pkg.campaign_end_datetime ? new Date(pkg.campaign_end_datetime) : null;
         return (!start || start <= now) && (!end || end >= now);
     });
+
+    let currentList: any[] = [];
+    if (activeTab === "my-packages") {
+        currentList = activePackages;
+    } else if (activeTab === "discover") {
+        currentList = filteredAvailable;
+    } else if (activeTab === "history") {
+        currentList = historyPackages;
+    }
+
+    const totalItems = currentList.length;
+    const itemsPerPageNum = rowsPerPage === "all" ? totalItems : parseInt(rowsPerPage, 10) || 9;
+    const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPageNum));
+    const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+    const startIndex = (safeCurrentPage - 1) * itemsPerPageNum;
+    const endIndex = rowsPerPage === "all" ? totalItems : Math.min(startIndex + itemsPerPageNum, totalItems);
+
+    const paginatedList = currentList.slice(startIndex, endIndex);
 
     return (
         <main className="min-h-screen bg-background font-mitr relative overflow-hidden">
@@ -223,10 +266,11 @@ function PackagePageContent() {
                                 <p className="text-lg text-muted-foreground">คุณยังไม่มีแพ็กเกจที่พร้อมใช้งานในขณะนี้</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {activePackages.map(({ pkgInfo, details }, index) => {
-                                    const totalUsed = details.filter(d => d.is_used).length;
-                                    const totalServices = details.length;
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {activeTab === "my-packages" && paginatedList.map(({ pkgInfo, details }, index) => {
+                                        const totalUsed = details.filter((d: any) => d.is_used).length;
+                                        const totalServices = details.length;
 
                                     return (
                                         <Dialog key={`${pkgInfo.package_id}-${index}`}>
@@ -300,9 +344,8 @@ function PackagePageContent() {
                                                 <div className="mt-4 space-y-4">
                                                     <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
                                                         <h4 className="text-sm font-semibold mb-2">สรุปการใช้งาน</h4>
-                                                        <div className="flex items-end justify-between">
-                                                            <span className="text-xs text-muted-foreground">ใช้ไปแล้ว {totalUsed} จากทั้งหมด {totalServices} ครั้ง</span>
-                                                            <span className="text-2xl font-bold text-primary">{Math.round((totalUsed / totalServices) * 100)}%</span>
+                                                        <div className="flex items-center mb-1">
+                                                            <span className="text-sm font-medium text-foreground/80">ใช้ไปแล้ว {totalUsed} บริการจาก {totalServices} บริการ</span>
                                                         </div>
                                                         <div className="w-full h-2 bg-muted rounded-full mt-2 overflow-hidden">
                                                             <div
@@ -317,7 +360,7 @@ function PackagePageContent() {
                                                             <Tag className="h-4 w-4 text-primary" /> เลือกบริการที่ต้องการจอง
                                                         </h4>
                                                         <div className="grid gap-3">
-                                                            {details.map((mp, i) => {
+                                                            {details.map((mp: any, i: number) => {
                                                                 const massage = mp.package_detail?.massage;
                                                                 return (
                                                                     <div key={mp.member_package_id || i} className={`p-3 rounded-lg border ${mp.is_used ? 'bg-muted/30 border-border/50 text-muted-foreground' : 'bg-background border-primary/20 hover:border-primary/50 transition-colors'}`}>
@@ -354,13 +397,39 @@ function PackagePageContent() {
                                         </Dialog>
                                     );
                                 })}
+                                </div>
+                                {totalItems > 0 && (
+                                    <div className="mt-8 rounded-xl overflow-hidden border border-border/40">
+                                        <DataTablePagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            totalItems={totalItems}
+                                            showingFrom={startIndex + 1}
+                                            showingTo={endIndex}
+                                            rowsPerPage={rowsPerPage}
+                                            onPageChange={setCurrentPage}
+                                            onRowsPerPageChange={(value) => {
+                                                setRowsPerPage(value);
+                                                setCurrentPage(1);
+                                            }}
+                                            pageOptions={["9", "18", "27", "all"]}
+                                            labels={{
+                                                showing: "แสดง",
+                                                of: "จาก",
+                                                items: "รายการ",
+                                                rowsPerPage: "จำนวนต่อหน้า:",
+                                                all: "ทั้งหมด"
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </TabsContent>
 
                     {/* Discover Packages Tab */}
                     <TabsContent value="discover" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                        {availablePackages.length === 0 ? (
+                        {filteredAvailable.length === 0 ? (
                             <div className="bg-muted/30 border border-border/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
                                 <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
                                     <PlusCircle className="h-12 w-12" />
@@ -368,14 +437,10 @@ function PackagePageContent() {
                                 <p className="text-lg text-muted-foreground">ไม่มีแพ็กเกจที่เปิดขายในขณะนี้</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {availablePackages.filter(pkg => {
-                                    const now = new Date();
-                                    const start = pkg.campaign_start_datetime ? new Date(pkg.campaign_start_datetime) : null;
-                                    const end = pkg.campaign_end_datetime ? new Date(pkg.campaign_end_datetime) : null;
-                                    return (!start || start <= now) && (!end || end >= now);
-                                }).map((pkg) => {
-                                    const endStr = pkg.campaign_end_datetime
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {activeTab === "discover" && paginatedList.map((pkg) => {
+                                        const endStr = pkg.campaign_end_datetime
                                         ? new Date(pkg.campaign_end_datetime).toLocaleDateString("th-TH") : "";
                                     const originalPrice = pkg.package_detail?.reduce((sum: number, detail: any) => sum + (Number(detail.massage?.massage_price) || 0), 0) || 0;
 
@@ -440,6 +505,32 @@ function PackagePageContent() {
                                         </Card>
                                     );
                                 })}
+                                </div>
+                                {totalItems > 0 && (
+                                    <div className="mt-8 rounded-xl overflow-hidden border border-border/40">
+                                        <DataTablePagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            totalItems={totalItems}
+                                            showingFrom={startIndex + 1}
+                                            showingTo={endIndex}
+                                            rowsPerPage={rowsPerPage}
+                                            onPageChange={setCurrentPage}
+                                            onRowsPerPageChange={(value) => {
+                                                setRowsPerPage(value);
+                                                setCurrentPage(1);
+                                            }}
+                                            pageOptions={["9", "18", "27", "all"]}
+                                            labels={{
+                                                showing: "แสดง",
+                                                of: "จาก",
+                                                items: "รายการ",
+                                                rowsPerPage: "จำนวนต่อหน้า:",
+                                                all: "ทั้งหมด"
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </TabsContent>
@@ -451,76 +542,77 @@ function PackagePageContent() {
                                 <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
                                     <History className="h-12 w-12" />
                                 </div>
-                                <p className="text-lg text-muted-foreground">คุณยังไม่มีประวัติการใช้แพ็กเกจ</p>
+                                <p className="text-lg text-muted-foreground">คุณยังไม่มีประวัติการใช้บริการจากแพ็กเกจ</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {historyPackages.map(({ pkgInfo, details }, index) => {
-                                    const totalUsed = details.length;
-                                    const totalServices = details.length;
+                            <div className="space-y-6">
+                                <div className="flex flex-col gap-3">
+                                    {activeTab === "history" && paginatedList.map((mp: any, index: number) => {
+                                        const pInfo = mp.package_detail?.package;
+                                        const massage = mp.package_detail?.massage;
+                                        const allTimes: string[] = (mp.booking_detail ?? []).map((bd: any) => bd.massage_start_dateTime).filter(Boolean);
+                                        const latestTime = allTimes.length > 0 ? allTimes.reduce((latest: string, t: string) => (t > latest ? t : latest)) : null;
+                                        const usageDateStr = latestTime
+                                            ? new Date(latestTime).toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" })
+                                            : null;
 
-                                    return (
-                                        <Dialog key={`history-${pkgInfo.package_id}-${index}`}>
-                                            <DialogTrigger asChild>
-                                                <Card className="group/card relative border-border/50 bg-muted/20 opacity-80 hover:opacity-100 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col shadow-sm active:scale-[0.98]">
-                                                    <div className="absolute top-0 left-0 w-full h-1.5 bg-muted-foreground/30" />
-
-                                                    <CardHeader className="pt-6 pb-2">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-2 bg-muted/50 rounded-lg text-muted-foreground">
-                                                                <History className="h-5 w-5" />
-                                                            </div>
-                                                        </div>
-                                                        <CardTitle className="text-xl font-medium mt-4 text-muted-foreground line-through leading-relaxed">
-                                                            {pkgInfo.package_name}
-                                                        </CardTitle>
-                                                    </CardHeader>
-
-                                                    <CardContent className="flex-1 pb-6 pt-2">
-                                                        <div className="mb-4">
-                                                            <div className="flex justify-between items-end mb-1.5">
-                                                                <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">การใช้งานครบแล้ว</span>
-                                                                <span className="text-sm font-bold text-muted-foreground">{totalUsed}/{totalServices} <span className="text-[10px] font-normal">บริการ</span></span>
-                                                            </div>
-                                                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="h-full bg-muted-foreground/40 rounded-full"
-                                                                    style={{ width: `100%` }}
-                                                                />
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 p-2.5 rounded-lg border border-border/40">
-                                                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                                                <span>คุณได้ใช้บริการในแพ็กเกจนี้จนครบถ้วนแล้ว</span>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-
-                                                    <CardFooter className="pt-0 pb-6">
-                                                        <div className="w-full flex items-center justify-center gap-2 text-xs font-semibold py-2.5 bg-muted/30 text-muted-foreground rounded-xl transition-all">
-                                                            <span>ตรวจสอบประวัติการใช้งาน</span>
-                                                            <ExternalLink className="h-3 w-3" />
-                                                        </div>
-                                                    </CardFooter>
-                                                </Card>
-                                            </DialogTrigger>
-
-                                            <DialogContent className="sm:max-w-md font-mitr">
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-xl font-medium text-muted-foreground flex items-center gap-2">
-                                                        ประวัติแพ็กเกจ: {pkgInfo.package_name}
-                                                    </DialogTitle>
-                                                </DialogHeader>
-                                                <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border flex flex-col items-center justify-center py-8">
-                                                    <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4 opacity-40" />
-                                                    <p className="text-sm font-medium text-muted-foreground">คุณใช้งานแพ็กเกจนี้ครบโควต้าแล้ว</p>
+                                        return (
+                                            <div
+                                                key={`history-${mp.member_package_id || index}`}
+                                                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-border/40 bg-muted/20 opacity-80 grayscale transition-all hover:opacity-100 hover:grayscale-0 gap-4"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0 border border-primary/10 text-primary">
+                                                        <CheckCircle2 className="h-6 w-6" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-sm text-foreground">{massage?.massage_name || "บริการนวด"}</span>
+                                                        <span className="text-xs text-muted-foreground mt-0.5">จากแพ็กเกจ: {pInfo?.package_name || "ไม่ระบุ"}</span>
+                                                    </div>
                                                 </div>
-                                            </DialogContent>
-                                        </Dialog>
-                                    );
-                                })}
+
+                                                <div className="flex flex-col sm:items-end gap-2 shrink-0">
+                                                    <Badge variant="secondary" className="text-[10px] font-normal px-2 py-0 h-5 w-fit">
+                                                        ใช้แล้ว
+                                                    </Badge>
+                                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" /> {massage?.massage_time || 60} นาที
+                                                    </span>
+                                                    {usageDateStr && (
+                                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3" /> {usageDateStr}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {totalItems > 0 && (
+                                    <div className="mt-8 rounded-xl overflow-hidden border border-border/40">
+                                        <DataTablePagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            totalItems={totalItems}
+                                            showingFrom={startIndex + 1}
+                                            showingTo={endIndex}
+                                            rowsPerPage={rowsPerPage}
+                                            onPageChange={setCurrentPage}
+                                            onRowsPerPageChange={(value) => {
+                                                setRowsPerPage(value);
+                                                setCurrentPage(1);
+                                            }}
+                                            pageOptions={["10", "20", "30", "all"]}
+                                            labels={{
+                                                showing: "แสดง",
+                                                of: "จาก",
+                                                items: "รายการ",
+                                                rowsPerPage: "จำนวนต่อหน้า:",
+                                                all: "ทั้งหมด"
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </TabsContent>
