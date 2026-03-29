@@ -280,6 +280,18 @@ export function StepDateTime({ data, onUpdate, onNext, onBack }: StepProps) {
                   );
                 })}
               </div>
+              
+              {/* Empty State: No available time slots */}
+              {timeSlots.every(slot => !checkSlotAvailability(slot)) && (
+                <div className="flex flex-col items-center justify-center p-4 mt-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
+                  <p className="text-sm font-medium font-sans text-center">
+                    ไม่มีเวลาว่างในวันที่เลือก
+                  </p>
+                  <p className="text-xs font-sans text-center text-amber-600 mt-1">
+                    กรุณาเลือกวันอื่นหรือติดต่อทางร้านโดยตรง
+                  </p>
+                </div>
+              )}
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground font-sans">
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block w-3 h-3 rounded-sm bg-primary/80" /> ว่าง
