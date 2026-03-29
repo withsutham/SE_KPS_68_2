@@ -4,8 +4,6 @@ import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
   CalendarClock,
-  ChevronLeft,
-  ChevronRight,
   Edit3,
   FilterX,
   Loader2,
@@ -17,6 +15,11 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DataTablePagination,
+  DEFAULT_TABLE_PAGE_OPTIONS,
+  type TablePageOption,
+} from "@/components/ui/data-table-pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -48,7 +51,7 @@ type Coupon = {
 type CouponStatus = "Active" | "Expired";
 //type StatusFilter = "all" | "active" | "upcoming" | "expired";
 type StatusFilter = "all" | "active" | "expired";
-type RowsPerPage = "10" | "30" | "50" | "all";
+type RowsPerPage = TablePageOption;
 type FormState = {
   coupon_name: string;
   discount_percent: string;
@@ -64,7 +67,7 @@ const INITIAL_FORM: FormState = {
   description: "",
 };
 
-const PAGE_OPTIONS: RowsPerPage[] = ["10", "30", "50", "all"];
+const PAGE_OPTIONS: RowsPerPage[] = [...DEFAULT_TABLE_PAGE_OPTIONS];
 const STATUS_STYLE: Record<CouponStatus, string> = {
   Active: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   //Upcoming: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300",
@@ -90,9 +93,7 @@ function getEnd(coupon: Coupon) {
 }
 
 function getStatus(coupon: Coupon, now = new Date()): CouponStatus {
-  const startsAt = getStart(coupon);
   const endsAt = getEnd(coupon);
-  //if (startsAt && startsAt.getTime() > now.getTime()) return "Upcoming";
   if (endsAt && endsAt.getTime() < now.getTime()) return "Expired";
   return "Active";
 }
@@ -121,12 +122,6 @@ function toIsoOrNull(value: string) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toISOString();
-}
-
-function pageWindow(totalPages: number, currentPage: number) {
-  const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
-  const end = Math.min(totalPages, start + 4);
-  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 }
 
 function matchesRange(coupon: ViewCoupon, dateFrom: string, dateTo: string) {
@@ -352,7 +347,6 @@ export function CouponManagement() {
   const rows = rowsPerPage === "all" ? filtered : filtered.slice(startIndex, startIndex + pageSize);
   const showingFrom = rows.length === 0 ? 0 : startIndex + 1;
   const showingTo = rows.length === 0 ? 0 : startIndex + rows.length;
-  const pages = pageWindow(totalPages, page);
   const activeCount = viewCoupons.filter((coupon) => coupon.status === "Active").length;
   //const upcomingCount = viewCoupons.filter((coupon) => coupon.status === "Upcoming").length;
   const expiredCount = viewCoupons.filter((coupon) => coupon.status === "Expired").length;
@@ -660,45 +654,17 @@ export function CouponManagement() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="flex flex-col gap-4 border-t border-border/40 bg-muted/15 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-                    <p className="font-sans text-sm text-muted-foreground lg:w-60">Showing {showingFrom}-{showingTo} of {filtered.length} items</p>
-                    <div className="flex flex-wrap items-center justify-center gap-1 lg:flex-1">
-                      <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-full" onClick={() => setCurrentPage(page - 1)} disabled={page <= 1 || filtered.length === 0}>
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      {pages.map((pageNumber) => (
-                        <Button
-                          key={pageNumber}
-                          type="button"
-                          variant={pageNumber === page ? "default" : "outline"}
-                          size="icon"
-                          className="h-9 w-9 rounded-full font-sans text-sm"
-                          onClick={() => setCurrentPage(pageNumber)}
-                          disabled={filtered.length === 0}
-                        >
-                          {pageNumber}
-                        </Button>
-                      ))}
-                      <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-full" onClick={() => setCurrentPage(page + 1)} disabled={page >= totalPages || filtered.length === 0}>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-3 lg:w-60 lg:justify-end">
-                      <span className="font-sans text-sm text-muted-foreground">Rows per page:</span>
-                      <Select value={rowsPerPage} onValueChange={(value) => setRowsPerPage(value as RowsPerPage)}>
-                        <SelectTrigger className="h-9 w-[96px] rounded-full bg-background font-sans">
-                          <SelectValue placeholder="10" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PAGE_OPTIONS.map((option) => (
-                            <SelectItem key={option} value={option} className="font-sans">
-                              {option === "all" ? "All" : option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  <DataTablePagination
+                    currentPage={page}
+                    pageOptions={PAGE_OPTIONS}
+                    rowsPerPage={rowsPerPage}
+                    showingFrom={showingFrom}
+                    showingTo={showingTo}
+                    totalItems={filtered.length}
+                    totalPages={totalPages}
+                    onPageChange={(nextPage) => setCurrentPage(nextPage)}
+                    onRowsPerPageChange={(value) => setRowsPerPage(value as RowsPerPage)}
+                  />
                 </>
               )}
             </div>

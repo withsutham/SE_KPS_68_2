@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DataTablePagination,
+  DEFAULT_TABLE_PAGE_OPTIONS,
+  type TablePageOption,
+} from "@/components/ui/data-table-pagination";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -23,6 +28,9 @@ type ApiResponse = {
 
 type SortField = "massage_price" | "massage_time";
 type SortDirection = "asc" | "desc";
+type RowsPerPage = TablePageOption;
+
+const PAGE_OPTIONS: RowsPerPage[] = [...DEFAULT_TABLE_PAGE_OPTIONS];
 
 export default function ListMassage() {
   const [massages, setMassages] = useState<Massage[]>([]);
@@ -32,6 +40,8 @@ export default function ListMassage() {
   const [previewImage, setPreviewImage] = useState<{ src: string; name: string } | null>(null);
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [rowsPerPage, setRowsPerPage] = useState<RowsPerPage>("10");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchMassages = async () => {
     setLoading(true);
@@ -54,6 +64,10 @@ export default function ListMassage() {
     void fetchMassages();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortField, sortDirection, rowsPerPage]);
+
   const filteredMassages = useMemo(() => {
     const normalized = searchTerm.trim().toLowerCase();
     if (!normalized) return massages;
@@ -67,6 +81,17 @@ export default function ListMassage() {
       return sortDirection === "asc" ? diff : -diff;
     });
   }, [filteredMassages, sortDirection, sortField]);
+
+  const pageSize = rowsPerPage === "all" ? Math.max(sortedMassages.length, 1) : Number(rowsPerPage);
+  const totalPages = Math.max(1, Math.ceil(sortedMassages.length / pageSize));
+  const page = Math.min(currentPage, totalPages);
+  const startIndex = rowsPerPage === "all" ? 0 : (page - 1) * pageSize;
+  const paginatedMassages =
+    rowsPerPage === "all"
+      ? sortedMassages
+      : sortedMassages.slice(startIndex, startIndex + pageSize);
+  const showingFrom = paginatedMassages.length === 0 ? 0 : startIndex + 1;
+  const showingTo = paginatedMassages.length === 0 ? 0 : startIndex + paginatedMassages.length;
 
   const toggleSort = (field: SortField) => {
     if (sortField !== field) {
@@ -132,92 +157,106 @@ export default function ListMassage() {
       ) : filteredMassages.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">No matching result</p>
       ) : (
-        <div className="w-full min-w-0 overflow-x-auto">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-muted-foreground">
-                <th className="rounded-tl-lg px-4 py-3">ภาพ</th>
-                <th className="px-4 py-3">ชื่อบริการ</th>
-                <th className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("massage_price")}
-                    className="inline-flex items-center font-semibold hover:text-foreground"
-                  >
-                    ราคา{sortIndicator("massage_price")}
-                  </button>
-                </th>
-                <th className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("massage_time")}
-                    className="inline-flex items-center font-semibold hover:text-foreground"
-                  >
-                    ระยะเวลา{sortIndicator("massage_time")}
-                  </button>
-                </th>
-                <th className="rounded-tr-lg px-4 py-3 text-right">การแก้ไข</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedMassages.map((massage) => (
-                <tr
-                  key={massage.massage_id}
-                  className="border-b border-border transition-colors hover:bg-muted/30"
-                >
-                  <td className="px-4 py-3">
-                    {massage.image_src ? (
-                      <button
-                        type="button"
-                        className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        onClick={() =>
-                          setPreviewImage({
-                            src: massage.image_src as string,
-                            name: massage.massage_name,
-                          })
-                        }
-                        aria-label={`Open image for ${massage.massage_name}`}
-                      >
-                        <img
-                          src={massage.image_src}
-                          alt={massage.massage_name}
-                          className="h-14 w-20 rounded-md border border-border object-cover transition-opacity hover:opacity-90"
-                          loading="lazy"
-                        />
-                      </button>
-                    ) : (
-                      <div className="flex h-14 w-20 items-center justify-center rounded-md border border-dashed border-border bg-muted/40 text-xs text-muted-foreground">
-                        No Image
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-medium">{massage.massage_name}</td>
-                  <td className="px-4 py-3 font-semibold text-primary">
-                    ฿{Number(massage.massage_price).toLocaleString("en-US")}
-                  </td>
-                  <td className="px-4 py-3">{Number(massage.massage_time)} นาที</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Link href={`/manager/massage/edit/${massage.massage_id}`}>
-                        <Button variant="outline" size="sm">
-                          แก้ไข
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deletingId === massage.massage_id}
-                        onClick={() => handleDelete(massage.massage_id)}
-                      >
-                        {deletingId === massage.massage_id ? "Deleting..." : "ลบ"}
-                      </Button>
-                    </div>
-                  </td>
+        <>
+          <div className="w-full min-w-0 overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="border-b border-border bg-muted/40 text-muted-foreground">
+                  <th className="rounded-tl-lg px-4 py-3">ภาพ</th>
+                  <th className="px-4 py-3">ชื่อบริการ</th>
+                  <th className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("massage_price")}
+                      className="inline-flex items-center font-semibold hover:text-foreground"
+                    >
+                      ราคา{sortIndicator("massage_price")}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("massage_time")}
+                      className="inline-flex items-center font-semibold hover:text-foreground"
+                    >
+                      ระยะเวลา{sortIndicator("massage_time")}
+                    </button>
+                  </th>
+                  <th className="rounded-tr-lg px-4 py-3 text-right">การแก้ไข</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {paginatedMassages.map((massage) => (
+                  <tr
+                    key={massage.massage_id}
+                    className="border-b border-border transition-colors hover:bg-muted/30"
+                  >
+                    <td className="px-4 py-3">
+                      {massage.image_src ? (
+                        <button
+                          type="button"
+                          className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() =>
+                            setPreviewImage({
+                              src: massage.image_src as string,
+                              name: massage.massage_name,
+                            })
+                          }
+                          aria-label={`Open image for ${massage.massage_name}`}
+                        >
+                          <img
+                            src={massage.image_src}
+                            alt={massage.massage_name}
+                            className="h-14 w-20 rounded-md border border-border object-cover transition-opacity hover:opacity-90"
+                            loading="lazy"
+                          />
+                        </button>
+                      ) : (
+                        <div className="flex h-14 w-20 items-center justify-center rounded-md border border-dashed border-border bg-muted/40 text-xs text-muted-foreground">
+                          No Image
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-medium">{massage.massage_name}</td>
+                    <td className="px-4 py-3 font-semibold text-primary">
+                      ฿{Number(massage.massage_price).toLocaleString("en-US")}
+                    </td>
+                    <td className="px-4 py-3">{Number(massage.massage_time)} นาที</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Link href={`/manager/massage/edit/${massage.massage_id}`}>
+                          <Button variant="outline" size="sm">
+                            แก้ไข
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deletingId === massage.massage_id}
+                          onClick={() => handleDelete(massage.massage_id)}
+                        >
+                          {deletingId === massage.massage_id ? "Deleting..." : "ลบ"}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <DataTablePagination
+            currentPage={page}
+            pageOptions={PAGE_OPTIONS}
+            rowsPerPage={rowsPerPage}
+            showingFrom={showingFrom}
+            showingTo={showingTo}
+            totalItems={sortedMassages.length}
+            totalPages={totalPages}
+            onPageChange={(nextPage) => setCurrentPage(nextPage)}
+            onRowsPerPageChange={(value) => setRowsPerPage(value as RowsPerPage)}
+          />
+        </>
       )}
 
       <Dialog
