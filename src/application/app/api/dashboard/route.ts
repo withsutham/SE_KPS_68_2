@@ -135,11 +135,13 @@ export async function GET(request: NextRequest) {
     const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
     const newCustomersThisMonth = allCustomers.filter((c: any) => {
+        if (!c.regis_dateTime) return false;
         const d = new Date(c.regis_dateTime);
         return d >= currentMonthStart;
     }).length;
 
     const newCustomersLastMonth = allCustomers.filter((c: any) => {
+        if (!c.regis_dateTime) return false;
         const d = new Date(c.regis_dateTime);
         return d >= prevMonthStart && d < currentMonthStart;
     }).length;
@@ -405,7 +407,7 @@ export async function GET(request: NextRequest) {
             id: "pending-leaves",
             type: "warning",
             message: `มีคำขอลา ${pendingLeaves} รายการที่รอการอนุมัติ`,
-            link: "/manager/employee/schedule" // Assuming this is where manager approves leaves
+            link: "/manager/employee/management"
         });
     }
 
