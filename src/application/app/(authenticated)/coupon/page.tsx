@@ -34,7 +34,7 @@ export default function CouponPage() {
   const [activeTab, setActiveTab] = useState("my-coupons");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState("9");
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState("discount_desc");
   const [isClaiming, setIsClaiming] = useState<string | null>(null);
 
   // Reset page when rowsPerPage or sortBy changes
@@ -46,7 +46,10 @@ export default function CouponPage() {
   useEffect(() => {
     setCurrentPage(1);
     setRowsPerPage(activeTab === "history" ? "10" : "9");
-  }, [activeTab]);
+    if (activeTab === "my-coupons" && sortBy === "newest") {
+      setSortBy("discount_desc");
+    }
+  }, [activeTab, sortBy]);
   const [alertMessage, setAlertMessage] = useState<{
     message: string;
     type: "success" | "error";
@@ -322,7 +325,9 @@ export default function CouponPage() {
                       <SelectValue placeholder="จัดเรียงตาม" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="newest" className="font-sans">ล่าสุด</SelectItem>
+                      {activeTab === "discover" && (
+                        <SelectItem value="newest" className="font-sans">ล่าสุด</SelectItem>
+                      )}
                       <SelectItem value="discount_desc" className="font-sans">ส่วนลด (มากไปน้อย)</SelectItem>
                       <SelectItem value="discount_asc" className="font-sans">ส่วนลด (น้อยไปมาก)</SelectItem>
                     </SelectContent>
