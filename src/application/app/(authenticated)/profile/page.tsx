@@ -409,6 +409,7 @@ function ProfilePageInner() {
           )}
         </CardContent>
       </Card>
+      </div>
 
       {/* Alert Message */}
       {alertMessage && (
