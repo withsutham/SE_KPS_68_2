@@ -23,7 +23,6 @@ import {
   LogOut,
   Sun,
   Moon,
-  Clock
 } from "lucide-react";
 
 type MenuItem = {
