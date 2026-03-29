@@ -46,7 +46,7 @@ interface DashboardData {
     peakHours: { hour: string; count: number }[];
     roomUsage: { name: string; rate: number; totalMinutes: number; maxMinutes: number }[];
     therapistUtilization: { name: string; rate: number; totalMinutes: number; maxMinutes: number }[];
-    couponRedemption: { total: number; used: number; rate: number };
+    couponRedemption: { total: number; used: number; rate: number; details: { name: string, total: number, used: number }[] };
     packageSalesUsage: { name: string; sold: number; used: number }[];
 }
 
@@ -86,10 +86,11 @@ function getPresetRange(preset: Preset): { from: string; to: string } {
     }
     if (preset === "30d") {
         const from = new Date(now);
-        from.setDate(now.getDate() - 29);
+        from.setDate(now.getDate() - 29); // Last 30 days including today
         return { from: from.toLocaleDateString("en-CA"), to: toStr };
     }
     if (preset === "month") {
+        // Start of current month
         const from = new Date(now.getFullYear(), now.getMonth(), 1);
         return { from: from.toLocaleDateString("en-CA"), to: toStr };
     }
@@ -102,8 +103,8 @@ function getPresetRange(preset: Preset): { from: string; to: string } {
 
 const PRESET_LABELS: { key: Preset; label: string }[] = [
     { key: "today", label: "วันนี้" },
-    { key: "7d", label: "7 วัน" },
-    { key: "30d", label: "30 วัน" },
+    { key: "7d", label: "7 วันล่าสุด" },
+    { key: "30d", label: "30 วันล่าสุด" },
     { key: "month", label: "เดือนนี้" },
     { key: "year", label: "ปีนี้" },
 ];
@@ -261,14 +262,14 @@ function KPICard({
 
 // ─── Coupon Ring ──────────────────────────────────────────────────────────────
 
-function CouponRing({ rate, used, total }: { rate: number; used: number; total: number }) {
+function CouponRing({ rate, used, total, compact = false }: { rate: number; used: number; total: number; compact?: boolean }) {
     const radius = 44;
     const circ = 2 * Math.PI * radius;
     const dash = (rate / 100) * circ;
 
     return (
-        <div className="flex flex-col items-center gap-3">
-            <div className="relative h-28 w-28">
+        <div className="flex flex-col items-center gap-2">
+            <div className={cn("relative", compact ? "h-16 w-16" : "h-28 w-28")}>
                 <svg viewBox="0 0 100 100" className="rotate-[-90deg]">
                     <circle
                         cx="50"
@@ -276,7 +277,7 @@ function CouponRing({ rate, used, total }: { rate: number; used: number; total: 
                         r={radius}
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="8"
+                        strokeWidth={compact ? "12" : "8"}
                         className="text-muted/30"
                     />
                     <circle
@@ -285,21 +286,23 @@ function CouponRing({ rate, used, total }: { rate: number; used: number; total: 
                         r={radius}
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="8"
+                        strokeWidth={compact ? "12" : "8"}
                         strokeDasharray={`${dash} ${circ - dash}`}
                         strokeLinecap="round"
                         className="text-violet-500 transition-all duration-700"
                     />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <p className="text-2xl font-bold font-mitr text-foreground">{rate}%</p>
+                    <p className={cn("font-bold font-mitr text-foreground", compact ? "text-[11px]" : "text-2xl")}>{rate}%</p>
                 </div>
             </div>
-            <div className="text-center">
-                <p className="text-xs text-muted-foreground font-sans">
-                    ใช้แล้ว {used} จาก {total} ใบ
-                </p>
-            </div>
+            {!compact && (
+                <div className="text-center">
+                    <p className="text-xs text-muted-foreground font-sans">
+                        ใช้แล้ว {used} จาก {total} ใบ
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
@@ -580,7 +583,7 @@ export default function ManagerDashboardPage() {
                                     <ResponsiveContainer width="100%" height={220}>
                                         <BarChart data={data.popularServices} layout="vertical" margin={{ left: 10 }}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.3} horizontal={false} />
-                                            <XAxis type="number" tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} />
+                                            <XAxis type="number" tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} allowDecimals={false} />
                                             <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} width={100} />
                                             <Tooltip content={<CustomTooltip />} />
                                             <Bar dataKey="count" name="จำนวน" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
@@ -627,14 +630,14 @@ export default function ManagerDashboardPage() {
                                     <EmptyState message="ยังไม่มีข้อมูลแพ็กเกจ" />
                                 ) : (
                                     <ResponsiveContainer width="100%" height={220}>
-                                        <BarChart data={data.packageSalesUsage}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.3} vertical={false} />
-                                            <XAxis dataKey="name" tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} />
-                                            <YAxis tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <BarChart data={data.packageSalesUsage} layout="vertical" margin={{ left: 10 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.3} horizontal={false} />
+                                            <XAxis type="number" tick={{ fontSize: 10, fontFamily: "sans-serif" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                                            <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fontFamily: "sans-serif", fontWeight: 500 }} tickLine={false} axisLine={false} width={100} />
                                             <Tooltip content={<CustomTooltip />} />
                                             <Legend wrapperStyle={{ fontSize: 10, fontFamily: "sans-serif", paddingTop: 10 }} />
-                                            <Bar dataKey="sold" name="ขายได้" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                                            <Bar dataKey="used" name="ใช้แล้ว" fill="#c4b5fd" radius={[4, 4, 0, 0]} />
+                                            <Bar dataKey="sold" name="ขายได้" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={12} />
+                                            <Bar dataKey="used" name="ใช้แล้ว" fill="#c4b5fd" radius={[0, 4, 4, 0]} barSize={12} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 )}
@@ -695,7 +698,7 @@ export default function ManagerDashboardPage() {
                             {/* 2.6 Coupon Redemption */}
                             <SectionCard
                                 title="อัตราแลกคูปอง"
-                                subtitle="คูปองทั้งหมดในระบบ"
+                                subtitle="แยกตามประเภทคูปอง"
                                 icon={Receipt}
                                 iconColor="text-violet-500"
                                 iconBg="bg-violet-500/10 border-violet-500/20"
@@ -703,12 +706,41 @@ export default function ManagerDashboardPage() {
                                 {data.couponRedemption.total === 0 ? (
                                     <EmptyState message="ยังไม่มีคูปองในระบบ" />
                                 ) : (
-                                    <div className="flex justify-center py-6">
-                                        <CouponRing
-                                            rate={data.couponRedemption.rate}
-                                            used={data.couponRedemption.used}
-                                            total={data.couponRedemption.total}
-                                        />
+                                    <div className="flex flex-col gap-6 py-2">
+                                        <div className="grid grid-cols-1 gap-6 max-h-[220px] overflow-y-auto pr-2 scrollbar-thin">
+                                            {data.couponRedemption.details.map((c, i) => (
+                                                <div key={i} className="flex items-center gap-4 bg-muted/20 p-3 rounded-xl border border-border/30">
+                                                    <div className="shrink-0 h-16 w-16">
+                                                        <CouponRing 
+                                                            rate={c.total > 0 ? Math.round((c.used / c.total) * 100) : 0} 
+                                                            used={c.used} 
+                                                            total={c.total} 
+                                                            compact
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold font-mitr truncate text-foreground">{c.name}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                                                <div 
+                                                                    className="h-full bg-violet-500 rounded-full" 
+                                                                    style={{ width: `${c.total > 0 ? (c.used / c.total) * 100 : 0}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-[10px] font-bold font-sans text-muted-foreground whitespace-nowrap">
+                                                                {c.used}/{c.total}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="pt-2 border-t border-border/30">
+                                            <div className="flex justify-between items-center text-[10px] font-bold font-sans text-muted-foreground uppercase tracking-wider">
+                                                <span>ภาพรวมทั้งหมด</span>
+                                                <span className="text-violet-500">{data.couponRedemption.rate}%</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </SectionCard>
