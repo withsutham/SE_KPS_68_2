@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const member_id = searchParams.get("member_id");
 
     const supabase = await createAdminClient();
-    let query = supabase.from("member_package").select("*, package_detail(*, package(*), massage(*))");
+    let query = supabase.from("member_package").select("*, package_detail(*, package(*), massage(*)), booking_detail(massage_start_dateTime)");
 
     if (member_id) {
         query = query.eq("member_id", member_id);

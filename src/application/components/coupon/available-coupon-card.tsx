@@ -19,8 +19,27 @@ interface AvailableCouponCardProps {
 }
 
 export function AvailableCouponCard({ coupon, isClaimed, isUsed, isClaiming, onClaim }: AvailableCouponCardProps) {
+  // Check if coupon expires within 7 days
+  const isExpiringSoon = () => {
+    if (!coupon.collect_deadline) return false;
+    const deadline = new Date(coupon.collect_deadline).getTime();
+    const now = new Date().getTime();
+    const daysUntilExpire = (deadline - now) / (1000 * 60 * 60 * 24);
+    return daysUntilExpire > 0 && daysUntilExpire <= 7;
+  };
+
+  const expiringSoon = isExpiringSoon();
+
   return (
-    <Card className="border-primary/20 bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col transition-all hover:shadow-md hover:border-primary/40 group">
+    <Card className="border-primary/20 bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col transition-all hover:shadow-md hover:border-primary/40 group relative">
+      {expiringSoon && !isClaimed && (
+        <div className="absolute top-3 right-3 z-10 animate-in fade-in zoom-in duration-300">
+          <div className="bg-destructive text-destructive-foreground text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center shadow-md">
+            <Clock className="w-3 h-3 mr-1" />
+            ใกล้หมดเวลา
+          </div>
+        </div>
+      )}
       <div className="flex aspect-[3/1] bg-primary/5 border-b border-primary/10 relative overflow-hidden items-center justify-center">
         <div className="absolute -left-4 w-8 h-8 rounded-full bg-background border-r border-primary/10"></div>
         <div className="absolute -right-4 w-8 h-8 rounded-full bg-background border-l border-primary/10"></div>
