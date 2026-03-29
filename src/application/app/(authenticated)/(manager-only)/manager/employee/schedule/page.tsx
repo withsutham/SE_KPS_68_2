@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, Fragment, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -288,6 +288,7 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
   leaveRecords: LeaveRecord[];
   bookings: BookingDetail[];
 }) {
+  const router = useRouter();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `employee-${employee.employee_id}`,
     data: { employee },
@@ -304,7 +305,7 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
   );
   const myBookings = bookings.filter(b => b.employee_id === employee.employee_id);
   
-  const collisionCount = myBookings.filter(b => {
+  const employeeCollisions = myBookings.filter(b => {
     return approvedLeaves.some(leave => {
       const leaveStart = new Date(leave.start_datetime).getTime();
       const leaveEnd = new Date(leave.end_datetime).getTime();
@@ -312,7 +313,25 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
       const bEnd = new Date(b.massage_end_dateTime).getTime();
       return bStart < leaveEnd && bEnd > leaveStart;
     });
-  }).length;
+  });
+
+  const collisionCount = employeeCollisions.length;
+
+  // Find earliest collision date for navigation
+  const firstCollisionDate = useMemo(() => {
+    if (employeeCollisions.length === 0) return null;
+    return new Date(Math.min(...employeeCollisions.map(b => new Date(b.massage_start_dateTime).getTime())));
+  }, [employeeCollisions]);
+
+  const handleBadgeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (firstCollisionDate) {
+      const monday = getMonday(firstCollisionDate);
+      const weekKey = toDateKey(monday);
+      router.push(`/manager/employee/schedule?week=${weekKey}`);
+    }
+  };
 
   return (
     <div
@@ -339,9 +358,15 @@ function DraggableEmployee({ employee, schedules, leaveRecords, bookings }: {
               {employee.first_name} {employee.last_name}
             </p>
             {collisionCount > 0 && (
-              <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] font-bold ring-2 ring-background">
+              <button
+                type="button"
+                onClick={handleBadgeClick}
+                onPointerDown={(e) => e.stopPropagation()}
+                title="คลิกเพื่อไปที่สัปดาห์ที่มีปัญหา"
+                className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] font-bold ring-2 ring-background hover:scale-110 active:scale-95 transition-transform"
+              >
                 {collisionCount}
-              </span>
+              </button>
             )}
           </div>
         </div>
@@ -949,6 +974,7 @@ function MassageFilterDialog({
 export default function WeeklySchedulePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [bookings, setBookings] = useState<BookingDetail[]>([]);
+  const [allBookings, setAllBookings] = useState<BookingDetail[]>([]);
   const [massages, setMassages] = useState<Massage[]>([]);
   const [skills, setSkills] = useState<TherapistSkill[]>([]);
   const [schedules, setSchedules] = useState<WorkSchedule[]>([]);
@@ -1040,11 +1066,11 @@ export default function WeeklySchedulePage() {
       });
     }
     
-    // Sort: Priority to those with leave collisions in this week
+    // Sort: Priority to those with leave collisions (Global)
     result = [...result].sort((a, b) => {
       const getCollisionCount = (emp: Employee) => {
         const approvedLeaves = leaveRecords.filter(l => l.employee_id === emp.employee_id && l.approval_status === "approved");
-        const myBookings = bookings.filter(b => b.employee_id === emp.employee_id);
+        const myBookings = allBookings.filter(b => b.employee_id === emp.employee_id);
         return myBookings.filter(b => {
           return approvedLeaves.some(l => {
             const bStart = new Date(b.massage_start_dateTime).getTime();
@@ -1062,7 +1088,7 @@ export default function WeeklySchedulePage() {
     });
     
     return result;
-  }, [employees, searchQuery, filterMassageId, skills, filterStartTime, filterEndTime, schedules, leaveRecords, bookings]);
+  }, [employees, searchQuery, filterMassageId, skills, filterStartTime, filterEndTime, schedules, leaveRecords, allBookings]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -1073,17 +1099,19 @@ export default function WeeklySchedulePage() {
     setLoading(true);
     try {
       const weekStartStr = toDateKey(weekMonday);
-      const [empRes, bdRes, massageRes, skillRes, schRes, leaveRes] = await Promise.all([
+      const [empRes, bdRes, allBdRes, massageRes, skillRes, schRes, leaveRes] = await Promise.all([
         fetch("/api/employee"),
         fetch(`/api/booking_detail?week_start=${weekStartStr}`),
+        fetch("/api/booking_detail"),
         fetch("/api/massage"),
         fetch("/api/therapist_massage_skill"),
         fetch("/api/work_schedule"),
         fetch("/api/leave_record"),
       ]);
-      const [empJson, bdJson, massageJson, skillJson, schJson, leaveJson] = await Promise.all([
+      const [empJson, bdJson, allBdJson, massageJson, skillJson, schJson, leaveJson] = await Promise.all([
         empRes.json(),
         bdRes.json(),
+        allBdRes.json(),
         massageRes.json(),
         skillRes.json(),
         schRes.json(),
@@ -1091,6 +1119,7 @@ export default function WeeklySchedulePage() {
       ]);
       setEmployees(empJson.data ?? []);
       setBookings(bdJson.data ?? []);
+      setAllBookings(allBdJson.data ?? []);
       setMassages(massageJson.data ?? []);
       setSkills(skillJson.data ?? []);
       setSchedules(schJson.data ?? []);
@@ -1098,6 +1127,7 @@ export default function WeeklySchedulePage() {
     } catch {
       setEmployees([]);
       setBookings([]);
+      setAllBookings([]);
       setSchedules([]);
       setLeaveRecords([]);
     } finally {
@@ -1284,23 +1314,37 @@ export default function WeeklySchedulePage() {
   const todayKey = toDateKey(today);
   const mergedSlots = buildMergedSlots(bookings, weekDates);
 
-  // Stats
+  // Stats (Sidebar Dashboard) - Based on All Data (matches Global Menu)
+  const globalUnassignedCount = allBookings.filter(b => !b.employee_id).length;
+  const globalApprovedLeaves = leaveRecords.filter(l => l.approval_status === "approved");
+  const globalLeaveCollisionCount = allBookings.filter(b => {
+    if (!b.employee_id) return false;
+    return globalApprovedLeaves.some(l => {
+      if (l.employee_id !== b.employee_id) return false;
+      const bStart = new Date(b.massage_start_dateTime).getTime();
+      const bEnd = new Date(b.massage_end_dateTime).getTime();
+      const lStart = new Date(l.start_datetime).getTime();
+      const lEnd = new Date(l.end_datetime).getTime();
+      return bStart < lEnd && bEnd > lStart;
+    });
+  }).length;
+
   const totalBookings = mergedSlots.length;
   const assignedSlots = mergedSlots.filter((s) => s.employee_id);
   
-  // Count slots with leave collision
-  const leaveCollisionCount = assignedSlots.filter(slot => {
-    return leaveRecords.some(l => {
-      if (l.employee_id !== slot.employee_id || l.approval_status !== "approved") return false;
-      const leaveStart = new Date(l.start_datetime).getTime();
-      const leaveEnd = new Date(l.end_datetime).getTime();
+  // Count slots with leave collision (Current Week Only)
+  const currentWeekCollisionCount = assignedSlots.filter(slot => {
+    return globalApprovedLeaves.some(l => {
+      if (l.employee_id !== slot.employee_id) return false;
+      const lStart = new Date(l.start_datetime).getTime();
+      const lEnd = new Date(l.end_datetime).getTime();
       const bStart = new Date(slot.bookingDetails[0].massage_start_dateTime).getTime();
       const bEnd = new Date(slot.bookingDetails[slot.bookingDetails.length - 1].massage_end_dateTime).getTime();
-      return bStart < leaveEnd && bEnd > leaveStart;
+      return bStart < lEnd && bEnd > lStart;
     });
   }).length;
   
-  const assignedCount = assignedSlots.length - leaveCollisionCount;
+  const assignedCount = assignedSlots.length - currentWeekCollisionCount;
   const pendingCount = totalBookings - assignedSlots.length;
 
   return (
@@ -1320,14 +1364,14 @@ export default function WeeklySchedulePage() {
                 </div>
                 <h2 className="font-mitr font-medium text-sm">พนักงาน</h2>
                 <div className="flex gap-1 items-center">
-                  {leaveCollisionCount > 0 && (
+                  {globalLeaveCollisionCount > 0 && (
                     <span className="shrink-0 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-background">
-                      {leaveCollisionCount}
+                      {globalLeaveCollisionCount}
                     </span>
                   )}
-                  {pendingCount > 0 && (
+                  {globalUnassignedCount > 0 && (
                     <span className="shrink-0 min-w-5 h-5 px-1 rounded-full bg-yellow-500 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-background">
-                      {pendingCount}
+                      {globalUnassignedCount}
                     </span>
                   )}
                 </div>
@@ -1413,7 +1457,7 @@ export default function WeeklySchedulePage() {
                   employee={emp}
                   schedules={schedules}
                   leaveRecords={leaveRecords}
-                  bookings={bookings}
+                  bookings={allBookings}
                 />
               ))
             )}
@@ -1467,10 +1511,10 @@ export default function WeeklySchedulePage() {
                     <span className="font-sans">จัดแล้ว</span>
                   </div>
                 )}
-                {leaveCollisionCount > 0 && (
+                {currentWeekCollisionCount > 0 && (
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
                     <AlertTriangle className="h-4 w-4" />
-                    <span className="font-medium font-mitr">{leaveCollisionCount}</span>
+                    <span className="font-medium font-mitr">{currentWeekCollisionCount}</span>
                     <span className="font-sans">หลุดจากการลา</span>
                   </div>
                 )}
