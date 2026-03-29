@@ -214,7 +214,7 @@ export function BookingManagement() {
                             <p className="text-muted-foreground">ตรวจสอบ ติดตาม และจัดการรายการจองคิวของลูกค้าทั้งหมด</p>
                         </div>
                         <Button variant="outline" onClick={loadBookings} disabled={isLoading} className="w-full sm:w-auto">
-                            <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
+                            <RefreshCw className={isLoading ? "animate-spin" : ""} />
                             รีเฟรช
                         </Button>
                     </div>
