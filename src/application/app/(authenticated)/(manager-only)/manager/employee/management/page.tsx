@@ -219,15 +219,38 @@ export default function EmployeeManagementPage() {
     [employees, selectedEmpId]
   );
 
-  // Filter employees by search
+  const totalPendingLeaves = useMemo(() => {
+    return leaveRecords.filter(l => l.approval_status === "pending").length;
+  }, [leaveRecords]);
+
+  // Filter and sort employees
   const filteredEmployees = useMemo(() => {
-    if (!searchQuery.trim()) return employees;
-    const q = searchQuery.toLowerCase();
-    return employees.filter(e => 
-      `${e.first_name} ${e.last_name}`.toLowerCase().includes(q) ||
-      (e.phone_number && e.phone_number.includes(q))
-    );
-  }, [employees, searchQuery]);
+    let result = [...employees];
+    
+    // 1. Filter by search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(e => 
+        `${e.first_name} ${e.last_name}`.toLowerCase().includes(q) ||
+        (e.phone_number && e.phone_number.includes(q))
+      );
+    }
+
+    // 2. Sort by pending leaves
+    return result.sort((a, b) => {
+      const countA = leaveRecords.filter(l => l.employee_id === a.employee_id && l.approval_status === "pending").length;
+      const countB = leaveRecords.filter(l => l.employee_id === b.employee_id && l.approval_status === "pending").length;
+      
+      // Sort priority:
+      // 1. Employees with pending leaves come first
+      // 2. Among those with pending leaves, sort by count descending
+      if (countA > 0 && countB === 0) return -1;
+      if (countA === 0 && countB > 0) return 1;
+      if (countA > 0 && countB > 0) return countB - countA;
+      
+      return 0; // Maintain original order for others
+    });
+  }, [employees, searchQuery, leaveRecords]);
 
   return (
     <main className="flex-1 w-full h-full flex flex-col md:flex-row overflow-hidden bg-background">
@@ -240,6 +263,11 @@ export default function EmployeeManagementPage() {
                 <Users className="h-4 w-4 text-primary" />
               </div>
               <h2 className="font-mitr font-medium">รายชื่อพนักงาน</h2>
+              {totalPendingLeaves > 0 && (
+                <Badge variant="outline" className="bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800 ml-1 px-1.5 py-0 h-5 text-[10px] font-bold">
+                  {totalPendingLeaves}
+                </Badge>
+              )}
             </div>
             <EmployeeFormDialog mode="add" massages={massages} onSaved={fetchData} />
           </div>
