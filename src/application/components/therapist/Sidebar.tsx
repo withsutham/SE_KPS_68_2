@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Home, Calendar, Send, History, User } from 'lucide-react';
+import { Home, Calendar, Send, History, User, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { getEmployeeByUserId } from '@/lib/user-actions';
+import { getEmployeeByUserId } from '@/components/therapist/employee_actions';
 import Image from 'next/image';
 
 export default function Sidebar() {
@@ -29,6 +29,7 @@ export default function Sidebar() {
     { icon: <Calendar size={20} />, label: "ตารางงาน", href: "/therapist/schedule" },
     { icon: <Send size={20} />, label: "ส่งใบลา", href: "/therapist/leave" },
     { icon: <History size={20} />, label: "ประวัติการลา", href: "/therapist/leavehistory" },
+    { icon: <Settings size={20} />, label: "ตั้งค่า", href: "/therapist/settings" },
   ];
 
   return (
@@ -57,7 +58,7 @@ export default function Sidebar() {
           
           <div className="hidden lg:block min-w-0">
             <p className="text-sm font-bold text-slate-800 truncate">
-              {employee ? `${employee.first_name}` : '...'}
+              {employee ? `${employee.first_name} ${employee.last_name || ''}` : '...'}
             </p>
             <p className="text-[9px] text-[#62846E] font-bold uppercase tracking-wider">Therapist</p>
           </div>
