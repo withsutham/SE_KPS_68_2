@@ -17,6 +17,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { PaymentDialog } from "@/components/package/payment-dialog";
 
 function PackagePageContent() {
@@ -33,6 +34,15 @@ function PackagePageContent() {
         type: "success" | "error";
     } | null>(null);
     const [activeTab, setActiveTab] = useState("my-packages");
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState("9");
+
+    // Reset page when tab or rowsPerPage changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab, rowsPerPage]);
 
     // Handle URL params for redirect flow
     useEffect(() => {
@@ -154,6 +164,23 @@ function PackagePageContent() {
         return (!start || start <= now) && (!end || end >= now);
     });
 
+    let currentList: any[] = [];
+    if (activeTab === "my-packages") {
+        currentList = activePackages;
+    } else if (activeTab === "discover") {
+        currentList = filteredAvailable;
+    } else if (activeTab === "history") {
+        currentList = historyPackages;
+    }
+
+    const totalItems = currentList.length;
+    const itemsPerPageNum = rowsPerPage === "all" ? totalItems : parseInt(rowsPerPage, 10) || 9;
+    const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPageNum));
+    const startIndex = (currentPage - 1) * itemsPerPageNum;
+    const endIndex = rowsPerPage === "all" ? totalItems : Math.min(startIndex + itemsPerPageNum, totalItems);
+
+    const paginatedList = currentList.slice(startIndex, endIndex);
+
     return (
         <main className="min-h-screen bg-background font-mitr relative overflow-hidden">
             {alertMessage && (
@@ -223,10 +250,11 @@ function PackagePageContent() {
                                 <p className="text-lg text-muted-foreground">คุณยังไม่มีแพ็กเกจที่พร้อมใช้งานในขณะนี้</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {activePackages.map(({ pkgInfo, details }, index) => {
-                                    const totalUsed = details.filter(d => d.is_used).length;
-                                    const totalServices = details.length;
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {paginatedList.map(({ pkgInfo, details }, index) => {
+                                        const totalUsed = details.filter((d: any) => d.is_used).length;
+                                        const totalServices = details.length;
 
                                     return (
                                         <Dialog key={`${pkgInfo.package_id}-${index}`}>
@@ -317,7 +345,7 @@ function PackagePageContent() {
                                                             <Tag className="h-4 w-4 text-primary" /> เลือกบริการที่ต้องการจอง
                                                         </h4>
                                                         <div className="grid gap-3">
-                                                            {details.map((mp, i) => {
+                                                            {details.map((mp: any, i: number) => {
                                                                 const massage = mp.package_detail?.massage;
                                                                 return (
                                                                     <div key={mp.member_package_id || i} className={`p-3 rounded-lg border ${mp.is_used ? 'bg-muted/30 border-border/50 text-muted-foreground' : 'bg-background border-primary/20 hover:border-primary/50 transition-colors'}`}>
@@ -354,13 +382,39 @@ function PackagePageContent() {
                                         </Dialog>
                                     );
                                 })}
+                                </div>
+                                {totalItems > 0 && (
+                                    <div className="mt-8 rounded-xl overflow-hidden border border-border/40">
+                                        <DataTablePagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            totalItems={totalItems}
+                                            showingFrom={startIndex + 1}
+                                            showingTo={endIndex}
+                                            rowsPerPage={rowsPerPage}
+                                            onPageChange={setCurrentPage}
+                                            onRowsPerPageChange={(value) => {
+                                                setRowsPerPage(value);
+                                                setCurrentPage(1);
+                                            }}
+                                            pageOptions={["9", "18", "27", "all"]}
+                                            labels={{
+                                                showing: "แสดง",
+                                                of: "จาก",
+                                                items: "รายการ",
+                                                rowsPerPage: "จำนวนต่อหน้า:",
+                                                all: "ทั้งหมด"
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </TabsContent>
 
                     {/* Discover Packages Tab */}
                     <TabsContent value="discover" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                        {availablePackages.length === 0 ? (
+                        {filteredAvailable.length === 0 ? (
                             <div className="bg-muted/30 border border-border/50 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
                                 <div className="text-muted-foreground mb-4 opacity-50 flex items-center justify-center">
                                     <PlusCircle className="h-12 w-12" />
@@ -368,14 +422,10 @@ function PackagePageContent() {
                                 <p className="text-lg text-muted-foreground">ไม่มีแพ็กเกจที่เปิดขายในขณะนี้</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {availablePackages.filter(pkg => {
-                                    const now = new Date();
-                                    const start = pkg.campaign_start_datetime ? new Date(pkg.campaign_start_datetime) : null;
-                                    const end = pkg.campaign_end_datetime ? new Date(pkg.campaign_end_datetime) : null;
-                                    return (!start || start <= now) && (!end || end >= now);
-                                }).map((pkg) => {
-                                    const endStr = pkg.campaign_end_datetime
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {paginatedList.map((pkg) => {
+                                        const endStr = pkg.campaign_end_datetime
                                         ? new Date(pkg.campaign_end_datetime).toLocaleDateString("th-TH") : "";
                                     const originalPrice = pkg.package_detail?.reduce((sum: number, detail: any) => sum + (Number(detail.massage?.massage_price) || 0), 0) || 0;
 
@@ -440,6 +490,32 @@ function PackagePageContent() {
                                         </Card>
                                     );
                                 })}
+                                </div>
+                                {totalItems > 0 && (
+                                    <div className="mt-8 rounded-xl overflow-hidden border border-border/40">
+                                        <DataTablePagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            totalItems={totalItems}
+                                            showingFrom={startIndex + 1}
+                                            showingTo={endIndex}
+                                            rowsPerPage={rowsPerPage}
+                                            onPageChange={setCurrentPage}
+                                            onRowsPerPageChange={(value) => {
+                                                setRowsPerPage(value);
+                                                setCurrentPage(1);
+                                            }}
+                                            pageOptions={["9", "18", "27", "all"]}
+                                            labels={{
+                                                showing: "แสดง",
+                                                of: "จาก",
+                                                items: "รายการ",
+                                                rowsPerPage: "จำนวนต่อหน้า:",
+                                                all: "ทั้งหมด"
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </TabsContent>
@@ -454,9 +530,10 @@ function PackagePageContent() {
                                 <p className="text-lg text-muted-foreground">คุณยังไม่มีประวัติการใช้แพ็กเกจ</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {historyPackages.map(({ pkgInfo, details }, index) => {
-                                    const totalUsed = details.length;
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {paginatedList.map(({ pkgInfo, details }, index) => {
+                                        const totalUsed = details.length;
                                     const totalServices = details.length;
 
                                     return (
@@ -521,6 +598,32 @@ function PackagePageContent() {
                                         </Dialog>
                                     );
                                 })}
+                                </div>
+                                {totalItems > 0 && (
+                                    <div className="mt-8 rounded-xl overflow-hidden border border-border/40">
+                                        <DataTablePagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            totalItems={totalItems}
+                                            showingFrom={startIndex + 1}
+                                            showingTo={endIndex}
+                                            rowsPerPage={rowsPerPage}
+                                            onPageChange={setCurrentPage}
+                                            onRowsPerPageChange={(value) => {
+                                                setRowsPerPage(value);
+                                                setCurrentPage(1);
+                                            }}
+                                            pageOptions={["9", "18", "27", "all"]}
+                                            labels={{
+                                                showing: "แสดง",
+                                                of: "จาก",
+                                                items: "รายการ",
+                                                rowsPerPage: "จำนวนต่อหน้า:",
+                                                all: "ทั้งหมด"
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </TabsContent>
