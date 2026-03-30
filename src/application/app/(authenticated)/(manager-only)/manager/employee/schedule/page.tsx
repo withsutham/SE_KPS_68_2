@@ -106,7 +106,7 @@ interface MergedSlot {
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
-const HOURS = [
+const DEFAULT_HOURS = [
   "08:00","09:00","10:00","11:00","12:00",
   "13:00","14:00","15:00","16:00","17:00",
   "18:00","19:00",
@@ -155,10 +155,10 @@ function toDateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function getHourIndex(dateStr: string): number {
+function getHourIndex(dateStr: string, hours: string[]): number {
   const d = new Date(dateStr);
   const h = d.getHours();
-  return HOURS.findIndex((hr) => {
+  return hours.findIndex((hr) => {
     const [hh] = hr.split(":").map(Number);
     return hh === h;
   });
@@ -166,7 +166,8 @@ function getHourIndex(dateStr: string): number {
 
 function buildMergedSlots(
   bookings: BookingDetail[],
-  weekDates: Date[]
+  weekDates: Date[],
+  hours: string[]
 ): MergedSlot[] {
   const result: MergedSlot[] = [];
 
@@ -196,7 +197,7 @@ function buildMergedSlots(
           new Date(b.massage_start_dateTime).getTime()
       );
 
-      const startIdx = getHourIndex(details[0].massage_start_dateTime);
+      const startIdx = getHourIndex(details[0].massage_start_dateTime, hours);
       if (startIdx < 0) continue;
 
       // Calculate span from first start to last end
@@ -694,12 +695,14 @@ function AssignConfirmDialog({
   onConfirm,
   saving,
   massages,
+  hours,
 }: {
   state: { open: boolean; employee: Employee | null; slot: MergedSlot | null; hasSkill: boolean; };
   onClose: () => void;
   onConfirm: () => void;
   saving: boolean;
   massages: Massage[];
+  hours: string[];
 }) {
   const empName = state.employee ? `${state.employee.first_name} ${state.employee.last_name}` : "";
   const massageName = state.slot ? (massages.find(m => m.massage_id === state.slot?.massage_id)?.massage_name ?? "บริการ") : "";
@@ -719,7 +722,7 @@ function AssignConfirmDialog({
         </DialogHeader>
         <div className="flex flex-col gap-4 pt-1">
           <p className="text-sm text-foreground font-sans">
-            ต้องการจัดพนักงาน <span className="font-medium">{empName}</span> ให้ทำบริการ <span className="font-medium text-primary">{massageName}</span> ในวันที่ {formatDateShort(d)} เวลา {HOURS[state.slot?.startHourIndex ?? 0]} น. หรือไม่?
+            ต้องการจัดพนักงาน <span className="font-medium">{empName}</span> ให้ทำบริการ <span className="font-medium text-primary">{massageName}</span> ในวันที่ {formatDateShort(d)} เวลา {state.slot ? hours[state.slot.startHourIndex] : "00:00"} น. หรือไม่?
           </p>
 
           {!state.hasSkill && (
@@ -1315,15 +1318,49 @@ export default function WeeklySchedulePage() {
   };
 
   // ─── Build week dates & merged slots ───────────────────────────────────────
-  const weekDates = Array.from({ length: 7 }, (_, i) => {
+  const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekMonday);
     d.setDate(d.getDate() + i);
     return d;
-  });
+  }), [weekMonday]);
 
   const today = new Date();
   const todayKey = toDateKey(today);
-  const mergedSlots = buildMergedSlots(bookings, weekDates);
+
+  // ─── Dynamic Hours Calculation ─────────────────────────────────────────────
+  const hours = useMemo(() => {
+    let minStart = 8;
+    let maxEnd = 20; // Default range is 08:00 to 20:00 (last row starts at 19:00)
+
+    if (bookings.length > 0) {
+      bookings.forEach(b => {
+        const startDate = new Date(b.massage_start_dateTime);
+        const endDate = new Date(b.massage_end_dateTime);
+        
+        const start = startDate.getHours();
+        
+        let endHour = endDate.getHours();
+        if (endDate.getMinutes() > 0) endHour += 1;
+        // If it crosses midnight or is exactly midnight
+        if (endHour === 0 && endDate.getDate() !== startDate.getDate()) {
+            endHour = 24;
+        }
+
+        if (start < minStart) minStart = start;
+        if (endHour > maxEnd) maxEnd = endHour;
+      });
+    }
+
+    if (maxEnd > 24) maxEnd = 24;
+
+    const hrs: string[] = [];
+    for (let h = minStart; h < maxEnd; h++) {
+      hrs.push(`${String(h).padStart(2, "0")}:00`);
+    }
+    return hrs;
+  }, [bookings]);
+
+  const mergedSlots = buildMergedSlots(bookings, weekDates, hours);
 
   // Stats (Sidebar Dashboard) - Based on All Data (matches Global Menu)
   const globalUnassignedCount = allBookings.filter(b => !b.employee_id).length;
@@ -1607,7 +1644,7 @@ export default function WeeklySchedulePage() {
                     {/* Grid Body */}
                     <div className="flex gap-1">
                       <div className="w-[60px] shrink-0 flex flex-col gap-1">
-                        {HOURS.map((hour) => (
+                        {hours.map((hour) => (
                           <div
                             key={hour}
                             className="flex items-center justify-end pr-2 text-xs text-muted-foreground font-mono"
@@ -1625,7 +1662,7 @@ export default function WeeklySchedulePage() {
                         return (
                           <div key={dayIdx} className="flex-1 relative">
                             <div className="flex flex-col gap-1">
-                              {HOURS.map((hour) => (
+                              {hours.map((hour) => (
                                 <div
                                   key={`bg-${dayIdx}-${hour}`}
                                   className="rounded-lg border border-dashed border-border/20"
@@ -1691,6 +1728,7 @@ export default function WeeklySchedulePage() {
         onConfirm={handleConfirmAssignment}
         saving={saving}
         massages={massages}
+        hours={hours}
       />
 
       {/* Block Notification Dialog */}
