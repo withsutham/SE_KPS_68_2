@@ -36,6 +36,7 @@ export async function GET() {
       customer_email,
       booking_dateTime,
       is_coupon_use,
+      payment_status,
       payment (
         payment_id,
         payment_method,

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,6 +60,7 @@ interface Booking {
     customer_email: string | null;
     booking_dateTime: string;
     is_coupon_use: boolean;
+    payment_status: string;
     payment: Payment[];
     booking_detail: BookingDetail[];
 }
@@ -66,12 +68,17 @@ interface Booking {
 type TabKey = "upcoming" | "completed" | "all";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
-function getBookingStatus(booking: Booking): "upcoming" | "completed" | "cancelled" {
+function getBookingStatus(booking: Booking): "pending" | "upcoming" | "completed" | "cancelled" {
     const now = new Date();
-    const paymentStatus = booking.payment?.[0]?.payment_status;
+    // Use booking.payment_status as primary source, fallback to payment table
+    const paymentStatus = booking.payment_status || booking.payment?.[0]?.payment_status;
 
     if (paymentStatus === "cancelled") return "cancelled";
+    
+    // Check for pending status (not yet confirmed by manager)
+    if (paymentStatus === "pending") return "pending";
 
+    // If payment is confirmed/paid/completed, check the time
     // Find the end time of the last service in this booking
     const details = booking.booking_detail ?? [];
     if (details.length > 0) {
@@ -89,6 +96,11 @@ function getBookingStatus(booking: Booking): "upcoming" | "completed" | "cancell
 }
 
 const STATUS_CONFIG = {
+    pending: {
+        label: "รอการยืนยัน",
+        color: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
+        icon: Clock,
+    },
     upcoming: {
         label: "กำลังจะมาถึง",
         color: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
@@ -141,6 +153,12 @@ function BookingCard({ booking, onClick }: { booking: Booking; onClick: () => vo
     const payment = booking.payment?.[0];
     const services = booking.booking_detail ?? [];
     const totalTime = services.reduce((sum, d) => sum + (d.massage?.massage_time ?? 60), 0);
+    
+    // Get the first service's start time, or fall back to booking time
+    const firstServiceTime = services.length > 0 
+        ? services[0].massage_start_dateTime 
+        : booking.booking_dateTime;
+    const firstServiceDate = new Date(firstServiceTime);
 
     return (
         <button
@@ -149,9 +167,9 @@ function BookingCard({ booking, onClick }: { booking: Booking; onClick: () => vo
         >
             {/* Date badge */}
             <div className="shrink-0 flex flex-col items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
-                <span className="text-2xl font-bold font-mitr leading-none">{new Date(booking.booking_dateTime).getDate()}</span>
-                <span className="text-xs font-medium">{MONTHS_TH[new Date(booking.booking_dateTime).getMonth()]}</span>
-                <span className="text-[10px] text-primary/60">{new Date(booking.booking_dateTime).getFullYear() + 543}</span>
+                <span className="text-2xl font-bold font-mitr leading-none">{firstServiceDate.getDate()}</span>
+                <span className="text-xs font-medium">{MONTHS_TH[firstServiceDate.getMonth()]}</span>
+                <span className="text-[10px] text-primary/60">{firstServiceDate.getFullYear() + 543}</span>
             </div>
 
             {/* Info */}
@@ -172,7 +190,7 @@ function BookingCard({ booking, onClick }: { booking: Booking; onClick: () => vo
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {formatTimeTH(booking.booking_dateTime)} · {totalTime} นาที
+                        {formatTimeTH(firstServiceTime)} · {totalTime} นาที
                     </span>
                     {payment && (
                         <span className="flex items-center gap-1">
@@ -205,6 +223,10 @@ function BookingDetailModal({ booking, open, onClose }: { booking: Booking | nul
     const Icon = cfg.icon;
     const payment = booking.payment?.[0];
     const PayIcon = PAYMENT_ICON[payment?.payment_method ?? "cash"] ?? CreditCard;
+    
+    // Get first service assignment time
+    const services = booking.booking_detail ?? [];
+    const firstServiceTime = services.length > 0 ? services[0].massage_start_dateTime : null;
 
     return (
         <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -225,14 +247,16 @@ function BookingDetailModal({ booking, open, onClose }: { booking: Booking | nul
                 </DialogHeader>
 
                 <div className="px-6 py-5 flex flex-col gap-5">
-                    {/* Booking date/time */}
-                    <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
-                        <Calendar className="h-5 w-5 text-primary shrink-0" />
-                        <div>
-                            <p className="text-xs text-muted-foreground font-sans">วันและเวลา</p>
-                            <p className="font-medium font-mitr">{formatDateTH(booking.booking_dateTime)} เวลา {formatTimeTH(booking.booking_dateTime)}</p>
+                    {/* Service assignment time - highlighted */}
+                    {firstServiceTime && (
+                        <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                            <Sparkles className="h-5 w-5 text-primary shrink-0" />
+                            <div>
+                                <p className="text-xs text-muted-foreground font-sans">เวลาการบริการ</p>
+                                <p className="font-medium font-mitr text-sm">{formatDateTH(firstServiceTime)} เวลา {formatTimeTH(firstServiceTime)}</p>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Services */}
                     <div>
@@ -296,6 +320,10 @@ function BookingDetailModal({ booking, open, onClose }: { booking: Booking | nul
                                     <span>{booking.customer_email}</span>
                                 </div>
                             )}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border/20 mt-2">
+                                <Calendar className="h-3.5 w-3.5 shrink-0" />
+                                <span>จองเมื่อ: {formatDateTH(booking.booking_dateTime)} เวลา {formatTimeTH(booking.booking_dateTime)}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -337,6 +365,13 @@ export default function BookingHistoryPage() {
     const [tab, setTab] = useState<TabKey>("upcoming");
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState("10");
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [tab]);
+
     useEffect(() => {
         const init = async () => {
             const supabase = createClient();
@@ -362,16 +397,31 @@ export default function BookingHistoryPage() {
 
     const filtered = bookings.filter(b => {
         const status = getBookingStatus(b);
-        if (tab === "upcoming") return status === "upcoming";
+        if (tab === "upcoming") return status === "upcoming" || status === "pending";
         if (tab === "completed") return status === "completed" || status === "cancelled";
         return true;
     });
 
     const tabCount = (key: TabKey) => {
-        if (key === "upcoming") return bookings.filter(b => getBookingStatus(b) === "upcoming").length;
-        if (key === "completed") return bookings.filter(b => getBookingStatus(b) !== "upcoming").length;
+        if (key === "upcoming") return bookings.filter(b => {
+            const s = getBookingStatus(b);
+            return s === "upcoming" || s === "pending";
+        }).length;
+        if (key === "completed") return bookings.filter(b => {
+            const s = getBookingStatus(b);
+            return s === "completed" || s === "cancelled";
+        }).length;
         return bookings.length;
     };
+
+    const totalItems = filtered.length;
+    const itemsPerPageNum = rowsPerPage === "all" ? totalItems : parseInt(rowsPerPage, 10) || 10;
+    const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPageNum));
+    const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+    const startIndex = (safeCurrentPage - 1) * itemsPerPageNum;
+    const endIndex = rowsPerPage === "all" ? totalItems : Math.min(startIndex + itemsPerPageNum, totalItems);
+
+    const paginatedList = filtered.slice(startIndex, endIndex);
 
     return (
         <main className="flex-1 w-full">
@@ -441,15 +491,42 @@ export default function BookingHistoryPage() {
                         </Button>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-3">
-                        {filtered.map(b => (
-                            <BookingCard
-                                key={b.booking_id}
-                                booking={b}
-                                onClick={() => setSelectedBooking(b)}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="flex flex-col gap-3">
+                            {paginatedList.map(b => (
+                                <BookingCard
+                                    key={b.booking_id}
+                                    booking={b}
+                                    onClick={() => setSelectedBooking(b)}
+                                />
+                            ))}
+                        </div>
+                        {totalItems > 0 && (
+                            <div className="mt-6 rounded-xl overflow-hidden border border-border/40">
+                                <DataTablePagination
+                                    currentPage={safeCurrentPage}
+                                    totalPages={totalPages}
+                                    totalItems={totalItems}
+                                    showingFrom={startIndex + 1}
+                                    showingTo={endIndex}
+                                    rowsPerPage={rowsPerPage}
+                                    onPageChange={setCurrentPage}
+                                    onRowsPerPageChange={(value) => {
+                                        setRowsPerPage(value);
+                                        setCurrentPage(1);
+                                    }}
+                                    pageOptions={["10", "20", "30", "all"]}
+                                    labels={{
+                                        showing: "แสดง",
+                                        of: "จาก",
+                                        items: "รายการ",
+                                        rowsPerPage: "จำนวนต่อหน้า:",
+                                        all: "ทั้งหมด"
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
