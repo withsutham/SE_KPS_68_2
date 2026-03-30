@@ -89,6 +89,30 @@ export async function createLeaveRecord(params: {
   }
 
   const supabase = createAdminClient();
+
+  // 1. ตรวจสอบว่ามีการลาซ้ำในช่วงเวลาดังกล่าวหรือไม่
+  const { data: existingLeaves, error: fetchError } = await supabase
+    .from("leave_record")
+    .select("*")
+    .eq("employee_id", emp.employee_id);
+
+  if (fetchError) {
+    console.error("Error checking existing leaves:", fetchError.message);
+  } else if (existingLeaves) {
+    const newStart = new Date(params.start_datetime).getTime();
+    const newEnd = new Date(params.end_datetime).getTime();
+
+    const hasOverlap = existingLeaves.some(leave => {
+      const exStart = new Date(leave.start_datetime).getTime();
+      const exEnd = new Date(leave.end_datetime).getTime();
+      return newStart <= exEnd && newEnd >= exStart;
+    });
+
+    if (hasOverlap) {
+      throw new Error("คุณมีรายการลาในช่วงเวลาดังกล่าวอยู่แล้ว กรุณาตรวจสอบอีกครั้ง");
+    }
+  }
+
   const { data, error } = await supabase
     .from("leave_record")
     .insert([
@@ -125,6 +149,37 @@ export async function updateLeaveRecord(
   }
 ) {
   const supabase = createAdminClient();
+
+  // 1. ดึงข้อมูลใบลาปัจจุบันเพื่อหา employee_id และวันเดิมถ้าไม่ได้ระบุใหม่
+  const { data: currentLeave } = await supabase
+    .from("leave_record")
+    .select("*")
+    .eq("leave_record_id", leaveRecordId)
+    .single();
+
+  if (currentLeave && (params.start_datetime || params.end_datetime)) {
+    const { data: otherLeaves } = await supabase
+        .from("leave_record")
+        .select("*")
+        .eq("employee_id", currentLeave.employee_id)
+        .neq("leave_record_id", leaveRecordId); // ไม่เช็คทับตัวเอง
+
+    if (otherLeaves) {
+        const checkStart = new Date(params.start_datetime || currentLeave.start_datetime).getTime();
+        const checkEnd = new Date(params.end_datetime || currentLeave.end_datetime).getTime();
+
+        const hasOverlap = otherLeaves.some(leave => {
+            const exStart = new Date(leave.start_datetime).getTime();
+            const exEnd = new Date(leave.end_datetime).getTime();
+            return checkStart <= exEnd && checkEnd >= exStart;
+        });
+
+        if (hasOverlap) {
+            throw new Error("ช่วงเวลาที่คุณแก้ไข ไปทับซ้อนกับรายการลาอื่นที่มีอยู่แล้ว");
+        }
+    }
+  }
+
   const { data, error } = await supabase
     .from("leave_record")
     .update(params)

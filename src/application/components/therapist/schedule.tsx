@@ -12,7 +12,14 @@ interface Booking {
   booking?: { customer_name: string };
 }
 
-export default function ScheduleCalendar({ initialBookings }: { initialBookings: Booking[] }) {
+interface Leave {
+  leave_record_id: number;
+  start_datetime: string;
+  end_datetime: string;
+  approval_status: string;
+}
+
+export default function ScheduleCalendar({ initialBookings, leaveRecords = [] }: { initialBookings: Booking[], leaveRecords?: Leave[] }) {
   // วันที่สำหรับสัปดาห์ที่กำลังแสดง (ค่าเริ่มต้นคือวันนี้)
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -72,10 +79,21 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
       .filter((booking) => {
         const bookingDate = new Date(booking.massage_start_dateTime);
         const isInRange = bookingDate >= startOfWeek && bookingDate <= endOfWeek;
-        return isInRange;
+        if (!isInRange) return false;
+
+        // ตรวจสอบว่าตรงกับวันลาที่อนุมัติแล้วหรือไม่
+        // ใช้ timezone Asia/Bangkok (UTC+7) เพื่อให้วันที่ถูกต้อง
+        const bookingDayStr = bookingDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+        const isOnLeave = leaveRecords.some(leave => {
+          const leaveStart = new Date(leave.start_datetime).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+          const leaveEnd = new Date(leave.end_datetime).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+          return bookingDayStr >= leaveStart && bookingDayStr <= leaveEnd;
+        });
+
+        return !isOnLeave; // ถ้าลาอยู่ ให้กรองออก (return false)
       });
 
-    console.log("Bookings after Weekly Filter:", filtered.length);
+    console.log("Bookings after Weekly & Leave Filter:", filtered.length);
     if (filtered.length > 0) {
       filtered.forEach((b, i) => {
         console.log(`Booking ${i+1} details:`, {
@@ -109,7 +127,7 @@ export default function ScheduleCalendar({ initialBookings }: { initialBookings:
           color: colors[index % colors.length]
         };
       });
-  }, [initialBookings, startOfWeek, endOfWeek, days]);
+  }, [initialBookings, startOfWeek, endOfWeek, days, leaveRecords]);
 
   // สร้าง time slots แบบ Dynamic ให้ขยายตามชั่วโมงของนัดหมายที่ดึกที่สุด
   const times = useMemo(() => {
