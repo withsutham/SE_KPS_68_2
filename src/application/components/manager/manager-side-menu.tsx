@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -48,31 +48,75 @@ const employeeItems: MenuItem[] = [
   { href: "/manager/employee/management", label: "จัดการข้อมูลพนักงาน", icon: Settings },
 ];
 
-function MenuLink({ item, active, collapsed, badge }: { item: MenuItem; active: boolean; collapsed: boolean; badge?: number }) {
+type BadgeData = { count: number; color: "yellow" | "red" };
+
+function MenuLink({ 
+  item, 
+  active, 
+  collapsed, 
+  badge, 
+  badges,
+  onBadgeClick 
+}: { 
+  item: MenuItem; 
+  active: boolean; 
+  collapsed: boolean; 
+  badge?: number; 
+  badges?: BadgeData[];
+  onBadgeClick?: (color: "yellow" | "red") => void;
+}) {
   const Icon = item.icon;
+  const allBadges: BadgeData[] = badges || (badge && badge > 0 ? [{ count: badge, color: "yellow" }] : []);
+  const validBadges = allBadges.filter((b: BadgeData) => b.count > 0);
+
   return (
-    <Link
-      href={item.href}
-      className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors relative",
-        active
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        collapsed && "justify-center px-2"
+    <div className="relative group/link">
+      <Link
+        href={item.href}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+          active
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          collapsed && "justify-center px-2"
+        )}
+        title={collapsed ? item.label : undefined}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+      </Link>
+
+      {!collapsed && validBadges.length > 0 && (
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10">
+          {validBadges.map((b, i) => (
+            <button
+              key={i}
+              onClick={(e) => {
+                if (onBadgeClick) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onBadgeClick(b.color);
+                }
+              }}
+              className={cn(
+                "h-5 min-w-[20px] rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-background px-1 transition-transform hover:scale-110 active:scale-95",
+                b.color === "yellow" ? "bg-yellow-500 text-white" : "bg-red-500 text-white",
+                onBadgeClick && "cursor-pointer"
+              )}
+            >
+              {b.count > 99 ? "99+" : b.count}
+            </button>
+          ))}
+        </div>
       )}
-      title={collapsed ? item.label : undefined}
-    >
-      <Icon className="h-4 w-4 shrink-0" />
-      {!collapsed && <span className="flex-1">{item.label}</span>}
-      {!collapsed && badge && badge > 0 && (
-        <span className="shrink-0 h-5 px-1.5 rounded-full bg-yellow-500 text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-background">
-          {badge}
-        </span>
+
+      {collapsed && validBadges.length > 0 && (
+        <span className={cn(
+          "absolute top-2 right-2 h-2.5 w-2.5 rounded-full ring-2 ring-background",
+          validBadges[0].color === "yellow" ? "bg-yellow-500" : "bg-red-500"
+        )} />
       )}
-      {collapsed && badge && badge > 0 && (
-        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-yellow-500 ring-2 ring-background" />
-      )}
-    </Link>
+    </div>
   );
 }
 
@@ -82,27 +126,83 @@ export function ManagerSideMenu() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [unassignedCount, setUnassignedCount] = useState(0);
+  const [leaveCollisionCount, setLeaveCollisionCount] = useState(0);
+  const [firstCollisionDate, setFirstCollisionDate] = useState<string | null>(null);
 
-  // Ensure component is mounted before rendering theme-dependent content
+  const fetchMetrics = useCallback(async () => {
+    try {
+      const [leaveRes, bookingRes] = await Promise.all([
+        fetch("/api/leave_record"),
+        fetch("/api/booking_detail")
+      ]);
+
+      const leaveJson = await leaveRes.json();
+      const bookingJson = await bookingRes.json();
+
+      if (leaveJson.data && bookingJson.data) {
+        const leaves = leaveJson.data;
+        const bookings = bookingJson.data;
+
+        // 1. Pending Leaves (Yellow badge on Management)
+        const pending = leaves.filter((l: any) => l.approval_status === "pending").length;
+        setPendingCount(pending);
+
+        // 2. Unassigned bookings
+        const unassigned = bookings.filter((b: any) => !b.employee_id).length;
+        setUnassignedCount(unassigned);
+
+        // 3. Leave collisions (Red badge on Schedule)
+        const approvedLeaves = leaves.filter((l: any) => l.approval_status === "approved");
+        let collisions = 0;
+        let earliestCollision: number | null = null;
+
+        bookings.forEach((b: any) => {
+          if (!b.employee_id) return;
+
+          const isColliding = approvedLeaves.some((l: any) => {
+            if (l.employee_id !== b.employee_id) return false;
+            
+            const bStart = new Date(b.massage_start_dateTime).getTime();
+            const bEnd = new Date(b.massage_end_dateTime).getTime();
+            const lStart = new Date(l.start_datetime).getTime();
+            const lEnd = new Date(l.end_datetime).getTime();
+
+            return (bStart < lEnd && bEnd > lStart);
+          });
+
+          if (isColliding) {
+            collisions++;
+            const bStart = new Date(b.massage_start_dateTime).getTime();
+            if (earliestCollision === null || bStart < earliestCollision) {
+              earliestCollision = bStart;
+            }
+          }
+        });
+
+        setLeaveCollisionCount(collisions);
+        if (earliestCollision) {
+          setFirstCollisionDate(new Date(earliestCollision).toISOString().split("T")[0]);
+        } else {
+          setFirstCollisionDate(null);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch menu metrics:", err);
+    }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
-    
-    // Fetch pending leave records
-    const fetchPendingLeaves = async () => {
-      try {
-        const res = await fetch("/api/leave_record");
-        const json = await res.json();
-        if (json.data) {
-          const count = json.data.filter((l: any) => l.approval_status === "pending").length;
-          setPendingCount(count);
-        }
-      } catch (err) {
-        console.error("Failed to fetch pending leaves:", err);
-      }
+    fetchMetrics();
+
+    const handleRefresh = () => {
+      fetchMetrics();
     };
 
-    fetchPendingLeaves();
-  }, []);
+    window.addEventListener("schedule-refresh", handleRefresh);
+    return () => window.removeEventListener("schedule-refresh", handleRefresh);
+  }, [fetchMetrics]);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -155,15 +255,26 @@ export function ManagerSideMenu() {
 
         <div className="mt-5 space-y-1">
           {!collapsed && <p className="px-2 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">พนักงาน</p>}
-          {employeeItems.map((item) => (
-            <MenuLink 
-              key={item.href} 
-              item={item} 
-              active={pathname === item.href} 
-              collapsed={collapsed} 
-              badge={item.href === "/manager/employee/management" ? pendingCount : undefined}
-            />
-          ))}
+          <MenuLink 
+            item={employeeItems[0]} 
+            active={pathname === employeeItems[0].href} 
+            collapsed={collapsed} 
+            badges={[
+              ...(leaveCollisionCount > 0 ? [{ count: leaveCollisionCount, color: "red" as const }] : []),
+              ...(unassignedCount > 0 ? [{ count: unassignedCount, color: "yellow" as const }] : [])
+            ]}
+            onBadgeClick={(color) => {
+              if (color === "red" && firstCollisionDate) {
+                window.location.href = `/manager/employee/schedule?week=${firstCollisionDate}`;
+              }
+            }}
+          />
+          <MenuLink 
+            item={employeeItems[1]} 
+            active={pathname === employeeItems[1].href} 
+            collapsed={collapsed} 
+            badge={pendingCount}
+          />
         </div>
       </div>
 
