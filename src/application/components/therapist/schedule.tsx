@@ -82,10 +82,11 @@ export default function ScheduleCalendar({ initialBookings, leaveRecords = [] }:
         if (!isInRange) return false;
 
         // ตรวจสอบว่าตรงกับวันลาที่อนุมัติแล้วหรือไม่
-        const bookingDayStr = bookingDate.toISOString().split('T')[0];
+        // ใช้ timezone Asia/Bangkok (UTC+7) เพื่อให้วันที่ถูกต้อง
+        const bookingDayStr = bookingDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
         const isOnLeave = leaveRecords.some(leave => {
-          const leaveStart = leave.start_datetime.split('T')[0];
-          const leaveEnd = leave.end_datetime.split('T')[0];
+          const leaveStart = new Date(leave.start_datetime).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+          const leaveEnd = new Date(leave.end_datetime).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
           return bookingDayStr >= leaveStart && bookingDayStr <= leaveEnd;
         });
 
@@ -126,7 +127,7 @@ export default function ScheduleCalendar({ initialBookings, leaveRecords = [] }:
           color: colors[index % colors.length]
         };
       });
-  }, [initialBookings, startOfWeek, endOfWeek, days]);
+  }, [initialBookings, startOfWeek, endOfWeek, days, leaveRecords]);
 
   // สร้าง time slots แบบ Dynamic ให้ขยายตามชั่วโมงของนัดหมายที่ดึกที่สุด
   const times = useMemo(() => {
