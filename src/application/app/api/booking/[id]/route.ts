@@ -36,6 +36,7 @@ export async function PUT(
         const body = await request.json();
         const supabase = await createAdminClient();
 
+        // Update booking table
         const { data, error } = await supabase
             .from("booking")
             .update(body)
@@ -46,6 +47,19 @@ export async function PUT(
         if (error) {
             console.error("booking PUT error:", error.message);
             return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        }
+
+        // If payment_status is being updated, also update the payment table
+        if (body.payment_status) {
+            const { error: paymentError } = await supabase
+                .from("payment")
+                .update({ payment_status: body.payment_status })
+                .eq("booking_id", id);
+
+            if (paymentError) {
+                console.error("payment status update error:", paymentError.message);
+                // Don't fail the request, just log the error
+            }
         }
 
         return NextResponse.json({ success: true, data }, { status: 200 });
